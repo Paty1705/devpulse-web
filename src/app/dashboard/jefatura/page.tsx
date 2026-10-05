@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
-import { Plus, FolderGit2, ArrowLeft, Info, Edit, Trash2, X, AlertTriangle, GitBranch } from 'lucide-react';
+import { Plus, FolderGit2, ArrowLeft, Info, Edit, Trash2, X, AlertTriangle, GitBranch, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { NewProjectModal } from '@/components/jefatura/NewProjectModal';
 import { ProjectDetailsModal } from '@/components/jefatura/ProjectDetailsModal';
@@ -129,6 +129,15 @@ export default function JefaturaPage() {
             <GitBranch size={18} />
             Control de Versiones
           </button>
+          {isJefe && (
+            <button
+              onClick={() => router.push('/dashboard/jefatura/usuarios')}
+              className="flex items-center gap-2 border border-[var(--border-card)] text-[var(--text-primary)] px-4 py-2.5 rounded-[6px] font-bold hover:bg-[var(--bg-page)] shadow-sm transition-all active:scale-[0.97]"
+            >
+              <Users size={18} />
+              Usuarios
+            </button>
+          )}
           {isJefe && (
             <button
               onClick={() => setIsModalOpen(true)}

@@ -8,6 +8,7 @@ type Profile = {
   id: string;
   email: string;
   role: 'jefe' | 'developer' | 'qa' | 'empleado' | 'usuario' | 'pasante';
+  status: 'pending' | 'approved' | 'rejected';
 };
 
 type AuthContextType = {

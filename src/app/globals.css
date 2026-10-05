@@ -1,0 +1,196 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-neon: #11DBDC;
+  --color-brand-magenta: #D15EEE;
+  --color-brand-azul: #2983D0;
+  --color-brand-indigo: #515ADA;
+  --color-brand-violet: #6942D7;
+}
+
+:root {
+  /* Light Mode - Base */
+  --bg-page: #F6F7FD;
+  --bg-navbar: #FFFFFF;
+  --border-subtle: #E2E6FA;
+  --bg-column: #ECEFFE;
+  --border-column: #D3DAFC;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #FDFDFF;
+  --border-card: #CBD5F9;
+  --text-primary: #1E1B4B;
+  --text-secondary: #515ADA;
+  
+  /* Primary Button Default */
+  --btn-primary-bg: #515ADA;
+  --btn-primary-text: #FFFFFF;
+  --btn-primary-hover: #6942D7;
+  
+  /* Badges & Semantics */
+  --badge-bg: rgba(41, 131, 208, 0.12);
+  --badge-text: #2983D0;
+  --badge-sql-bg: rgba(105, 66, 215, 0.1);
+  --badge-sql-text: #6942D7;
+  --badge-locked-bg: rgba(239, 68, 68, 0.15);
+  --badge-locked-text: #EF4444;
+  --badge-urgent-bg: rgba(245, 158, 11, 0.15);
+  --badge-urgent-text: #F59E0B;
+  
+  --shadow-subtle: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  --shadow-hover: 0 10px 20px -5px rgba(81, 90, 218, 0.15);
+  --card-bevel: rgba(255, 255, 255, 0.5);
+  
+  /* Density Defaults */
+  --kanban-card-padding: 14px;
+  --kanban-card-text: 15px;
+}
+
+:root.dark {
+  /* Dark Mode - Base */
+  --bg-page: #090A10;
+  --bg-navbar: rgba(14, 15, 26, 0.85);
+  --border-subtle: rgba(81, 90, 218, 0.25);
+  --bg-column: rgba(22, 21, 43, 0.55);
+  --border-column: rgba(105, 66, 215, 0.3);
+  --bg-card: #151628;
+  --bg-card-hover: #1C1D36;
+  --border-card: rgba(81, 90, 218, 0.4);
+  --text-primary: #FFFFFF;
+  --text-secondary: #A5B4FC;
+  
+  /* Primary Button Default */
+  --btn-primary-bg: #11DBDC;
+  --btn-primary-text: #090A10;
+  --btn-primary-hover: #D15EEE;
+  
+  /* Badges & Semantics */
+  --badge-bg: rgba(17, 219, 220, 0.15);
+  --badge-text: #11DBDC;
+  --badge-sql-bg: rgba(209, 94, 238, 0.18);
+  --badge-sql-text: #D15EEE;
+  --badge-locked-bg: rgba(239, 68, 68, 0.2);
+  --badge-locked-text: #F87171;
+  --badge-urgent-bg: rgba(245, 158, 11, 0.2);
+  --badge-urgent-text: #FBBF24;
+  
+  --shadow-subtle: 0 4px 10px rgba(0, 0, 0, 0.3);
+  --shadow-hover: 0 10px 20px -5px rgba(0, 0, 0, 0.35);
+  --card-bevel: rgba(81, 90, 218, 0.3);
+}
+
+/* =========================================
+   ACCENTS
+========================================= */
+
+/* Neón (Cian) */
+:root[data-accent="neon"] {
+  --btn-primary-bg: #11DBDC;
+  --btn-primary-hover: #D15EEE;
+  --border-card: rgba(17, 219, 220, 0.2);
+}
+:root.dark[data-accent="neon"] {
+  --btn-primary-bg: #11DBDC;
+  --btn-primary-hover: #D15EEE;
+  --border-card: rgba(17, 219, 220, 0.25);
+  --badge-bg: rgba(17, 219, 220, 0.15);
+  --badge-text: #11DBDC;
+}
+
+/* Magenta Orquídea */
+:root[data-accent="magenta"] {
+  --btn-primary-bg: #D15EEE;
+  --btn-primary-hover: #11DBDC;
+  --border-card: rgba(209, 94, 238, 0.2);
+}
+:root.dark[data-accent="magenta"] {
+  --btn-primary-bg: #D15EEE;
+  --btn-primary-hover: #11DBDC;
+  --border-card: rgba(209, 94, 238, 0.25);
+  --badge-bg: rgba(209, 94, 238, 0.15);
+  --badge-text: #D15EEE;
+}
+
+/* Azul Eléctrico */
+:root[data-accent="azul"] {
+  --btn-primary-bg: #2983D0;
+  --btn-primary-hover: #515ADA;
+  --border-card: rgba(41, 131, 208, 0.2);
+}
+:root.dark[data-accent="azul"] {
+  --btn-primary-bg: #2983D0;
+  --btn-primary-hover: #515ADA;
+  --border-card: rgba(41, 131, 208, 0.25);
+  --badge-bg: rgba(41, 131, 208, 0.15);
+  --badge-text: #2983D0;
+}
+
+/* Índigo / Violeta */
+:root[data-accent="indigo"] {
+  --btn-primary-bg: #515ADA;
+  --btn-primary-hover: #6942D7;
+  --border-card: rgba(81, 90, 218, 0.2);
+}
+:root.dark[data-accent="indigo"] {
+  --btn-primary-bg: #515ADA;
+  --btn-primary-hover: #6942D7;
+  --border-card: rgba(81, 90, 218, 0.25);
+  --badge-bg: rgba(81, 90, 218, 0.15);
+  --badge-text: #A5B4FC;
+}
+
+/* Menta Teal */
+:root[data-accent="mint"] {
+  --btn-primary-bg: #3E9B94;
+  --btn-primary-hover: #88C9C4;
+  --border-card: rgba(62, 155, 148, 0.2);
+}
+:root.dark[data-accent="mint"] {
+  --btn-primary-bg: #3E9B94;
+  --btn-primary-hover: #88C9C4;
+  --border-card: rgba(62, 155, 148, 0.25);
+  --badge-bg: rgba(62, 155, 148, 0.15);
+  --badge-text: #88C9C4;
+}
+
+/* Ámbar Solar */
+:root[data-accent="amber"] {
+  --btn-primary-bg: #F59E0B;
+  --btn-primary-hover: #D97706;
+  --border-card: rgba(245, 158, 11, 0.2);
+}
+:root.dark[data-accent="amber"] {
+  --btn-primary-bg: #F59E0B;
+  --btn-primary-hover: #D97706;
+  --border-card: rgba(245, 158, 11, 0.25);
+  --badge-bg: rgba(245, 158, 11, 0.15);
+  --badge-text: #FBBF24;
+}
+
+/* =========================================
+   DENSITY
+========================================= */
+:root[data-density="compact"] {
+  --kanban-card-padding: 8px;
+  --kanban-card-text: 12px;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}

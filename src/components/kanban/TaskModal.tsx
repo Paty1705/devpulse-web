@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { branchNameForTask } from '@/lib/github';
+import { specialtyLabel } from '@/lib/specialties';
 
 type FullTask = {
   id: string;
@@ -25,7 +26,7 @@ type FullTask = {
 
 type PrStatus = { state: 'open' | 'closed'; merged: boolean; draft: boolean };
 
-type AssigneeProfile = { email: string; role: string };
+type AssigneeProfile = { email: string; role: string; specialty: string | null };
 
 type AuditRecord = {
   id: string;
@@ -122,7 +123,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
     setAuditComment('');
 
     if (data.assigned_to) {
-      const { data: profile } = await supabase.from('profiles').select('email, role').eq('id', data.assigned_to).single();
+      const { data: profile } = await supabase.from('profiles').select('email, role, specialty').eq('id', data.assigned_to).single();
       if (profile) setAssignee(profile as AssigneeProfile);
     } else {
       setAssignee(null);
@@ -494,6 +495,9 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
                       {assignee.email.slice(0, 2).toUpperCase()}
                     </div>
                     <span className="text-[var(--text-primary)] font-medium truncate">{assignee.email}</span>
+                    {specialtyLabel(assignee.specialty) && (
+                      <span className="text-xs text-[var(--text-secondary)] shrink-0">· {specialtyLabel(assignee.specialty)}</span>
+                    )}
                   </div>
                 ) : (
                   <span className="text-sm text-[var(--text-secondary)] italic">Sin asignar</span>

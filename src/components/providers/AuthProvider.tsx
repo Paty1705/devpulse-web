@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import type { Specialty } from '@/lib/specialties';
 
 type Profile = {
   id: string;
@@ -10,6 +11,7 @@ type Profile = {
   role: 'jefe' | 'developer' | 'qa' | 'empleado' | 'usuario' | 'pasante';
   status: 'pending' | 'approved' | 'rejected';
   requested_role: 'developer' | 'qa' | 'pasante' | null;
+  specialty: Specialty | null;
 };
 
 export type RequestableRole = 'developer' | 'qa' | 'pasante';
@@ -24,8 +26,9 @@ type AuthContextType = {
   signInWithGithub: () => Promise<void>;
   signInWithEmail: (email: string) => Promise<void>;
   signInWithPassword: (email: string, password: string) => Promise<string | null>;
-  signUpWithEmail: (email: string, password: string, requestedRole: RequestableRole) => Promise<SignUpResult>;
+  signUpWithEmail: (email: string, password: string, requestedRole: RequestableRole, specialty: Specialty | null) => Promise<SignUpResult>;
   setRequestedRole: (role: RequestableRole) => Promise<string | null>;
+  setSpecialty: (specialty: Specialty) => Promise<string | null>;
   signOut: () => Promise<void>;
 };
 
@@ -39,6 +42,7 @@ const AuthContext = createContext<AuthContextType>({
   signInWithPassword: async () => null,
   signUpWithEmail: async () => ({ error: null, needsEmailConfirmation: false }),
   setRequestedRole: async () => null,
+  setSpecialty: async () => null,
   signOut: async () => {},
 });
 
@@ -139,12 +143,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Registro con correo. El rol elegido es solo una SOLICITUD: la cuenta queda
   // 'pending' y un jefe decide el rol real al aprobarla.
-  const signUpWithEmail = async (email: string, password: string, requestedRole: RequestableRole): Promise<SignUpResult> => {
+  const signUpWithEmail = async (email: string, password: string, requestedRole: RequestableRole, specialty: Specialty | null): Promise<SignUpResult> => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { requested_role: requestedRole },
+        data: { requested_role: requestedRole, specialty },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
@@ -161,12 +165,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return null;
   };
 
+  const setSpecialty = async (specialty: Specialty) => {
+    const { error } = await supabase.rpc('set_specialty', { wanted: specialty });
+    if (error) return error.message;
+    if (user) await fetchProfile(user.id);
+    return null;
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signInWithGoogle, signInWithGithub, signInWithEmail, signInWithPassword, signUpWithEmail, setRequestedRole, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, signInWithGoogle, signInWithGithub, signInWithEmail, signInWithPassword, signUpWithEmail, setRequestedRole, setSpecialty, signOut }}>
       {children}
     </AuthContext.Provider>
   );

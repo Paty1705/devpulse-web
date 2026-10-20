@@ -4,6 +4,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { useAuth, RequestableRole } from "@/components/providers/AuthProvider";
 import { Hourglass, ShieldX } from "lucide-react";
 import { useState } from "react";
+import { SPECIALTIES, SPECIALTY_LABELS, Specialty } from "@/lib/specialties";
 
 const ROLE_LABELS: Record<RequestableRole, string> = { developer: 'Developer', qa: 'QA', pasante: 'Pasante' };
 
@@ -12,8 +13,14 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { profile, loading, signOut, setRequestedRole } = useAuth();
+  const { profile, loading, signOut, setRequestedRole, setSpecialty } = useAuth();
   const [roleError, setRoleError] = useState<string | null>(null);
+
+  const chooseSpecialty = async (specialty: Specialty) => {
+    setRoleError(null);
+    const error = await setSpecialty(specialty);
+    if (error) setRoleError(error);
+  };
 
   const chooseRole = async (role: RequestableRole) => {
     setRoleError(null);
@@ -52,6 +59,26 @@ export default function DashboardLayout({
                   ))}
                 </div>
                 {roleError && <p className="text-sm text-[#EF4444] mt-2">{roleError}</p>}
+              </div>
+            )}
+            {profile.specialty ? (
+              <p className="text-sm text-[var(--text-secondary)] mb-6">
+                Especialidad: <span className="font-bold text-[var(--text-primary)]">{SPECIALTY_LABELS[profile.specialty]}</span>
+              </p>
+            ) : (
+              <div className="mb-6">
+                <p className="text-sm text-[var(--text-secondary)] mb-3">¿Cuál es tu especialidad?</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {SPECIALTIES.map(s => (
+                    <button
+                      key={s}
+                      onClick={() => chooseSpecialty(s)}
+                      className="px-3 py-1.5 text-sm font-bold bg-[var(--bg-page)] border border-[var(--border-card)] text-[var(--text-primary)] hover:border-[var(--btn-primary-bg)] rounded-[6px] transition-colors"
+                    >
+                      {SPECIALTY_LABELS[s]}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             <button

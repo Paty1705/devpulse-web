@@ -5,8 +5,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { branchNameForTask, slugifyRepoName } from '@/lib/github';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { roleWithSpecialty } from '@/lib/specialties';
 
-type Profile = { id: string; email: string; role: string };
+type Profile = { id: string; email: string; role: string; specialty: string | null };
 type GeneratedTask = {
   title: string;
   description: string;
@@ -97,7 +98,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
   }
 
   const fetchProfiles = useCallback(async () => {
-    const { data } = await supabase.from('profiles').select('id, email, role');
+    const { data } = await supabase.from('profiles').select('id, email, role, specialty');
     if (data) setProfiles(data);
   }, []);
 
@@ -474,7 +475,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                   className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[6px] p-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <option value="">Seleccionar responsable...</option>
-                  {profiles.map(p => <option key={p.id} value={p.id}>{p.email} ({p.role})</option>)}
+                  {profiles.map(p => <option key={p.id} value={p.id}>{p.email} ({roleWithSpecialty(p.role, p.specialty)})</option>)}
                 </select>
                 {!canChangeLeader && (
                   <p className="text-[11px] text-[var(--text-secondary)] mt-1">Solo un jefe puede reasignar el liderazgo del proyecto.</p>
@@ -493,7 +494,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                           onChange={() => toggleMember(p.id)}
                           className="rounded-[4px] text-[var(--btn-primary-bg)] focus:ring-[var(--btn-primary-bg)] bg-[var(--bg-column)] border-[var(--border-card)]" 
                         /> 
-                        {p.email} <span className="text-xs text-[var(--text-secondary)]">({p.role})</span>
+                        {p.email} <span className="text-xs text-[var(--text-secondary)]">({roleWithSpecialty(p.role, p.specialty)})</span>
                       </label>
                     ))}
                   </div>
@@ -633,7 +634,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                         className="w-full bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[4px] p-1.5 text-[11px] text-[var(--text-primary)] mb-2 focus:outline-none focus:border-[var(--btn-primary-bg)]"
                       >
                         <option value="">Sin asignar</option>
-                        {assignableProfiles.map(p => <option key={p.id} value={p.id}>{p.email} ({p.role})</option>)}
+                        {assignableProfiles.map(p => <option key={p.id} value={p.id}>{p.email} ({roleWithSpecialty(p.role, p.specialty)})</option>)}
                       </select>
 
                       <div className="flex gap-1.5">

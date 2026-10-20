@@ -1,6 +1,7 @@
 import { X, Users, CheckCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { specialtyLabel } from '@/lib/specialties';
 
 type Project = {
   id: string;
@@ -9,7 +10,7 @@ type Project = {
   mode: string;
 };
 
-type Member = { email: string; role: string };
+type Member = { email: string; role: string; specialty: string | null };
 
 interface ProjectDetailsModalProps {
   project: Project | null;
@@ -44,7 +45,7 @@ export function ProjectDetailsModal({ project, isOpen, onClose }: ProjectDetails
 
       if (memberRows && memberRows.length > 0) {
         const userIds = memberRows.map(d => d.user_id);
-        const { data: profiles } = await supabase.from('profiles').select('email, role').in('id', userIds);
+        const { data: profiles } = await supabase.from('profiles').select('email, role, specialty').in('id', userIds);
         if (!cancelled && profiles) setMembers(profiles);
       } else {
         setMembers([]);
@@ -103,6 +104,9 @@ export function ProjectDetailsModal({ project, isOpen, onClose }: ProjectDetails
                   <li key={i} className="flex justify-between items-center text-sm p-2 bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[6px]">
                     <span className="text-[var(--text-primary)] font-medium">{m.email}</span>
                     <span className="text-xs bg-[var(--badge-bg)] text-[var(--badge-text)] px-2 py-0.5 rounded-[4px] uppercase">{m.role}</span>
+                    {specialtyLabel(m.specialty) && (
+                      <span className="text-xs bg-[var(--bg-page)] border border-[var(--border-card)] text-[var(--text-secondary)] px-2 py-0.5 rounded-[4px]">{specialtyLabel(m.specialty)}</span>
+                    )}
                   </li>
                 ))}
               </ul>

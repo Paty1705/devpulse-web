@@ -6,9 +6,10 @@ import { supabase } from '@/lib/supabase';
 import { createGoogleCalendarEvent } from '@/lib/calendar';
 import { branchNameForTask } from '@/lib/github';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { roleWithSpecialty } from '@/lib/specialties';
 
 type Project = { id: string; name: string; leader_id: string | null; mode: string; repo_url: string | null };
-type Profile = { id: string; email: string; role: string };
+type Profile = { id: string; email: string; role: string; specialty: string | null };
 
 type NewTaskModalProps = {
   isOpen: boolean;
@@ -57,7 +58,7 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
       if (visibleProjects.length > 0) setProjectId(prev => prev || visibleProjects[0].id);
     }
 
-    const { data: profs } = await supabase.from('profiles').select('id, email, role');
+    const { data: profs } = await supabase.from('profiles').select('id, email, role, specialty');
     if (profs) setProfiles(profs);
   }, [isJefe, user?.id]);
 
@@ -314,7 +315,7 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
                   className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[6px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                 >
                   <option value="">Sin asignar</option>
-                  {assignableProfiles.map(p => <option key={p.id} value={p.id}>{p.email} ({p.role})</option>)}
+                  {assignableProfiles.map(p => <option key={p.id} value={p.id}>{p.email} ({roleWithSpecialty(p.role, p.specialty)})</option>)}
                 </select>
                 {selectedProject && assignableProfiles.length === 0 && (
                   <p className="text-xs text-amber-500 mt-1">Este proyecto todavía no tiene líder/equipo asignado.</p>

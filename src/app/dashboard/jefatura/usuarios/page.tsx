@@ -5,6 +5,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, UserCheck, UserX, Users } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { SPECIALTIES, SPECIALTY_LABELS, specialtyLabel } from '@/lib/specialties';
 
 type Profile = {
   id: string;
@@ -12,6 +13,7 @@ type Profile = {
   role: string;
   status: 'pending' | 'approved' | 'rejected';
   requested_role: string | null;
+  specialty: string | null;
 };
 
 const ROLE_OPTIONS = ['developer', 'qa', 'pasante', 'jefe'];
@@ -30,7 +32,7 @@ export default function UsuariosPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const fetchProfiles = useCallback(async () => {
-    const { data } = await supabase.from('profiles').select('id, email, role, status, requested_role').order('email');
+    const { data } = await supabase.from('profiles').select('id, email, role, status, requested_role, specialty').order('email');
     setProfiles(data || []);
     setLoaded(true);
   }, []);
@@ -61,6 +63,18 @@ export default function UsuariosPage() {
     setBusyId(null);
     if (error) {
       alert('Error al aprobar: ' + error.message);
+    } else {
+      fetchProfiles();
+    }
+  };
+
+  // Un jefe puede asignar o cambiar la especialidad de cualquier usuario
+  const changeSpecialty = async (p: Profile, value: string) => {
+    setBusyId(p.id);
+    const { error } = await supabase.from('profiles').update({ specialty: value || null }).eq('id', p.id);
+    setBusyId(null);
+    if (error) {
+      alert('Error al cambiar la especialidad: ' + error.message);
     } else {
       fetchProfiles();
     }
@@ -110,6 +124,7 @@ export default function UsuariosPage() {
                   <span className="font-medium text-[var(--text-primary)]">{p.email}</span>
                   <p className="text-xs text-[var(--text-secondary)]">
                     Rol solicitado: {p.requested_role ? ROLE_LABELS[p.requested_role] : 'sin indicar'}
+                    {' · '}Especialidad: {specialtyLabel(p.specialty) ?? 'sin indicar'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -149,6 +164,7 @@ export default function UsuariosPage() {
               <tr className="bg-[var(--bg-column)] border-b border-[var(--border-column)] text-left text-[var(--text-secondary)] uppercase text-xs tracking-wider">
                 <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Rol</th>
+                <th className="px-4 py-3">Especialidad</th>
                 <th className="px-4 py-3">Estado</th>
                 <th className="px-4 py-3"></th>
               </tr>
@@ -158,6 +174,17 @@ export default function UsuariosPage() {
                 <tr key={p.id} className="border-b border-[var(--border-column)] last:border-b-0">
                   <td className="px-4 py-3 text-[var(--text-primary)]">{p.email}</td>
                   <td className="px-4 py-3 text-[var(--text-secondary)]">{ROLE_LABELS[p.role] || p.role}</td>
+                  <td className="px-4 py-3">
+                    <select
+                      value={p.specialty || ''}
+                      disabled={busyId === p.id}
+                      onChange={e => changeSpecialty(p, e.target.value)}
+                      className="bg-[var(--bg-page)] border border-[var(--border-column)] text-[var(--text-primary)] rounded-[6px] px-2 py-1 text-sm disabled:opacity-50"
+                    >
+                      <option value="">—</option>
+                      {SPECIALTIES.map(s => <option key={s} value={s}>{SPECIALTY_LABELS[s]}</option>)}
+                    </select>
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded-[4px] ${p.status === 'approved' ? 'bg-[var(--badge-sql-bg)] text-[var(--badge-sql-text)]' : 'bg-[var(--badge-locked-bg)] text-[var(--badge-locked-text)]'}`}>
                       {p.status === 'approved' ? 'Aprobado' : 'Rechazado'}

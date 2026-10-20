@@ -4,6 +4,7 @@ import { useAuth, RequestableRole } from '@/components/providers/AuthProvider';
 import { LogIn, GitBranch } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { SPECIALTIES, SPECIALTY_LABELS, Specialty } from '@/lib/specialties';
 
 const ROLE_OPTIONS: { value: RequestableRole; label: string }[] = [
   { value: 'developer', label: 'Developer' },
@@ -20,6 +21,7 @@ export default function Home() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [role, setRole] = useState<RequestableRole>('developer');
+  const [specialty, setSpecialty] = useState<Specialty | ''>('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formInfo, setFormInfo] = useState<string | null>(null);
@@ -32,6 +34,7 @@ export default function Home() {
     if (mode === 'register') {
       if (password.length < 6) return setFormError('La contraseña debe tener al menos 6 caracteres.');
       if (password !== confirm) return setFormError('Las contraseñas no coinciden.');
+      if (role === 'developer' && !specialty) return setFormError('Elige tu especialidad (frontend, backend, etc.).');
     }
 
     setSubmitting(true);
@@ -39,7 +42,7 @@ export default function Home() {
       const error = await signInWithPassword(email.trim(), password);
       if (error) setFormError(error === 'Invalid login credentials' ? 'Correo o contraseña incorrectos.' : error);
     } else {
-      const { error, needsEmailConfirmation } = await signUpWithEmail(email.trim(), password, role);
+      const { error, needsEmailConfirmation } = await signUpWithEmail(email.trim(), password, role, specialty || null);
       if (error) {
         setFormError(error);
       } else if (needsEmailConfirmation) {
@@ -125,6 +128,15 @@ export default function Home() {
                       {ROLE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                     </select>
                     <p className="text-xs text-[var(--text-secondary)] mt-1">Un jefe revisa tu solicitud y confirma tu rol antes de darte acceso.</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
+                      Especialidad{role === 'developer' ? '' : ' (opcional)'}
+                    </label>
+                    <select value={specialty} onChange={e => setSpecialty(e.target.value as Specialty | '')} className={inputClass}>
+                      <option value="">Selecciona...</option>
+                      {SPECIALTIES.map(s => <option key={s} value={s}>{SPECIALTY_LABELS[s]}</option>)}
+                    </select>
                   </div>
                 </>
               )}

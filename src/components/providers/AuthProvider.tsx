@@ -9,7 +9,12 @@ type Profile = {
   email: string;
   role: 'jefe' | 'developer' | 'qa' | 'empleado' | 'usuario' | 'pasante';
   status: 'pending' | 'approved' | 'rejected';
+  requested_role: 'developer' | 'qa' | 'pasante' | null;
 };
+
+export type RequestableRole = 'developer' | 'qa' | 'pasante';
+
+type SignUpResult = { error: string | null; needsEmailConfirmation: boolean };
 
 type AuthContextType = {
   user: User | null;
@@ -18,6 +23,9 @@ type AuthContextType = {
   signInWithGoogle: () => Promise<void>;
   signInWithGithub: () => Promise<void>;
   signInWithEmail: (email: string) => Promise<void>;
+  signInWithPassword: (email: string, password: string) => Promise<string | null>;
+  signUpWithEmail: (email: string, password: string, requestedRole: RequestableRole) => Promise<SignUpResult>;
+  setRequestedRole: (role: RequestableRole) => Promise<string | null>;
   signOut: () => Promise<void>;
 };
 
@@ -28,6 +36,9 @@ const AuthContext = createContext<AuthContextType>({
   signInWithGoogle: async () => {},
   signInWithGithub: async () => {},
   signInWithEmail: async () => {},
+  signInWithPassword: async () => null,
+  signUpWithEmail: async () => ({ error: null, needsEmailConfirmation: false }),
+  setRequestedRole: async () => null,
   signOut: async () => {},
 });
 
@@ -120,12 +131,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Login real con correo y contraseña (devuelve el mensaje de error o null)
+  const signInWithPassword = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return error ? error.message : null;
+  };
+
+  // Registro con correo. El rol elegido es solo una SOLICITUD: la cuenta queda
+  // 'pending' y un jefe decide el rol real al aprobarla.
+  const signUpWithEmail = async (email: string, password: string, requestedRole: RequestableRole): Promise<SignUpResult> => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { requested_role: requestedRole },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) return { error: error.message, needsEmailConfirmation: false };
+    // Sin sesión = Supabase exige confirmar el correo antes de entrar
+    return { error: null, needsEmailConfirmation: !data.session };
+  };
+
+  // Para quien entró con Google/GitHub y todavía no indicó qué rol solicita
+  const setRequestedRole = async (role: RequestableRole) => {
+    const { error } = await supabase.rpc('set_requested_role', { wanted: role });
+    if (error) return error.message;
+    if (user) await fetchProfile(user.id);
+    return null;
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signInWithGoogle, signInWithGithub, signInWithEmail, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, signInWithGoogle, signInWithGithub, signInWithEmail, signInWithPassword, signUpWithEmail, setRequestedRole, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,13 +1,57 @@
 'use client';
 
-import { useAuth } from '@/components/providers/AuthProvider';
+import { useAuth, RequestableRole } from '@/components/providers/AuthProvider';
 import { LogIn, GitBranch } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
+const ROLE_OPTIONS: { value: RequestableRole; label: string }[] = [
+  { value: 'developer', label: 'Developer' },
+  { value: 'qa', label: 'QA' },
+  { value: 'pasante', label: 'Pasante' },
+];
 
 export default function Home() {
-  const { user, loading, signInWithGoogle, signInWithGithub, signInWithEmail } = useAuth();
+  const { user, loading, signInWithGoogle, signInWithGithub, signInWithEmail, signInWithPassword, signUpWithEmail } = useAuth();
   const router = useRouter();
+
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [role, setRole] = useState<RequestableRole>('developer');
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formInfo, setFormInfo] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    setFormInfo(null);
+
+    if (mode === 'register') {
+      if (password.length < 6) return setFormError('La contraseña debe tener al menos 6 caracteres.');
+      if (password !== confirm) return setFormError('Las contraseñas no coinciden.');
+    }
+
+    setSubmitting(true);
+    if (mode === 'login') {
+      const error = await signInWithPassword(email.trim(), password);
+      if (error) setFormError(error === 'Invalid login credentials' ? 'Correo o contraseña incorrectos.' : error);
+    } else {
+      const { error, needsEmailConfirmation } = await signUpWithEmail(email.trim(), password, role);
+      if (error) {
+        setFormError(error);
+      } else if (needsEmailConfirmation) {
+        setFormInfo('Cuenta creada. Revisa tu correo para confirmarla; después un jefe tendrá que aprobar tu acceso.');
+      }
+      // Con sesión activa, el useEffect de arriba redirige al dashboard (pantalla de "pendiente de aprobación").
+    }
+    setSubmitting(false);
+  };
+
+  const inputClass =
+    'w-full bg-[var(--bg-page)] border border-[var(--border-card)] text-[var(--text-primary)] text-sm rounded-[6px] p-2.5 focus:outline-none focus:border-[var(--btn-primary-bg)]';
 
   useEffect(() => {
     if (!loading && user) {
@@ -40,6 +84,61 @@ export default function Home() {
               <LogIn size={20} className="text-[var(--text-secondary)]" />
               Iniciar sesión con Google
             </button>
+
+            <div className="flex items-center gap-3 pt-2">
+              <div className="flex-1 h-px bg-[var(--border-card)]" />
+              <span className="text-xs text-[var(--text-secondary)] uppercase tracking-wider">o con tu correo</span>
+              <div className="flex-1 h-px bg-[var(--border-card)]" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-1 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[6px] p-1">
+              {(['login', 'register'] as const).map(m => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => { setMode(m); setFormError(null); setFormInfo(null); }}
+                  className={`py-1.5 text-sm font-bold rounded-[4px] transition-colors ${mode === m ? 'bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                >
+                  {m === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3 text-left">
+              <input
+                type="email" required autoComplete="email" placeholder="Correo"
+                value={email} onChange={e => setEmail(e.target.value)} className={inputClass}
+              />
+              <input
+                type="password" required autoComplete={mode === 'login' ? 'current-password' : 'new-password'} placeholder="Contraseña"
+                value={password} onChange={e => setPassword(e.target.value)} className={inputClass}
+              />
+              {mode === 'register' && (
+                <>
+                  <input
+                    type="password" required autoComplete="new-password" placeholder="Confirmar contraseña"
+                    value={confirm} onChange={e => setConfirm(e.target.value)} className={inputClass}
+                  />
+                  <div>
+                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">Rol que solicitas</label>
+                    <select value={role} onChange={e => setRole(e.target.value as RequestableRole)} className={inputClass}>
+                      {ROLE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                    </select>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1">Un jefe revisa tu solicitud y confirma tu rol antes de darte acceso.</p>
+                  </div>
+                </>
+              )}
+
+              {formError && <p className="text-sm text-[#EF4444]">{formError}</p>}
+              {formInfo && <p className="text-sm text-[var(--btn-primary-bg)]">{formInfo}</p>}
+
+              <button
+                type="submit" disabled={submitting}
+                className="w-full bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] font-bold py-3 px-4 rounded-[6px] hover:brightness-110 transition-all active:scale-[0.97] disabled:opacity-50"
+              >
+                {submitting ? 'Procesando...' : mode === 'login' ? 'Entrar' : 'Crear cuenta'}
+              </button>
+            </form>
 
             <div className="mt-8 pt-6 border-t border-[var(--border-card)]">
               <p className="text-xs text-[var(--text-secondary)] mb-3 font-bold uppercase tracking-wider">Entorno de Pruebas</p>

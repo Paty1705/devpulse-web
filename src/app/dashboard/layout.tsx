@@ -1,15 +1,25 @@
 'use client';
 
 import { Navbar } from "@/components/layout/Navbar";
-import { useAuth } from "@/components/providers/AuthProvider";
+import { useAuth, RequestableRole } from "@/components/providers/AuthProvider";
 import { Hourglass, ShieldX } from "lucide-react";
+import { useState } from "react";
+
+const ROLE_LABELS: Record<RequestableRole, string> = { developer: 'Developer', qa: 'QA', pasante: 'Pasante' };
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { profile, loading, signOut } = useAuth();
+  const { profile, loading, signOut, setRequestedRole } = useAuth();
+  const [roleError, setRoleError] = useState<string | null>(null);
+
+  const chooseRole = async (role: RequestableRole) => {
+    setRoleError(null);
+    const error = await setRequestedRole(role);
+    if (error) setRoleError(error);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -23,6 +33,27 @@ export default function DashboardLayout({
               Tu cuenta ({profile.email}) fue creada, pero todavía no tiene acceso.
               Un jefe tiene que aprobarla antes de que puedas ver proyectos o tareas.
             </p>
+            {profile.requested_role ? (
+              <p className="text-sm text-[var(--text-secondary)] mb-6">
+                Rol solicitado: <span className="font-bold text-[var(--text-primary)]">{ROLE_LABELS[profile.requested_role]}</span>
+              </p>
+            ) : (
+              <div className="mb-6">
+                <p className="text-sm text-[var(--text-secondary)] mb-3">¿Qué rol solicitas?</p>
+                <div className="flex justify-center gap-2">
+                  {(Object.keys(ROLE_LABELS) as RequestableRole[]).map(r => (
+                    <button
+                      key={r}
+                      onClick={() => chooseRole(r)}
+                      className="px-3 py-1.5 text-sm font-bold bg-[var(--bg-page)] border border-[var(--border-card)] text-[var(--text-primary)] hover:border-[var(--btn-primary-bg)] rounded-[6px] transition-colors"
+                    >
+                      {ROLE_LABELS[r]}
+                    </button>
+                  ))}
+                </div>
+                {roleError && <p className="text-sm text-[#EF4444] mt-2">{roleError}</p>}
+              </div>
+            )}
             <button
               onClick={signOut}
               className="px-4 py-2 font-bold text-sm bg-[var(--bg-page)] border border-[var(--border-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] rounded-[6px] transition-colors"

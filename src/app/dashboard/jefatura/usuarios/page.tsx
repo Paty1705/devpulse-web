@@ -11,6 +11,7 @@ type Profile = {
   email: string;
   role: string;
   status: 'pending' | 'approved' | 'rejected';
+  requested_role: string | null;
 };
 
 const ROLE_OPTIONS = ['developer', 'qa', 'pasante', 'jefe'];
@@ -29,7 +30,7 @@ export default function UsuariosPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const fetchProfiles = useCallback(async () => {
-    const { data } = await supabase.from('profiles').select('id, email, role, status').order('email');
+    const { data } = await supabase.from('profiles').select('id, email, role, status, requested_role').order('email');
     setProfiles(data || []);
     setLoaded(true);
   }, []);
@@ -55,7 +56,7 @@ export default function UsuariosPage() {
 
   const approve = async (p: Profile) => {
     setBusyId(p.id);
-    const newRole = roleChoice[p.id] || 'pasante';
+    const newRole = roleChoice[p.id] || p.requested_role || 'pasante';
     const { error } = await supabase.from('profiles').update({ status: 'approved', role: newRole }).eq('id', p.id);
     setBusyId(null);
     if (error) {
@@ -88,7 +89,7 @@ export default function UsuariosPage() {
         </button>
         <h1 className="text-3xl font-bold text-[var(--text-primary)]">Usuarios</h1>
         <p className="text-[var(--text-secondary)] mt-1">
-          Cuentas nuevas creadas por Google/GitHub quedan pendientes hasta que las apruebes.
+          Cuentas nuevas (correo, Google o GitHub) quedan pendientes hasta que las apruebes.
         </p>
       </header>
 
@@ -105,10 +106,15 @@ export default function UsuariosPage() {
           <div className="space-y-3">
             {pending.map(p => (
               <div key={p.id} className="flex items-center justify-between gap-4 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[8px] p-4 shadow-[var(--shadow-subtle)]">
-                <span className="font-medium text-[var(--text-primary)]">{p.email}</span>
+                <div>
+                  <span className="font-medium text-[var(--text-primary)]">{p.email}</span>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Rol solicitado: {p.requested_role ? ROLE_LABELS[p.requested_role] : 'sin indicar'}
+                  </p>
+                </div>
                 <div className="flex items-center gap-2">
                   <select
-                    value={roleChoice[p.id] || 'pasante'}
+                    value={roleChoice[p.id] || p.requested_role || 'pasante'}
                     onChange={e => setRoleChoice(prev => ({ ...prev, [p.id]: e.target.value }))}
                     className="bg-[var(--bg-page)] border border-[var(--border-column)] text-[var(--text-primary)] rounded-[6px] px-2 py-1.5 text-sm"
                   >

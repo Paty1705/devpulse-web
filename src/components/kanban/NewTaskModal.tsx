@@ -24,7 +24,6 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
   // Datos de Supabase
   const [projects, setProjects] = useState<Project[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [projectMemberIds, setProjectMemberIds] = useState<string[]>([]);
   
   // Estado del formulario
   const [projectId, setProjectId] = useState('');
@@ -69,33 +68,17 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
     }
   }, [isOpen, fetchProjectsAndProfiles]);
 
-  // Trae el equipo del proyecto elegido para no poder asignar la tarea a
-  // alguien que no forma parte de ese proyecto.
-  useEffect(() => {
-    if (!isOpen) return;
-    let cancelled = false;
-    (async () => {
-      if (!projectId) {
-        if (!cancelled) setProjectMemberIds([]);
-        return;
-      }
-      const { data } = await supabase.from('project_members').select('user_id').eq('project_id', projectId);
-      if (!cancelled) setProjectMemberIds((data || []).map(d => d.user_id));
-    })();
-    return () => { cancelled = true; };
-  }, [isOpen, projectId]);
-
   const selectedProject = projects.find(p => p.id === projectId) || null;
+  // Los proyectos son individuales: sus tareas solo pueden ser del responsable.
   const assignableProfiles = !selectedProject
     ? profiles
-    : profiles.filter(p => p.id === selectedProject.leader_id || (selectedProject.mode === 'team' && projectMemberIds.includes(p.id)));
+    : profiles.filter(p => p.id === selectedProject.leader_id);
 
-  // Si el proyecto cambia (ver <select> de Proyecto) y el asignado ya no
-  // pertenece a ese equipo, se limpia ahí mismo en el handler, no en un
-  // efecto reactivo (evita cascada de renders por derivar estado en efecto).
+  // Al elegir proyecto, la tarea se asigna sola a su responsable (se hace en
+  // el handler, no en un efecto, para no derivar estado en cascada).
   const handleProjectChange = (newProjectId: string) => {
     setProjectId(newProjectId);
-    setAssignedTo('');
+    setAssignedTo(projects.find(p => p.id === newProjectId)?.leader_id ?? '');
   };
 
   // Precarga la fecha límite cada vez que el modal se abre (ej. al venir

@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Bot, Save, Users, User as UserIcon, Check, Trash2, Pencil, Plus, Calendar as CalendarIcon } from 'lucide-react';
+import { X, Bot, Save, Check, Trash2, Pencil, Plus, Calendar as CalendarIcon } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { branchNameForTask, slugifyRepoName } from '@/lib/github';
@@ -51,11 +51,11 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
   const [repoUrl, setRepoUrl] = useState('');
   const [manualRepo, setManualRepo] = useState(false);
   const [repoName, setRepoName] = useState('');
-  const [mode, setMode] = useState<'individual' | 'team'>('individual');
+  // Todos los proyectos son individuales: un solo responsable (leader_id).
+  const mode = 'individual';
 
   // Asignaciones
   const [leaderId, setLeaderId] = useState('');
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [initialMemberIds, setInitialMemberIds] = useState<string[]>([]);
   
   // IA
@@ -77,7 +77,6 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
         setName(project.name);
         setDescription(project.description || '');
         setRepoUrl(project.repo_url || '');
-        setMode(project.mode === 'team' ? 'team' : 'individual');
         setLeaderId(project.leader_id || '');
       } else {
         setName('');
@@ -85,9 +84,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
         setRepoUrl('');
         setManualRepo(false);
         setRepoName('');
-        setMode('individual');
         setLeaderId('');
-        setSelectedMembers([]);
         setInitialMemberIds([]);
       }
       setSpec('');
@@ -109,14 +106,13 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
     }
   }, [isOpen, fetchProfiles]);
 
-  // En modo edición, trae el equipo actual del proyecto para poder
-  // comparar (agregar/quitar) contra lo que quede seleccionado al guardar.
+  // En modo edición, trae los colaboradores que hayan quedado de cuando
+  // existía el modo equipo, para quitarlos al guardar.
   useEffect(() => {
     if (isOpen && project) {
       (async () => {
         const { data } = await supabase.from('project_members').select('user_id').eq('project_id', project.id);
         const ids = (data || []).map(d => d.user_id);
-        setSelectedMembers(ids);
         setInitialMemberIds(ids);
       })();
     }
@@ -124,9 +120,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
 
   if (!isOpen) return null;
 
-  const assignableProfiles = mode === 'team'
-    ? profiles.filter(p => p.id === leaderId || selectedMembers.includes(p.id))
-    : profiles.filter(p => p.id === leaderId);
+  const assignableProfiles = profiles.filter(p => p.id === leaderId);
 
   const handleAssignGeneratedTask = (index: number, userId: string) => {
     setGeneratedTasks(prev => prev.map((t, i) => i === index ? { ...t, assignedTo: userId } : t));
@@ -173,14 +167,6 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
   };
 
   const acceptedCount = generatedTasks.filter(t => t.accepted).length;
-
-  const toggleMember = (id: string) => {
-    if (selectedMembers.includes(id)) {
-      setSelectedMembers(selectedMembers.filter(m => m !== id));
-    } else {
-      setSelectedMembers([...selectedMembers, id]);
-    }
-  };
 
   const handleGenerateTasks = async () => {
     if (!spec.trim()) return;
@@ -244,7 +230,8 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
 
         if (updateError) throw updateError;
 
-        const effectiveMembers = mode === 'team' ? selectedMembers : [];
+        // Al editar se quitan los colaboradores que quedaran de cuando existía el modo equipo.
+        const effectiveMembers: string[] = [];
         const toAdd = effectiveMembers.filter(id => !initialMemberIds.includes(id));
         const toRemove = initialMemberIds.filter(id => !effectiveMembers.includes(id));
 
@@ -284,20 +271,6 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
         .single();
 
       if (projectError) throw projectError;
-
-      // 2. Insertar Miembros si es equipo
-      if (mode === 'team' && selectedMembers.length > 0) {
-        const membersToInsert = selectedMembers.map(userId => ({
-          project_id: projectData.id,
-          user_id: userId
-        }));
-        
-        const { error: membersError } = await supabase
-          .from('project_members')
-          .insert(membersToInsert);
-          
-        if (membersError) throw membersError;
-      }
 
       // 3. Insertar Tareas Generadas por IA (solo las que el usuario aceptó explícitamente)
       const acceptedTasks = generatedTasks.filter(t => t.accepted);
@@ -436,38 +409,15 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
           <section className="space-y-4">
             <h3 className="font-bold text-lg text-[var(--text-primary)] pb-2 flex items-center gap-2 border-b border-[var(--border-column)]">
               <span className="bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] w-6 h-6 rounded flex items-center justify-center text-sm font-bold">2</span>
-              Modalidad y Equipo
+              Responsable
             </h3>
-
-            <div className="flex gap-4">
-              <label className={`flex-1 cursor-pointer border rounded-[20px] p-4 flex items-center gap-4 transition-colors ${mode === 'individual' ? 'border-[var(--btn-primary-bg)] bg-[var(--bg-column)]' : 'border-[var(--border-card)] hover:bg-[var(--bg-card-hover)]'}`}>
-                <input type="radio" name="mode" value="individual" checked={mode === 'individual'} onChange={() => setMode('individual')} className="hidden" />
-                <div className={`w-10 h-10 rounded-[12px] flex items-center justify-center ${mode === 'individual' ? 'bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)]' : 'bg-[var(--bg-page)] text-[var(--text-secondary)]'}`}>
-                  <UserIcon size={20} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-[var(--text-primary)]">Individual</h3>
-                  <p className="text-xs text-[var(--text-secondary)]">Un solo responsable</p>
-                </div>
-              </label>
-
-              <label className={`flex-1 cursor-pointer border rounded-[20px] p-4 flex items-center gap-4 transition-colors ${mode === 'team' ? 'border-[var(--btn-primary-bg)] bg-[var(--bg-column)]' : 'border-[var(--border-card)] hover:bg-[var(--bg-card-hover)]'}`}>
-                <input type="radio" name="mode" value="team" checked={mode === 'team'} onChange={() => setMode('team')} className="hidden" />
-                <div className={`w-10 h-10 rounded-[12px] flex items-center justify-center ${mode === 'team' ? 'bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)]' : 'bg-[var(--bg-page)] text-[var(--text-secondary)]'}`}>
-                  <Users size={20} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-[var(--text-primary)]">En Equipo</h3>
-                  <p className="text-xs text-[var(--text-secondary)]">Múltiples colaboradores</p>
-                </div>
-              </label>
-            </div>
 
             <div className="bg-[var(--bg-column)] border border-[var(--border-card)] p-4 rounded-[20px] space-y-4">
               <div>
                 <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">
-                  {mode === 'individual' ? 'Responsable Único' : 'Líder del Proyecto'}
+                  Responsable del proyecto
                 </label>
+                <p className="text-[11px] text-[var(--text-secondary)] mb-2">Los proyectos son individuales: todas sus tareas se le asignan a esta persona.</p>
                 <select
                   value={leaderId} onChange={(e) => setLeaderId(e.target.value)}
                   disabled={!canChangeLeader}
@@ -481,24 +431,6 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                 )}
               </div>
 
-              {mode === 'team' && (
-                <div>
-                  <label className="block text-sm font-bold text-[var(--text-secondary)] mb-2">Colaboradores Autorizados</label>
-                  <div className="max-h-32 overflow-y-auto space-y-2 border border-[var(--border-card)] p-2 rounded-[12px] bg-[var(--bg-page)]">
-                    {profiles.map(p => (
-                      <label key={p.id} className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedMembers.includes(p.id)}
-                          onChange={() => toggleMember(p.id)}
-                          className="rounded-[8px] text-[var(--btn-primary-bg)] focus:ring-[var(--btn-primary-bg)] bg-[var(--bg-column)] border-[var(--border-card)]" 
-                        /> 
-                        {p.email} <span className="text-xs text-[var(--text-secondary)]">({p.role})</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </section>
 

@@ -179,7 +179,7 @@
 /* Desenfoque en las tarjetas y la navegación. --bg-column (encabezados de
    modales, bloques internos, botones secundarios) queda solo translúcido:
    ponerle desenfoque y sombra a cada uno es ruido visual y cuesta rendimiento. */
-:root[data-surface="vidrio"] :is([class*="bg-[var(--bg-card)]"], [class*="bg-[var(--bg-navbar)]"]) {
+:root[data-surface="vidrio"] :is([class~="bg-[var(--bg-card)]"], [class~="bg-[var(--bg-navbar)]"]) {
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(170%);
   backdrop-filter: blur(var(--glass-blur)) saturate(170%);
   box-shadow: var(--shadow-subtle), inset 0 1px 0 var(--glass-highlight);
@@ -187,16 +187,16 @@
 
 /* Modales y menús flotantes: casi opacos para que el texto se lea
    sobre el oscurecido del overlay o sobre el contenido de abajo. */
-:root[data-surface="vidrio"] :is([class*="fixed"] > [class*="bg-[var(--bg-card)]"], [class*="absolute"][class*="bg-[var(--bg-card)]"]) {
+:root[data-surface="vidrio"] :is([class~="fixed"] > [class~="bg-[var(--bg-card)]"], [class~="absolute"][class~="bg-[var(--bg-card)]"]) {
   background-color: var(--bg-solid);
 }
 
 /* Borde iridiscente en tarjetas (no en elementos posicionados, para no
    romper menús ni overlays). Usa el mismo radio que la tarjeta. */
-:root[data-surface="vidrio"] [class*="bg-[var(--bg-card)]"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]) {
+:root[data-surface="vidrio"] [class~="bg-[var(--bg-card)]"]:not([class~="absolute"]):not([class~="fixed"]):not([class~="sticky"]) {
   position: relative;
 }
-:root[data-surface="vidrio"] [class*="bg-[var(--bg-card)]"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"])::before,
+:root[data-surface="vidrio"] [class~="bg-[var(--bg-card)]"]:not([class~="absolute"]):not([class~="fixed"]):not([class~="sticky"])::before,
 .glass-iridescent::before {
   content: "";
   position: absolute;
@@ -211,9 +211,11 @@
   pointer-events: none;
 }
 
-/* Botones principales: degradado entre los dos acentos. Excluye los usos
-   con opacidad (bg-[var(--btn-primary-bg)]/10) que son fondos suaves. */
-:root[data-surface="vidrio"] [class*="bg-[var(--btn-primary-bg)]"]:not([class*="bg-[var(--btn-primary-bg)]/"]) {
+/* Selectores con ~= (palabra exacta en class): así "hover:bg-[...]" o
+   "bg-[...]/10" no cuentan como si el elemento tuviera ese fondo. */
+
+/* Botones principales: degradado entre los dos acentos. */
+:root[data-surface="vidrio"] [class~="bg-[var(--btn-primary-bg)]"] {
   background-image: linear-gradient(135deg, var(--accent), var(--accent-2));
   box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 30%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
@@ -255,6 +257,14 @@ h1, h2, h3 {
   opacity: min(1, calc(var(--iridescence) + 0.2)) !important;
 }
 
+/* Barra lateral: scroll sin barra visible en pantallas bajas. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Elemento activo de la navegación. */
 .nav-active {
   color: var(--accent-contrast);
@@ -264,7 +274,7 @@ h1, h2, h3 {
 
 /* Fondo de tarjeta para piezas pequeñas (chips, barras, campos) dentro de
    otra tarjeta: mismo color, pero sin el desenfoque ni el borde iridiscente
-   que la regla global aplica a [class*="bg-[var(--bg-card)]"]. */
+   que la regla global aplica a [class~="bg-[var(--bg-card)]"]. */
 .surface-card {
   background-color: var(--bg-card);
 }

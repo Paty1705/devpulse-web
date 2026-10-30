@@ -15,6 +15,7 @@ type Project = {
   repo_url: string | null;
   mode: string;
   leader_id: string | null;
+  leader?: { email: string } | null;
 };
 
 export default function JefaturaPage() {
@@ -33,7 +34,7 @@ export default function JefaturaPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchProjects = useCallback(async () => {
-    const { data } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+    const { data } = await supabase.from('projects').select('*, leader:profiles!projects_leader_id_fkey(email)').order('created_at', { ascending: false });
     if (data) setProjects(data);
     setProjectsLoaded(true);
   }, []);
@@ -154,16 +155,25 @@ export default function JefaturaPage() {
           visibleProjects.map(p => (
             <div key={p.id} className="bg-[var(--bg-card)] border border-[var(--border-card)] p-5 rounded-[20px] shadow-[var(--shadow-subtle)] flex flex-col justify-between hover:bg-[var(--bg-card-hover)] transition-colors">
               <div>
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-bold text-xl text-[var(--text-primary)]">{p.name}</h3>
-                  <span className="text-xs bg-[var(--badge-bg)] text-[var(--badge-text)] px-2.5 py-1 rounded-[12px] font-bold uppercase tracking-wider">{p.mode}</span>
+                <div className="flex justify-between items-start gap-3 mb-2">
+                  <h3 className="font-bold text-xl text-[var(--text-primary)] min-w-0 break-words">{p.name}</h3>
+                  <span
+                    title={p.leader?.email ?? 'Sin responsable'}
+                    className="tile-3d shrink-0 w-9 h-9 rounded-[12px] flex items-center justify-center text-xs font-bold text-white"
+                    style={{ background: p.leader_id === user?.id ? 'linear-gradient(150deg, var(--accent), var(--accent-2))' : 'linear-gradient(150deg, #64748B, #334155)' }}
+                  >
+                    {p.leader?.email ? p.leader.email.split('@')[0].replace(/[^a-zA-Z]/g, '').slice(0, 2).toUpperCase() : '—'}
+                  </span>
                 </div>
+                <p className="font-mono text-xs text-[var(--text-secondary)] mb-3 truncate">
+                  responsable: {p.leader?.email ?? 'sin asignar'}
+                </p>
                 <p className="text-sm text-[var(--text-primary)] opacity-80 mb-4 line-clamp-3">{p.description}</p>
               </div>
               
               <div className="mt-2 flex flex-col gap-2">
-                {/* Botón principal corregido para contraste en modo claro */}
-                <a href={p.repo_url ?? undefined} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-[12px] text-sm font-bold text-[var(--btn-primary-bg)] bg-[var(--bg-column)] hover:bg-[var(--btn-primary-bg)] hover:text-white dark:hover:text-[#090A10] w-full transition-colors border border-[var(--btn-primary-bg)] shadow-sm">
+                {/* Botón principal: degradado de acentos con texto de contraste automático */}
+                <a href={p.repo_url ?? undefined} target="_blank" rel="noreferrer" className="nav-active inline-flex items-center justify-center gap-2 min-h-11 px-4 rounded-[14px] text-sm font-semibold w-full transition-transform active:scale-[0.98]">
                   <FolderGit2 size={16} /> Repositorio
                 </a>
                 

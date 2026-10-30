@@ -77,7 +77,7 @@ export function Sidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
   return (
     <aside
       aria-label="Navegación principal"
-      className="glass-panel glass-iridescent thick-iridescent rounded-[30px] p-4 flex flex-col gap-6 w-full lg:w-[248px] lg:shrink-0 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:overflow-y-auto"
+      className="glass-panel glass-iridescent thick-iridescent rounded-[30px] p-4 flex flex-col gap-5 w-full lg:w-[248px] lg:shrink-0 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:overflow-y-auto no-scrollbar"
     >
       <div className="flex items-center gap-3 px-2 pt-2">
         <span className="tile-3d w-12 h-12 rounded-[16px] flex items-center justify-center" style={{ background: 'linear-gradient(150deg, var(--accent-2), var(--accent))' }}>
@@ -98,7 +98,7 @@ export function Sidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
                 key={item.href}
                 aria-disabled="true"
                 title="Disponible en la siguiente fase"
-                className="flex items-center gap-3 min-h-[46px] px-3.5 rounded-[16px] text-[15px] font-medium text-[var(--text-secondary)] opacity-60 cursor-default"
+                className="flex items-center gap-3 min-h-[42px] px-3.5 rounded-[16px] text-[15px] font-medium text-[var(--text-secondary)] opacity-60 cursor-default"
               >
                 <Icon size={20} />
                 <span className="flex-1">{item.label}</span>
@@ -112,7 +112,7 @@ export function Sidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
               key={item.href}
               href={item.href}
               aria-current={active ? 'page' : undefined}
-              className={`flex items-center gap-3 min-h-[46px] px-3.5 rounded-[16px] text-[15px] transition-colors ${
+              className={`flex items-center gap-3 min-h-[42px] px-3.5 rounded-[16px] text-[15px] transition-colors ${
                 active
                   ? 'nav-active font-semibold'
                   : 'font-medium text-[var(--text-primary)] hover:bg-[var(--bg-page)]'
@@ -126,7 +126,7 @@ export function Sidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
       </nav>
 
       {/* Widget estilo terminal con el avance personal */}
-      <div className="rounded-[20px] p-4 font-mono text-xs leading-relaxed bg-[#0A0F1E]/85 text-[#A9B4CC] shadow-[inset_0_2px_6px_rgba(0,0,0,0.5)]">
+      <div className="[@media(max-height:760px)]:hidden rounded-[20px] p-4 font-mono text-xs leading-relaxed bg-[#0A0F1E]/85 text-[#A9B4CC] shadow-[inset_0_2px_6px_rgba(0,0,0,0.5)]">
         <div className="flex gap-1.5 mb-2.5" aria-hidden="true">
           <span className="w-2.5 h-2.5 rounded-full bg-[#F87171]" />
           <span className="w-2.5 h-2.5 rounded-full bg-[#FBBF24]" />
@@ -148,7 +148,7 @@ export function Sidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
       <div className="mt-auto flex flex-col gap-1.5">
         <button
           onClick={onOpenSettings}
-          className="flex items-center gap-3 min-h-[46px] px-3.5 rounded-[16px] text-[15px] font-medium text-[var(--text-primary)] hover:bg-[var(--bg-page)] transition-colors text-left"
+          className="flex items-center gap-3 min-h-[42px] px-3.5 rounded-[16px] text-[15px] font-medium text-[var(--text-primary)] hover:bg-[var(--bg-page)] transition-colors text-left"
         >
           <Settings size={20} />
           Preferencias
@@ -156,7 +156,7 @@ export function Sidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
         {user && (
           <button
             onClick={signOut}
-            className="flex items-center gap-3 min-h-[46px] px-3.5 rounded-[16px] text-[15px] font-medium text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-500 transition-colors text-left"
+            className="flex items-center gap-3 min-h-[42px] px-3.5 rounded-[16px] text-[15px] font-medium text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-500 transition-colors text-left"
           >
             <LogOut size={20} />
             Cerrar sesión

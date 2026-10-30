@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 type Profile = {
   id: string;
   email: string;
-  role: 'jefe' | 'ingeniero' | 'pasante';
+  role: 'jefe' | 'developer' | 'qa' | 'empleado' | 'usuario' | 'pasante';
 };
 
 type AuthContextType = {
@@ -91,6 +91,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       options: {
         scopes: 'https://www.googleapis.com/auth/calendar.events',
         redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
       },
     });
   };
@@ -107,7 +111,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signInWithEmail = async (email: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
-      password: 'password123'
+      password: '123456'
     });
     if (error) {
       console.error("Error logging in with email:", error);

@@ -124,7 +124,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated }: NewProjec
       if (generatedTasks.length > 0) {
         const tasksToInsert = generatedTasks.map(t => ({
           project_id: projectData.id,
-          column_id: 'todo', // Columna inicial por defecto
+          status: 'backlog', // Estado inicial según enum
           title: t.title,
           description: t.description,
           item_type: t.itemType,

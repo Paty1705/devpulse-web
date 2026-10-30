@@ -1,17 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Lock, FileCode, CheckCircle, Clock, ArrowLeft } from 'lucide-react';
+import { Lock, FileCode, Clock, ArrowLeft } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { TaskModal } from '@/components/kanban/TaskModal';
+import { NewTaskModal } from '@/components/kanban/NewTaskModal';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { useRouter } from 'next/navigation';
 
-// Tipos base para el Kanban
-type Task = {
+export type Task = {
   id: string;
   title: string;
-  is_locked: boolean;
-  requires_sql: boolean;
+  status: string;
+  project_id: string;
   item_type?: string;
+  priority?: string;
+  description?: string;
+  locked_by?: string | null;
+  sql_script?: string | null;
+  acceptance_criteria?: string[];
   due_date?: string | null;
+  created_at?: string;
 };
 
 type Column = {
@@ -20,85 +30,107 @@ type Column = {
   tasks: Task[];
 };
 
-const initialColumns: Record<string, Column> = {
-  backlog: { id: 'backlog', title: 'Backlog', tasks: [{ id: 't1', title: 'Diseñar BD', is_locked: false, requires_sql: true }] },
-  in_progress: { id: 'in_progress', title: 'En Progreso', tasks: [{ id: 't2', title: 'API Login', is_locked: true, requires_sql: false }] },
+const INITIAL_COLUMNS: Record<string, Column> = {
+  backlog: { id: 'backlog', title: 'Backlog', tasks: [] },
+  in_progress: { id: 'in_progress', title: 'En Progreso', tasks: [] },
   in_review: { id: 'in_review', title: 'En Pruebas / Auditoría', tasks: [] },
   ready: { id: 'ready', title: 'Listo para Despliegue', tasks: [] },
   completed: { id: 'completed', title: 'Completado', tasks: [] },
 };
 
-import { TaskModal } from '@/components/kanban/TaskModal';
-import { NewTaskModal } from '@/components/kanban/NewTaskModal';
-import { useAuth } from '@/components/providers/AuthProvider';
-
-import { useRouter } from 'next/navigation';
-
 export function KanbanBoard() {
   const { profile } = useAuth();
   const router = useRouter();
-  const [columns, setColumns] = useState(initialColumns);
+  const [columns, setColumns] = useState(INITIAL_COLUMNS);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleCreateTask = (taskData: { title: string; requires_sql: boolean; due_date: string | null }) => {
-    const newTask: Task = {
-      id: Math.random().toString(36).substring(2, 9), // ID simulado
-      title: taskData.title,
-      is_locked: false,
-      requires_sql: taskData.requires_sql,
-      due_date: taskData.due_date,
-    };
-
-    setColumns(prev => ({
-      ...prev,
-      backlog: {
-        ...prev.backlog,
-        tasks: [...prev.backlog.tasks, newTask]
-      }
-    }));
-  };
-
-  const onDragEnd = (result: DropResult) => {
-    // ... drag logic remains the same
-    const { source, destination } = result;
-    if (!destination) return;
-
-    if (source.droppableId === destination.droppableId && source.index === destination.index) {
+  const fetchTasks = async () => {
+    // RLS will filter this automatically based on project_members
+    const { data, error } = await supabase.from('tasks').select('*').order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error("Error fetching tasks:", error);
+      setLoading(false);
       return;
     }
 
-    const sourceCol = columns[source.droppableId];
-    const destCol = columns[destination.droppableId];
-    
-    const task = sourceCol.tasks[source.index];
+    if (data) {
+      const newColumns: Record<string, Column> = {
+        backlog: { ...INITIAL_COLUMNS.backlog, tasks: [] },
+        in_progress: { ...INITIAL_COLUMNS.in_progress, tasks: [] },
+        in_review: { ...INITIAL_COLUMNS.in_review, tasks: [] },
+        ready: { ...INITIAL_COLUMNS.ready, tasks: [] },
+        completed: { ...INITIAL_COLUMNS.completed, tasks: [] },
+      };
 
-    const newSourceTasks = Array.from(sourceCol.tasks);
-    const [removed] = newSourceTasks.splice(source.index, 1);
-    
-    if (source.droppableId === destination.droppableId) {
-      newSourceTasks.splice(destination.index, 0, removed);
-      setColumns({
-        ...columns,
-        [source.droppableId]: { ...sourceCol, tasks: newSourceTasks }
+      data.forEach((task: Task) => {
+        const colId = task.status || 'backlog';
+        if (newColumns[colId]) {
+          newColumns[colId].tasks.push(task);
+        }
       });
-    } else {
-      const newDestTasks = Array.from(destCol.tasks);
-      newDestTasks.splice(destination.index, 0, removed);
+
+      setColumns(newColumns);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchTasks();
+
+    const subscription = supabase
+      .channel('tasks_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, (payload) => {
+        fetchTasks();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, []);
+
+  const onDragEnd = async (result: DropResult) => {
+    if (!result.destination) return;
+
+    const { source, destination, draggableId } = result;
+
+    if (source.droppableId !== destination.droppableId || source.index !== destination.index) {
+      const sourceCol = columns[source.droppableId];
+      const destCol = columns[destination.droppableId];
+      const sourceTasks = [...sourceCol.tasks];
+      const destTasks = source.droppableId === destination.droppableId ? sourceTasks : [...destCol.tasks];
       
-      if (destination.droppableId === 'in_progress') {
-        removed.is_locked = true;
-      } else if (source.droppableId === 'in_progress') {
-        removed.is_locked = false;
+      const [removed] = sourceTasks.splice(source.index, 1);
+      
+      removed.status = destination.droppableId;
+      if (source.droppableId !== destination.droppableId) {
+        destTasks.splice(destination.index, 0, removed);
       }
 
       setColumns({
         ...columns,
-        [source.droppableId]: { ...sourceCol, tasks: newSourceTasks },
-        [destination.droppableId]: { ...destCol, tasks: newDestTasks }
+        [source.droppableId]: { ...sourceCol, tasks: sourceTasks },
+        [destination.droppableId]: { ...destCol, tasks: destTasks }
       });
+
+      const { error } = await supabase
+        .from('tasks')
+        .update({ status: destination.droppableId })
+        .eq('id', draggableId);
+
+      if (error) {
+        console.error("Error al mover la tarea:", error);
+        fetchTasks();
+      }
     }
   };
+
+  if (loading) {
+    return <div className="p-8 text-center text-[var(--text-secondary)]">Cargando tablero...</div>;
+  }
 
   return (
     <>
@@ -140,7 +172,7 @@ export function KanbanBoard() {
                 <div 
                   ref={provided.innerRef} 
                   {...provided.droppableProps}
-                  className="flex-1 p-3 overflow-y-auto flex flex-col gap-3"
+                  className="flex-1 p-3 overflow-y-auto flex flex-col gap-3 min-h-[150px]"
                 >
                   {column.tasks.map((task, index) => {
                     let accentColor = 'var(--btn-primary-bg)';
@@ -162,17 +194,16 @@ export function KanbanBoard() {
                           style={{
                             ...provided.draggableProps.style,
                             borderLeftColor: accentColor,
-                            animationDelay: `${index * 50}ms`
                           }}
-                          className={`animate-fade-in-up opacity-0 bg-[var(--bg-card)] border border-[var(--border-card)] border-t-[var(--card-bevel)] border-l-[3px] rounded-[8px] p-[var(--kanban-card-padding)] relative cursor-pointer shadow-[var(--shadow-subtle)] hover:bg-[var(--bg-card-hover)] hover:-translate-y-[3px] hover:shadow-[var(--shadow-hover)] hover:border-[var(--btn-primary-bg)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                          className={`animate-fade-in-up bg-[var(--bg-card)] border border-[var(--border-card)] border-t-[var(--card-bevel)] border-l-[3px] rounded-[8px] p-[var(--kanban-card-padding)] relative cursor-pointer shadow-[var(--shadow-subtle)] hover:bg-[var(--bg-card-hover)] hover:-translate-y-[3px] hover:shadow-[var(--shadow-hover)] hover:border-[var(--btn-primary-bg)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
                             snapshot.isDragging ? '!shadow-[var(--shadow-hover)] scale-[1.02] z-50 hover:border-[var(--btn-primary-bg)] opacity-100' : ''
                           }`}
                         >
                           <div className="flex justify-between items-start mb-2">
                             <span className="text-[10px] font-bold font-mono bg-[var(--badge-bg)] text-[var(--badge-text)] px-2 py-0.5 rounded-[6px]">
-                              TASK-{task.id}
+                              TASK-{task.id.substring(0,6)}
                             </span>
-                            {task.is_locked && (
+                            {task.locked_by && (
                               <div className="bg-[var(--badge-locked-bg)] text-[var(--badge-locked-text)] p-1 rounded-full shadow-sm flex items-center justify-center" title="Bloqueo Exclusivo Activo">
                                 <Lock size={12} />
                               </div>
@@ -180,7 +211,7 @@ export function KanbanBoard() {
                           </div>
                           <h4 className="font-semibold text-[var(--text-primary)] text-[length:var(--kanban-card-text)] mb-3 leading-snug">{task.title}</h4>
                           <div className="flex gap-2">
-                            {task.requires_sql && (
+                            {task.sql_script && (
                               <div className="bg-[var(--badge-sql-bg)] text-[var(--badge-sql-text)] border border-[var(--badge-sql-text)]/20 px-[6px] py-[2px] text-[10px] rounded-[6px] flex items-center gap-1" title="Requiere SQL">
                                 <FileCode size={10} />
                                 <span className="font-bold uppercase tracking-wider">SQL</span>
@@ -213,15 +244,18 @@ export function KanbanBoard() {
     </DragDropContext>
     <TaskModal 
       isOpen={!!selectedTask} 
-      onClose={() => setSelectedTask(null)} 
+      onClose={() => {
+        setSelectedTask(null);
+        fetchTasks();
+      }} 
       task={selectedTask} 
     />
     <NewTaskModal 
       isOpen={isNewTaskModalOpen}
       onClose={() => setIsNewTaskModalOpen(false)}
       onTaskCreated={() => {
-        // En una app real haríamos refetch de Supabase aquí
         setIsNewTaskModalOpen(false);
+        fetchTasks();
       }}
     />
   </>

@@ -627,3 +627,17 @@ USING (
   bucket_id = 'resources'
   AND ((storage.foldername(name))[1] = auth.uid()::text OR public.is_jefe())
 );
+
+
+-- =====================================================================
+-- 7. PERMISOS DE LAS FUNCIONES AUXILIARES
+-- =====================================================================
+-- Solo las usan políticas RLS de usuarios con sesión: se quita el acceso
+-- anónimo vía /rest/v1/rpc. sync_task_progress es solo de trigger.
+REVOKE EXECUTE ON FUNCTION public.is_jefe() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.can_manage_task(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.is_meeting_attendee(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.sync_task_progress() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.is_jefe() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.can_manage_task(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_meeting_attendee(uuid) TO authenticated;

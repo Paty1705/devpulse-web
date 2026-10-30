@@ -1,65 +1,41 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Lock, FileCode, Clock, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { TaskModal } from '@/components/kanban/TaskModal';
 import { NewTaskModal } from '@/components/kanban/NewTaskModal';
+import { BoardView, COLUMN_DEFS, type BoardColumn, type BoardTask } from '@/components/kanban/BoardView';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
 
-type Task = {
-  id: string;
-  title: string;
-  status: string;
-  is_locked: boolean;
-  locked_by: string | null;
-  requires_sql: boolean;
-  assigned_to: string | null;
-  item_type?: string;
-  due_date?: string | null;
-  project_id: string | null;
-};
+type Task = BoardTask;
+type Column = BoardColumn;
 
-type Column = {
-  id: string;
-  title: string;
-  tasks: Task[];
-};
-
-const COLUMN_DEFS: { id: string; title: string }[] = [
-  { id: 'backlog', title: 'Backlog' },
-  { id: 'in_progress', title: 'En Progreso' },
-  { id: 'in_review', title: 'En Pruebas / Auditoría' },
-  { id: 'ready', title: 'Listo para Despliegue' },
-  { id: 'completed', title: 'Completado' },
-];
+const emptyColumns = (): Record<string, Column> =>
+  Object.fromEntries(COLUMN_DEFS.map((c) => [c.id, { id: c.id, title: c.title, tasks: [] as Task[] }]));
 
 export function KanbanBoard() {
   const { profile, user } = useAuth();
-  const router = useRouter();
-  const [columns, setColumns] = useState<Record<string, Column>>(
-    Object.fromEntries(COLUMN_DEFS.map(c => [c.id, { ...c, tasks: [] }]))
-  );
+  const [columns, setColumns] = useState<Record<string, Column>>(emptyColumns);
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const [leaderProjectIds, setLeaderProjectIds] = useState<Set<string>>(new Set());
+  const [projectNames, setProjectNames] = useState<Record<string, string>>({});
+  const [testDates, setTestDates] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data } = await supabase.from('projects').select('id').eq('leader_id', user.id);
-      setLeaderProjectIds(new Set((data || []).map(p => p.id)));
+      const { data } = await supabase.from('projects').select('id, name, leader_id');
+      setProjectNames(Object.fromEntries((data || []).map((p) => [p.id, p.name])));
+      setLeaderProjectIds(new Set((data || []).filter((p) => p.leader_id === user.id).map((p) => p.id)));
     })();
   }, [user]);
 
   const fetchTasks = useCallback(async () => {
-    setLoading(true);
     const { data, error } = await supabase
       .from('tasks')
-      .select('id, title, status, is_locked, locked_by, requires_sql, assigned_to, item_type, due_date, project_id')
+      .select('id, title, status, is_locked, locked_by, requires_sql, assigned_to, item_type, priority, progress, recurrence_id, due_date, project_id, assignee:profiles!tasks_assigned_to_fkey(email)')
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -68,18 +44,24 @@ export function KanbanBoard() {
       return;
     }
 
-    const grouped: Record<string, Column> = Object.fromEntries(
-      COLUMN_DEFS.map(c => [c.id, { ...c, tasks: [] as Task[] }])
-    );
-    (data || []).forEach((t: Task) => {
-      if (grouped[t.status]) {
-        grouped[t.status].tasks.push(t);
-      } else {
-        grouped.backlog.tasks.push(t);
-      }
+    const grouped = emptyColumns();
+    ((data || []) as unknown as Task[]).forEach((t) => {
+      (grouped[t.status] ?? grouped.backlog).tasks.push(t);
     });
     setColumns(grouped);
     setLoading(false);
+
+    // Próxima fecha de prueba pendiente de cada tarea (si la tabla existe).
+    const { data: tests } = await supabase
+      .from('task_test_dates')
+      .select('task_id, test_date')
+      .eq('result', 'pendiente')
+      .order('test_date', { ascending: true });
+    const next: Record<string, string> = {};
+    (tests || []).forEach((t) => {
+      if (!next[t.task_id]) next[t.task_id] = t.test_date;
+    });
+    setTestDates(next);
   }, []);
 
   useEffect(() => {
@@ -116,22 +98,14 @@ export function KanbanBoard() {
     return task.assigned_to === user.id && task.status !== 'in_review' && task.status !== 'ready';
   }, [user, isManagerOfTask]);
 
-  const onDragEnd = async (result: DropResult) => {
-    const { source, destination } = result;
-    if (!destination) return;
-    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
-
-    const sourceCol = columns[source.droppableId];
-    const destCol = columns[destination.droppableId];
-    const task = sourceCol.tasks[source.index];
-
+  const moveTask = async (taskId: string, to: string, beforeId: string | null) => {
+    const from = Object.values(columns).find((c) => c.tasks.some((t) => t.id === taskId));
+    if (!from || !columns[to]) return;
+    const task = from.tasks.find((t) => t.id === taskId)!;
     if (!canModifyTask(task)) return;
 
-    const newSourceTasks = Array.from(sourceCol.tasks);
-    const [moved] = newSourceTasks.splice(source.index, 1);
-
-    const updatedTask: Task = { ...moved, status: destination.droppableId };
-    if (destination.droppableId === 'in_progress') {
+    const updatedTask: Task = { ...task, status: to };
+    if (to === 'in_progress') {
       updatedTask.is_locked = true;
       // El bloqueo debe quedar a nombre de quien realmente va a trabajar la
       // tarea (el asignado), no de quien la arrastra: el jefe puede mover
@@ -139,23 +113,24 @@ export function KanbanBoard() {
       // Si no tiene asignado, cae a quien la movió (si no, locked_by=null
       // dejaría al jefe bloqueado afuera de su propia acción).
       updatedTask.locked_by = task.assigned_to || user?.id || null;
-    } else if (source.droppableId === 'in_progress') {
+    } else if (from.id === 'in_progress' && to !== 'in_progress') {
       updatedTask.is_locked = false;
       updatedTask.locked_by = null;
     }
 
-    if (source.droppableId === destination.droppableId) {
-      newSourceTasks.splice(destination.index, 0, updatedTask);
-      setColumns(prev => ({ ...prev, [source.droppableId]: { ...sourceCol, tasks: newSourceTasks } }));
-    } else {
-      const newDestTasks = Array.from(destCol.tasks);
-      newDestTasks.splice(destination.index, 0, updatedTask);
-      setColumns(prev => ({
-        ...prev,
-        [source.droppableId]: { ...sourceCol, tasks: newSourceTasks },
-        [destination.droppableId]: { ...destCol, tasks: newDestTasks },
-      }));
-    }
+    // Actualización optimista: se quita de su columna y se inserta antes de
+    // `beforeId` en la de destino (o al final).
+    setColumns((prev) => {
+      const next = { ...prev };
+      next[from.id] = { ...prev[from.id], tasks: prev[from.id].tasks.filter((t) => t.id !== taskId) };
+      const dest = [...next[to].tasks];
+      const at = beforeId ? dest.findIndex((t) => t.id === beforeId) : -1;
+      dest.splice(at === -1 ? dest.length : at, 0, updatedTask);
+      next[to] = { ...next[to], tasks: dest };
+      return next;
+    });
+
+    if (from.id === to) return; // Solo cambió el orden visual
 
     const { error } = await supabase
       .from('tasks')
@@ -174,115 +149,18 @@ export function KanbanBoard() {
 
   return (
     <>
-      <header className="mb-6 flex justify-between items-end">
-        <div className="flex flex-col gap-2">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors self-start text-sm font-bold bg-[var(--bg-column)] border border-[var(--border-column)] px-3 py-1.5 rounded-[6px] shadow-[var(--shadow-subtle)] hover:border-[var(--btn-primary-bg)] active:scale-[0.97]"
-          >
-            <ArrowLeft size={16} />
-            Volver al Panel
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-1">Tablero Técnico</h1>
-            <p className="text-[var(--text-secondary)]">Gestión de tareas, auditoría y despliegues.</p>
-          </div>
-        </div>
-        {(profile?.role === 'jefe' || leaderProjectIds.size > 0) && (
-          <button
-            onClick={() => setIsNewTaskModalOpen(true)}
-            className="bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover)] text-[var(--btn-primary-text)] hover:text-white dark:hover:text-white px-5 py-2.5 rounded-[6px] font-bold tracking-wide transition-all shadow-[0_0_15px_rgba(17,219,220,0.2)] hover:shadow-[0_0_20px_var(--btn-primary-bg)] active:scale-[0.97]"
-          >
-            + Nueva Tarea
-          </button>
-        )}
-      </header>
-
-      {loading ? (
-        <div className="text-[var(--text-secondary)] py-12 text-center">Cargando tareas...</div>
-      ) : (
-        <DragDropContext onDragEnd={onDragEnd}>
-          <div className="grid grid-cols-5 gap-4 pb-4 pt-2 h-[calc(100vh-200px)]">
-            {Object.values(columns).map(column => (
-              <div key={column.id} className="min-w-0 flex flex-col bg-[var(--bg-column)] backdrop-blur-[14px] border border-[var(--border-column)] rounded-[12px] overflow-hidden mb-2 shadow-[var(--shadow-subtle)]">
-                <div className="px-4 py-3 font-semibold text-[var(--text-primary)] flex justify-between items-center border-b border-[var(--border-column)] bg-black/5 dark:bg-black/20">
-                  {column.title}
-                  <span className="bg-[var(--badge-bg)] text-[var(--badge-text)] text-xs font-bold px-2.5 py-1 rounded-[6px]">{column.tasks.length}</span>
-                </div>
-
-                <Droppable droppableId={column.id}>
-                  {(provided) => (
-                    <div ref={provided.innerRef} {...provided.droppableProps} className="flex-1 p-3 overflow-y-auto flex flex-col gap-3">
-                      {column.tasks.map((task, index) => {
-                        let accentColor = 'var(--btn-primary-bg)';
-                        if (task.item_type === 'Bug') accentColor = '#EF4444';
-                        if (task.item_type === 'Refactor') accentColor = '#D15EEE';
-                        if (task.item_type === 'Base de Datos') accentColor = '#F59E0B';
-
-                        const editable = canModifyTask(task);
-
-                        return (
-                          <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={!editable}>
-                            {(provided, snapshot) => {
-                              const isDueToday = task.due_date ? new Date(task.due_date).toDateString() === new Date().toDateString() : false;
-                              const isOverdue = !!task.due_date && task.status !== 'completed'
-                                && new Date(task.due_date) < new Date(new Date().toDateString());
-                              return (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  onClick={() => setSelectedTask(task)}
-                                  title={!editable ? (task.is_locked ? 'Bloqueada por la persona asignada: nadie más puede moverla' : 'Solo el jefe o la persona asignada pueden mover esta tarea') : undefined}
-                                  style={{ ...provided.draggableProps.style, borderLeftColor: accentColor }}
-                                  className={`bg-[var(--bg-card)] border border-[var(--border-card)] border-t-[var(--card-bevel)] border-l-[3px] rounded-[8px] p-[var(--kanban-card-padding)] relative cursor-pointer shadow-[var(--shadow-subtle)] hover:bg-[var(--bg-card-hover)] hover:-translate-y-[3px] hover:shadow-[var(--shadow-hover)] hover:border-[var(--btn-primary-bg)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                                    snapshot.isDragging ? '!shadow-[var(--shadow-hover)] scale-[1.02] z-50 hover:border-[var(--btn-primary-bg)] opacity-100' : ''
-                                  } ${!editable ? 'opacity-70' : ''}`}
-                                >
-                                  <div className="flex justify-between items-start mb-2">
-                                    <span className="text-[10px] font-bold font-mono bg-[var(--badge-bg)] text-[var(--badge-text)] px-2 py-0.5 rounded-[6px]">
-                                      TASK-{task.id.slice(0, 6)}
-                                    </span>
-                                    {task.is_locked && (
-                                      <div className="bg-[var(--badge-locked-bg)] text-[var(--badge-locked-text)] p-1 rounded-full shadow-sm flex items-center justify-center" title="Bloqueo Exclusivo Activo">
-                                        <Lock size={12} />
-                                      </div>
-                                    )}
-                                  </div>
-                                  <h4 className="font-semibold text-[var(--text-primary)] text-[length:var(--kanban-card-text)] mb-3 leading-snug">{task.title}</h4>
-                                  <div className="flex flex-wrap gap-2">
-                                    {task.requires_sql && (
-                                      <div className="bg-[var(--badge-sql-bg)] text-[var(--badge-sql-text)] border border-[var(--badge-sql-text)]/20 px-[6px] py-[2px] text-[10px] rounded-[6px] flex items-center gap-1" title="Requiere SQL">
-                                        <FileCode size={10} />
-                                        <span className="font-bold uppercase tracking-wider">SQL</span>
-                                      </div>
-                                    )}
-                                    {task.due_date ? (
-                                      <div className={`border px-[6px] py-[2px] text-[10px] rounded-[6px] flex items-center gap-1 ${isOverdue ? 'bg-[var(--badge-locked-bg)] text-[var(--badge-locked-text)] border-[var(--badge-locked-text)]/20' : isDueToday ? 'bg-[var(--badge-urgent-bg)] text-[var(--badge-urgent-text)] border-[var(--badge-urgent-text)]/20' : 'bg-[var(--badge-bg)] text-[var(--badge-text)] border-[var(--badge-text)]/20'}`}>
-                                        {isOverdue ? <AlertTriangle size={10} /> : <Clock size={10} />}
-                                        <span className="font-bold">{isOverdue ? 'Atrasada' : new Date(task.due_date).toLocaleDateString()}</span>
-                                      </div>
-                                    ) : (
-                                      <div className="bg-[var(--bg-column)] text-[var(--text-secondary)] border border-[var(--border-column)] px-[6px] py-[2px] text-[10px] rounded-[6px] flex items-center opacity-70" title="Sin fecha límite">
-                                        <Clock size={10} />
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            }}
-                          </Draggable>
-                        );
-                      })}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </div>
-            ))}
-          </div>
-        </DragDropContext>
-      )}
+      <BoardView
+        columns={columns}
+        loading={loading}
+        currentUserId={user?.id ?? null}
+        projectNames={projectNames}
+        testDates={testDates}
+        canModify={canModifyTask}
+        canCreate={profile?.role === 'jefe' || leaderProjectIds.size > 0}
+        onCreate={() => setIsNewTaskModalOpen(true)}
+        onOpen={setSelectedTask}
+        onMove={moveTask}
+      />
 
       <TaskModal isOpen={!!selectedTask} onClose={() => setSelectedTask(null)} task={selectedTask} onUpdated={fetchTasks} />
       <NewTaskModal

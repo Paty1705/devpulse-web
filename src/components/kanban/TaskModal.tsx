@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { branchNameForTask } from '@/lib/github';
+import { TaskProgressSection } from '@/components/kanban/TaskProgressSection';
 
 type FullTask = {
   id: string;
@@ -453,6 +454,8 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
                 </div>
               )}
             </section>
+
+            <TaskProgressSection taskId={fullTask.id} canManage={isOwner || isManager} onChanged={onUpdated} />
 
             <section>
               <h3 className="font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">

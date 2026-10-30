@@ -260,6 +260,19 @@ h1, h2, h3 {
   box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 30%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
+/* Fondo de tarjeta para piezas pequeñas (chips, barras, campos) dentro de
+   otra tarjeta: mismo color, pero sin el desenfoque ni el borde iridiscente
+   que la regla global aplica a [class*="bg-[var(--bg-card)]"]. */
+.surface-card {
+  background-color: var(--bg-card);
+}
+:root[data-surface="vidrio"] .surface-card {
+  background-color: rgba(255, 255, 255, 0.78);
+}
+:root.dark[data-surface="vidrio"] .surface-card {
+  background-color: rgba(255, 255, 255, 0.09);
+}
+
 /* Fondo "chip": vidrio más claro dentro de una tarjeta. */
 .chip-glass {
   background-color: var(--bg-page);

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
-import { Plus, FolderGit2, ArrowLeft, Info, Edit, Trash2, X, AlertTriangle, GitBranch, Users } from 'lucide-react';
+import { Plus, FolderGit2, Info, Edit, Trash2, X, AlertTriangle, GitBranch, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { NewProjectModal } from '@/components/jefatura/NewProjectModal';
 import { ProjectDetailsModal } from '@/components/jefatura/ProjectDetailsModal';
@@ -97,7 +97,7 @@ export default function JefaturaPage() {
 
   if (profile && !canSeePage) {
     return (
-      <div className="p-8 bg-red-50 text-red-600 rounded-lg max-w-2xl mx-auto mt-8 border border-red-200">
+      <div className="glass-panel glass-iridescent p-8 rounded-[28px] max-w-2xl mx-auto mt-8 text-[var(--text-primary)]">
         <h2 className="text-xl font-bold mb-2">Acceso Denegado</h2>
         <p>Esta vista es exclusiva para jefatura o líderes de proyecto.</p>
         <button onClick={() => router.push('/dashboard')} className="mt-4 underline">Volver al panel</button>
@@ -109,13 +109,6 @@ export default function JefaturaPage() {
     <div className="max-w-6xl mx-auto space-y-6 pb-12">
       <header className="mb-8 flex justify-between items-end">
         <div className="flex flex-col gap-2">
-          <button 
-            onClick={() => router.push('/dashboard')}
-            className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors self-start text-sm font-bold bg-[var(--bg-column)] border border-[var(--border-column)] px-3 py-1.5 rounded-[6px] shadow-[var(--shadow-subtle)] hover:border-[var(--btn-primary-bg)] active:scale-[0.97]"
-          >
-            <ArrowLeft size={16} />
-            Volver al Panel
-          </button>
           <div>
             <h1 className="text-3xl font-bold text-[var(--text-primary)]">Gobernanza de Proyectos</h1>
             <p className="text-[var(--text-secondary)] mt-1">Crea y administra los desarrollos activos.</p>
@@ -124,7 +117,7 @@ export default function JefaturaPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push('/dashboard/jefatura/versiones')}
-            className="flex items-center gap-2 border border-[var(--border-card)] text-[var(--text-primary)] px-4 py-2.5 rounded-[6px] font-bold hover:bg-[var(--bg-page)] shadow-sm transition-all active:scale-[0.97]"
+            className="flex items-center gap-2 border border-[var(--border-card)] text-[var(--text-primary)] px-4 py-2.5 rounded-[12px] font-bold hover:bg-[var(--bg-page)] shadow-sm transition-all active:scale-[0.97]"
           >
             <GitBranch size={18} />
             Control de Versiones
@@ -132,7 +125,7 @@ export default function JefaturaPage() {
           {isJefe && (
             <button
               onClick={() => router.push('/dashboard/jefatura/usuarios')}
-              className="flex items-center gap-2 border border-[var(--border-card)] text-[var(--text-primary)] px-4 py-2.5 rounded-[6px] font-bold hover:bg-[var(--bg-page)] shadow-sm transition-all active:scale-[0.97]"
+              className="flex items-center gap-2 border border-[var(--border-card)] text-[var(--text-primary)] px-4 py-2.5 rounded-[12px] font-bold hover:bg-[var(--bg-page)] shadow-sm transition-all active:scale-[0.97]"
             >
               <Users size={18} />
               Usuarios
@@ -141,7 +134,7 @@ export default function JefaturaPage() {
           {isJefe && (
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover)] text-[var(--btn-primary-text)] hover:text-white dark:hover:text-white px-5 py-2.5 rounded-[6px] font-bold tracking-wide transition-all shadow-[0_0_15px_rgba(17,219,220,0.2)] hover:shadow-[0_0_20px_var(--btn-primary-bg)] active:scale-[0.97] flex items-center gap-2"
+              className="bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] px-5 py-2.5 rounded-[12px] font-bold tracking-wide transition-all active:scale-[0.97] flex items-center gap-2"
             >
               <Plus size={20} />
               Nuevo Proyecto
@@ -152,38 +145,38 @@ export default function JefaturaPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {visibleProjects.length === 0 ? (
-          <div className="col-span-3 text-center py-12 text-[var(--text-secondary)] border-2 border-dashed border-[var(--border-column)] rounded-[12px] bg-[var(--bg-column)]">
+          <div className="col-span-3 text-center py-12 text-[var(--text-secondary)] border-2 border-dashed border-[var(--border-column)] rounded-[24px] bg-[var(--bg-column)]">
             <FolderGit2 size={48} className="mx-auto mb-4 opacity-50" />
             <p>No hay proyectos activos.</p>
             {isJefe && <p className="text-sm mt-1 opacity-70">Haz clic en &quot;Nuevo Proyecto&quot; para comenzar.</p>}
           </div>
         ) : (
           visibleProjects.map(p => (
-            <div key={p.id} className="bg-[var(--bg-card)] border border-[var(--border-card)] p-5 rounded-[8px] shadow-[var(--shadow-subtle)] flex flex-col justify-between hover:bg-[var(--bg-card-hover)] transition-colors">
+            <div key={p.id} className="bg-[var(--bg-card)] border border-[var(--border-card)] p-5 rounded-[20px] shadow-[var(--shadow-subtle)] flex flex-col justify-between hover:bg-[var(--bg-card-hover)] transition-colors">
               <div>
                 <div className="flex justify-between items-start mb-3">
                   <h3 className="font-bold text-xl text-[var(--text-primary)]">{p.name}</h3>
-                  <span className="text-xs bg-[var(--badge-bg)] text-[var(--badge-text)] px-2.5 py-1 rounded-[6px] font-bold uppercase tracking-wider">{p.mode}</span>
+                  <span className="text-xs bg-[var(--badge-bg)] text-[var(--badge-text)] px-2.5 py-1 rounded-[12px] font-bold uppercase tracking-wider">{p.mode}</span>
                 </div>
                 <p className="text-sm text-[var(--text-primary)] opacity-80 mb-4 line-clamp-3">{p.description}</p>
               </div>
               
               <div className="mt-2 flex flex-col gap-2">
                 {/* Botón principal corregido para contraste en modo claro */}
-                <a href={p.repo_url ?? undefined} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-[6px] text-sm font-bold text-[var(--btn-primary-bg)] bg-[var(--bg-column)] hover:bg-[var(--btn-primary-bg)] hover:text-white dark:hover:text-[#090A10] w-full transition-colors border border-[var(--btn-primary-bg)] shadow-sm">
+                <a href={p.repo_url ?? undefined} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-[12px] text-sm font-bold text-[var(--btn-primary-bg)] bg-[var(--bg-column)] hover:bg-[var(--btn-primary-bg)] hover:text-white dark:hover:text-[#090A10] w-full transition-colors border border-[var(--btn-primary-bg)] shadow-sm">
                   <FolderGit2 size={16} /> Repositorio
                 </a>
                 
                 {/* Botones de acción secundaria */}
                 <div className="flex gap-2 w-full mt-1">
-                  <button onClick={() => setSelectedProject(p)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-[6px] text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-page)] hover:bg-[var(--bg-column)] transition-colors border border-[var(--border-column)]">
+                  <button onClick={() => setSelectedProject(p)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-[12px] text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-page)] hover:bg-[var(--bg-column)] transition-colors border border-[var(--border-column)]">
                     <Info size={14} /> Detalles
                   </button>
-                  <button onClick={() => setEditingProject(p)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-[6px] text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-page)] hover:bg-[var(--bg-column)] transition-colors border border-[var(--border-column)]">
+                  <button onClick={() => setEditingProject(p)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-[12px] text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-page)] hover:bg-[var(--bg-column)] transition-colors border border-[var(--border-column)]">
                     <Edit size={14} /> Editar
                   </button>
                   {isJefe && (
-                    <button onClick={() => requestDelete(p)} className="flex items-center justify-center px-3 py-1.5 rounded-[6px] text-[#EF4444] hover:text-white hover:bg-[#EF4444] bg-[var(--bg-page)] transition-colors border border-[#EF4444]/30">
+                    <button onClick={() => requestDelete(p)} className="flex items-center justify-center px-3 py-1.5 rounded-[12px] text-[#EF4444] hover:text-white hover:bg-[#EF4444] bg-[var(--bg-page)] transition-colors border border-[#EF4444]/30">
                       <Trash2 size={14} />
                     </button>
                   )}
@@ -209,7 +202,7 @@ export default function JefaturaPage() {
 
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[8px] shadow-[var(--shadow-hover)] w-full max-w-md overflow-hidden">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[20px] shadow-[var(--shadow-hover)] w-full max-w-md overflow-hidden">
             <div className="px-5 py-4 bg-[var(--bg-column)] border-b border-[var(--border-column)] flex justify-between items-start">
               <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <AlertTriangle size={18} className="text-[#EF4444]" />
@@ -224,11 +217,11 @@ export default function JefaturaPage() {
                 ¿Estás seguro de que deseas eliminar permanentemente el proyecto <strong>&quot;{deleteTarget.name}&quot;</strong>? Esto borrará todas sus tareas y equipos asociados.
               </p>
               {deleteTarget.repo_url && (
-                <label className="flex items-start gap-2 text-sm text-[var(--text-primary)] cursor-pointer bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[6px] p-3">
+                <label className="flex items-start gap-2 text-sm text-[var(--text-primary)] cursor-pointer bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[12px] p-3">
                   <input
                     type="checkbox" checked={alsoDeleteRepo}
                     onChange={(e) => setAlsoDeleteRepo(e.target.checked)}
-                    className="mt-0.5 rounded-[4px] text-[var(--btn-primary-bg)] focus:ring-[var(--btn-primary-bg)] bg-[var(--bg-column)] border-[var(--border-card)]"
+                    className="mt-0.5 rounded-[8px] text-[var(--btn-primary-bg)] focus:ring-[var(--btn-primary-bg)] bg-[var(--bg-column)] border-[var(--border-card)]"
                   />
                   <span>
                     También eliminar el repositorio vinculado en GitHub
@@ -237,19 +230,19 @@ export default function JefaturaPage() {
                 </label>
               )}
               {deleteError && (
-                <p className="text-xs text-[#EF4444] bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-[6px] p-2">{deleteError}</p>
+                <p className="text-xs text-[#EF4444] bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-[12px] p-2">{deleteError}</p>
               )}
             </div>
             <div className="px-5 py-4 bg-[var(--bg-column)] border-t border-[var(--border-column)] flex justify-end gap-2">
               <button
                 type="button" onClick={() => setDeleteTarget(null)} disabled={isDeleting}
-                className="px-4 py-2 text-sm font-bold border border-[var(--border-card)] text-[var(--text-primary)] rounded-[6px] hover:bg-[var(--bg-page)] transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-bold border border-[var(--border-card)] text-[var(--text-primary)] rounded-[12px] hover:bg-[var(--bg-page)] transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 type="button" onClick={confirmDelete} disabled={isDeleting}
-                className="px-4 py-2 text-sm font-bold bg-[#EF4444] text-white rounded-[6px] hover:brightness-110 transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 text-sm font-bold bg-[#EF4444] text-white rounded-[12px] hover:brightness-110 transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 <Trash2 size={16} /> {isDeleting ? 'Eliminando...' : 'Eliminar'}
               </button>

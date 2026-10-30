@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, GitBranch, ExternalLink } from 'lucide-react';
+import { GitBranch, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { parseGithubRepo } from '@/lib/github';
 
@@ -74,7 +74,7 @@ export default function VersionesPage() {
 
   if (profile && !canSeePage) {
     return (
-      <div className="p-8 bg-red-50 text-red-600 rounded-lg max-w-2xl mx-auto mt-8 border border-red-200">
+      <div className="glass-panel glass-iridescent p-8 rounded-[28px] max-w-2xl mx-auto mt-8 text-[var(--text-primary)]">
         <h2 className="text-xl font-bold mb-2">Acceso Denegado</h2>
         <p>Esta vista es exclusiva para jefatura o líderes de proyecto.</p>
         <button onClick={() => router.push('/dashboard')} className="mt-4 underline">Volver al panel</button>
@@ -86,13 +86,6 @@ export default function VersionesPage() {
     <div className="max-w-6xl mx-auto space-y-6 pb-12">
       <header className="mb-8 flex justify-between items-end flex-wrap gap-4">
         <div className="flex flex-col gap-2">
-          <button
-            onClick={() => router.push('/dashboard/jefatura')}
-            className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors self-start text-sm font-bold bg-[var(--bg-column)] border border-[var(--border-column)] px-3 py-1.5 rounded-[6px] shadow-[var(--shadow-subtle)] hover:border-[var(--btn-primary-bg)] active:scale-[0.97]"
-          >
-            <ArrowLeft size={16} />
-            Volver a Proyectos
-          </button>
           <div>
             <h1 className="text-3xl font-bold text-[var(--text-primary)]">Control de Versiones</h1>
             <p className="text-[var(--text-secondary)] mt-1">
@@ -105,7 +98,7 @@ export default function VersionesPage() {
           <select
             value={projectFilter}
             onChange={e => setProjectFilter(e.target.value)}
-            className="bg-[var(--bg-page)] border border-[var(--border-column)] text-[var(--text-primary)] rounded-[6px] px-3 py-2 text-sm font-bold"
+            className="bg-[var(--bg-page)] border border-[var(--border-column)] text-[var(--text-primary)] rounded-[12px] px-3 py-2 text-sm font-bold"
           >
             <option value="all">Todos los proyectos</option>
             {visibleProjects.map(p => (
@@ -115,7 +108,7 @@ export default function VersionesPage() {
         )}
       </header>
 
-      <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[8px] shadow-[var(--shadow-subtle)] overflow-hidden">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[20px] shadow-[var(--shadow-subtle)] overflow-hidden">
         {filteredLogs.length === 0 ? (
           <div className="text-center py-12 text-[var(--text-secondary)]">
             <GitBranch size={48} className="mx-auto mb-4 opacity-50" />
@@ -154,7 +147,7 @@ export default function VersionesPage() {
                       {new Date(log.created_at).toLocaleString()}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded-[4px] ${log.already_existed ? 'bg-[var(--badge-bg)] text-[var(--badge-text)]' : 'bg-[var(--badge-sql-bg)] text-[var(--badge-sql-text)]'}`}>
+                      <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded-[8px] ${log.already_existed ? 'bg-[var(--badge-bg)] text-[var(--badge-text)]' : 'bg-[var(--badge-sql-bg)] text-[var(--badge-sql-text)]'}`}>
                         {log.already_existed ? 'Ya existía' : 'Creada'}
                       </span>
                     </td>

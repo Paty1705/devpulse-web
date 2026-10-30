@@ -31,10 +31,10 @@ export function QuickAddModal({ isOpen, date, isJefe, onClose, onAddPersonal, on
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[8px] shadow-[var(--shadow-hover)] w-full max-w-sm flex flex-col overflow-hidden">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[20px] shadow-[var(--shadow-hover)] w-full max-w-sm flex flex-col overflow-hidden">
         <div className="px-5 py-4 flex justify-between items-center bg-[var(--bg-column)] border-b border-[var(--border-column)]">
           <h2 className="text-sm font-bold text-[var(--text-primary)] capitalize">{dateLabel}</h2>
-          <button onClick={onClose} className="p-1.5 hover:bg-[var(--bg-card-hover)] rounded-[6px] text-[var(--text-secondary)] transition-colors">
+          <button onClick={onClose} className="p-1.5 hover:bg-[var(--bg-card-hover)] rounded-[12px] text-[var(--text-secondary)] transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -50,12 +50,12 @@ export function QuickAddModal({ isOpen, date, isJefe, onClose, onAddPersonal, on
                 onChange={(e) => setTitle(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleAddPersonal(); }}
                 placeholder="Ej: Dentista, entregar reporte..."
-                className="flex-1 bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[6px] p-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                className="flex-1 bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
               />
               <button
                 onClick={handleAddPersonal}
                 disabled={isSaving || !title.trim()}
-                className="px-3 bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] rounded-[6px] font-bold hover:brightness-110 transition-colors disabled:opacity-50 flex items-center justify-center"
+                className="px-3 bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] rounded-[12px] font-bold hover:brightness-110 transition-colors disabled:opacity-50 flex items-center justify-center"
               >
                 <Plus size={18} />
               </button>
@@ -67,7 +67,7 @@ export function QuickAddModal({ isOpen, date, isJefe, onClose, onAddPersonal, on
             <div className="pt-4 border-t border-[var(--border-column)]">
               <button
                 onClick={onCreateWorkTask}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-[var(--bg-column)] border border-[var(--border-column)] rounded-[6px] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--btn-primary-bg)] hover:text-[var(--btn-primary-bg)] transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-[var(--bg-column)] border border-[var(--border-column)] rounded-[12px] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--btn-primary-bg)] hover:text-[var(--btn-primary-bg)] transition-colors"
               >
                 <Briefcase size={16} /> Crear tarea de trabajo
               </button>

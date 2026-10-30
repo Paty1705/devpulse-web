@@ -58,7 +58,7 @@ export function ProjectDetailsModal({ project, isOpen, onClose }: ProjectDetails
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[8px] shadow-[var(--shadow-hover)] w-full max-w-lg flex flex-col overflow-hidden animate-fade-in-up">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[20px] shadow-[var(--shadow-hover)] w-full max-w-lg flex flex-col overflow-hidden animate-fade-in-up">
         
         <div className="px-6 py-4 flex justify-between items-center bg-[var(--bg-column)] border-b border-[var(--border-column)]">
           <div>
@@ -77,14 +77,14 @@ export function ProjectDetailsModal({ project, isOpen, onClose }: ProjectDetails
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-[var(--bg-page)] border border-[var(--border-column)] p-4 rounded-[8px]">
+            <div className="bg-[var(--bg-page)] border border-[var(--border-column)] p-4 rounded-[20px]">
               <div className="flex items-center gap-2 text-[var(--text-secondary)] mb-1">
                 <CheckCircle size={16} />
                 <span className="text-xs font-bold uppercase">Progreso Tareas</span>
               </div>
               <p className="text-2xl font-bold text-[var(--text-primary)]">{stats.completed} / {stats.total}</p>
             </div>
-            <div className="bg-[var(--bg-page)] border border-[var(--border-column)] p-4 rounded-[8px]">
+            <div className="bg-[var(--bg-page)] border border-[var(--border-column)] p-4 rounded-[20px]">
               <div className="flex items-center gap-2 text-[var(--text-secondary)] mb-1">
                 <Users size={16} />
                 <span className="text-xs font-bold uppercase">Equipo</span>
@@ -100,9 +100,9 @@ export function ProjectDetailsModal({ project, isOpen, onClose }: ProjectDetails
             ) : (
               <ul className="space-y-2">
                 {members.map((m, i) => (
-                  <li key={i} className="flex justify-between items-center text-sm p-2 bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[6px]">
+                  <li key={i} className="flex justify-between items-center text-sm p-2 bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[12px]">
                     <span className="text-[var(--text-primary)] font-medium">{m.email}</span>
-                    <span className="text-xs bg-[var(--badge-bg)] text-[var(--badge-text)] px-2 py-0.5 rounded-[4px] uppercase">{m.role}</span>
+                    <span className="text-xs bg-[var(--badge-bg)] text-[var(--badge-text)] px-2 py-0.5 rounded-[8px] uppercase">{m.role}</span>
                   </li>
                 ))}
               </ul>
@@ -113,7 +113,7 @@ export function ProjectDetailsModal({ project, isOpen, onClose }: ProjectDetails
         <div className="px-6 py-4 bg-[var(--bg-column)] border-t border-[var(--border-column)] flex justify-end">
           <button 
             onClick={onClose}
-            className="px-4 py-2 font-bold text-sm bg-[var(--bg-page)] border border-[var(--border-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] rounded-[6px] transition-colors"
+            className="px-4 py-2 font-bold text-sm bg-[var(--bg-page)] border border-[var(--border-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] rounded-[12px] transition-colors"
           >
             Cerrar
           </button>

@@ -176,8 +176,10 @@
     radial-gradient(30vmax 30vmax at 45% 105%, #F0ABFC, transparent 70%);
 }
 
-/* Desenfoque en todas las superficies translúcidas. */
-:root[data-surface="vidrio"] :is([class*="bg-[var(--bg-card)]"], [class*="bg-[var(--bg-column)]"], [class*="bg-[var(--bg-navbar)]"]) {
+/* Desenfoque en las tarjetas y la navegación. --bg-column (encabezados de
+   modales, bloques internos, botones secundarios) queda solo translúcido:
+   ponerle desenfoque y sombra a cada uno es ruido visual y cuesta rendimiento. */
+:root[data-surface="vidrio"] :is([class*="bg-[var(--bg-card)]"], [class*="bg-[var(--bg-navbar)]"]) {
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(170%);
   backdrop-filter: blur(var(--glass-blur)) saturate(170%);
   box-shadow: var(--shadow-subtle), inset 0 1px 0 var(--glass-highlight);

@@ -1,12 +1,23 @@
 'use client';
 
 import { useAuth } from '@/components/providers/AuthProvider';
-import { LogIn, GitBranch } from 'lucide-react';
+import { usePreferences } from '@/components/providers/PreferencesProvider';
+import { Mascot } from '@/components/mascot/Mascot';
+import { Activity, GitBranch, LogIn } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
+const TEST_USERS = [
+  { email: 'jefa.tecnica@devpulse.com', label: 'Jefatura' },
+  { email: 'front.senior@devpulse.com', label: 'Developer Front' },
+  { email: 'back.senior@devpulse.com', label: 'Developer Back' },
+  { email: 'qa.tester@devpulse.com', label: 'QA Tester' },
+  { email: 'dev.junior@devpulse.com', label: 'Dev Junior' },
+];
+
 export default function Home() {
   const { user, loading, signInWithGoogle, signInWithGithub, signInWithEmail } = useAuth();
+  const { preferences } = usePreferences();
   const router = useRouter();
 
   useEffect(() => {
@@ -15,56 +26,75 @@ export default function Home() {
     }
   }, [user, loading, router]);
 
-  if (loading) return <div className="flex h-screen items-center justify-center">Cargando...</div>;
-
-  if (!user) {
-    return (
-      <main className="flex h-screen flex-col items-center justify-center p-24">
-        <div className="bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-card)] p-8 rounded-[8px] shadow-[var(--shadow-hover)] max-w-md w-full text-center">
-          <h1 className="text-3xl font-bold mb-2 text-[var(--text-primary)]">DevPulse Web</h1>
-          <p className="text-[var(--text-secondary)] mb-8">Gestión de proyectos y auditoría cruzada</p>
-          
-          <div className="space-y-4">
-            <button 
-              onClick={signInWithGithub}
-              className="flex items-center justify-center gap-3 w-full bg-[#24292F] hover:bg-[#24292F]/90 text-white font-bold py-3 px-4 rounded-[6px] transition-all shadow-md active:scale-[0.97]"
-            >
-              <GitBranch size={20} />
-              Iniciar sesión con GitHub
-            </button>
-
-            <button 
-              onClick={signInWithGoogle}
-              className="flex items-center justify-center gap-3 w-full bg-[var(--bg-column)] border border-[var(--border-column)] hover:bg-[var(--bg-page)] text-[var(--text-primary)] font-bold py-3 px-4 rounded-[6px] transition-all shadow-[var(--shadow-subtle)] active:scale-[0.97]"
-            >
-              <LogIn size={20} className="text-[var(--text-secondary)]" />
-              Iniciar sesión con Google
-            </button>
-
-            <div className="mt-8 pt-6 border-t border-[var(--border-card)]">
-              <p className="text-xs text-[var(--text-secondary)] mb-3 font-bold uppercase tracking-wider">Entorno de Pruebas</p>
-              <select 
-                onChange={(e) => {
-                  if (e.target.value) {
-                    signInWithEmail(e.target.value);
-                  }
-                }}
-                className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] text-[var(--text-primary)] text-sm rounded-[6px] p-2 focus:outline-none focus:border-[var(--btn-primary-bg)] cursor-pointer"
-                defaultValue=""
-              >
-                <option value="" disabled>Selecciona un usuario de prueba...</option>
-                <option value="jefa.tecnica@devpulse.com">👑 Jefatura (jefa.tecnica@devpulse.com)</option>
-                <option value="front.senior@devpulse.com">💻 Developer Front (front.senior@devpulse.com)</option>
-                <option value="back.senior@devpulse.com">⚙️ Developer Back (back.senior@devpulse.com)</option>
-                <option value="qa.tester@devpulse.com">🔍 QA Tester (qa.tester@devpulse.com)</option>
-                <option value="dev.junior@devpulse.com">🌱 Dev Junior (dev.junior@devpulse.com)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </main>
-    );
+  if (loading) {
+    return <div className="flex min-h-screen items-center justify-center text-[var(--text-secondary)]">Cargando…</div>;
   }
 
-  return null;
+  if (user) return null;
+
+  return (
+    <main className="min-h-screen flex items-center justify-center p-4 md:p-8">
+      <div className="glass-panel glass-iridescent thick-iridescent rounded-[32px] w-full max-w-[880px] p-6 md:p-10 flex flex-wrap items-center gap-8 md:gap-12">
+        {/* Lado de marca */}
+        <div className="flex-[1_1_300px] flex flex-col items-center md:items-start gap-6 text-center md:text-left">
+          <div className="flex items-center gap-3">
+            <span className="tile-3d w-14 h-14 rounded-[18px] flex items-center justify-center" style={{ background: 'linear-gradient(150deg, var(--accent-2), var(--accent))' }}>
+              <Activity size={28} strokeWidth={2.4} className="text-white" />
+            </span>
+            <span className="flex flex-col text-left">
+              <span className="font-display font-bold text-3xl tracking-tight text-[var(--text-primary)]">DevPulse</span>
+              <span className="font-mono text-xs text-[var(--text-secondary)]">área de sistemas</span>
+            </span>
+          </div>
+          <Mascot kind={preferences.mascot} size={190} />
+          <p className="text-[15px] leading-relaxed text-[var(--text-secondary)] max-w-[300px]">
+            Proyectos, tareas, juntas y avances del equipo en un solo lugar.
+          </p>
+        </div>
+
+        {/* Lado de acceso */}
+        <div className="flex-[1_1_320px] flex flex-col gap-4">
+          <div className="flex flex-col gap-1 mb-2">
+            <h1 className="text-3xl font-bold tracking-tight text-[var(--text-primary)]">Bienvenido</h1>
+            <p className="text-sm text-[var(--text-secondary)]">Inicia sesión para continuar.</p>
+          </div>
+
+          <button
+            onClick={signInWithGithub}
+            className="tile-3d flex items-center justify-center gap-3 w-full min-h-12 bg-[#1F2328] hover:bg-[#2D333B] text-white font-semibold px-4 rounded-[16px] transition-colors active:scale-[0.98]"
+          >
+            <GitBranch size={20} />
+            Continuar con GitHub
+          </button>
+
+          <button
+            onClick={signInWithGoogle}
+            className="chip-glass flex items-center justify-center gap-3 w-full min-h-12 border border-[var(--border-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] font-semibold px-4 rounded-[16px] transition-colors active:scale-[0.98]"
+          >
+            <LogIn size={20} className="text-[var(--text-secondary)]" />
+            Continuar con Google
+          </button>
+
+          <div className="mt-4 pt-5 border-t border-[var(--border-card)] flex flex-col gap-2">
+            <label htmlFor="test-user" className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+              Entorno de pruebas
+            </label>
+            <select
+              id="test-user"
+              onChange={(e) => {
+                if (e.target.value) signInWithEmail(e.target.value);
+              }}
+              defaultValue=""
+              className="w-full min-h-11 chip-glass border border-[var(--border-card)] text-[var(--text-primary)] text-sm rounded-[14px] px-3 outline-none focus:border-[var(--accent)] cursor-pointer"
+            >
+              <option value="" disabled>Selecciona un usuario de prueba…</option>
+              {TEST_USERS.map((u) => (
+                <option key={u.email} value={u.email}>{u.label} ({u.email})</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
 }

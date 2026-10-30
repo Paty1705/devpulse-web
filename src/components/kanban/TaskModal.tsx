@@ -377,16 +377,16 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[8px] shadow-[var(--shadow-hover)] w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[20px] shadow-[var(--shadow-hover)] w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
 
         <div className="px-6 py-5 flex justify-between items-center bg-[var(--bg-column)] border-b border-[var(--border-column)]">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="font-mono bg-[var(--badge-bg)] text-[var(--badge-text)] px-2 py-1 rounded-[6px] font-bold text-sm flex-shrink-0">
+            <span className="font-mono bg-[var(--badge-bg)] text-[var(--badge-text)] px-2 py-1 rounded-[12px] font-bold text-sm flex-shrink-0">
               TASK-{(fullTask?.id || '000').slice(0, 6)}
             </span>
             <h2 className="text-xl font-bold text-[var(--text-primary)] truncate">{loading ? 'Cargando...' : fullTask?.title || 'Tarea'}</h2>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-[var(--bg-card-hover)] rounded-[6px] text-[var(--text-secondary)] transition-colors flex-shrink-0">
+          <button onClick={onClose} className="p-2 hover:bg-[var(--bg-card-hover)] rounded-[12px] text-[var(--text-secondary)] transition-colors flex-shrink-0">
             <X size={20} />
           </button>
         </div>
@@ -400,19 +400,19 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
 
           <div className="flex-1 space-y-6">
             {fullTask.status !== 'completed' && fullTask.due_date && new Date(fullTask.due_date) < new Date(new Date().toDateString()) && (
-              <div className="bg-red-900/10 text-red-500 border border-red-500/30 rounded-[6px] px-4 py-3 text-sm font-bold flex items-center gap-2">
+              <div className="bg-red-900/10 text-red-500 border border-red-500/30 rounded-[12px] px-4 py-3 text-sm font-bold flex items-center gap-2">
                 <AlertTriangle size={16} /> Tarea atrasada: venció el {new Date(fullTask.due_date).toLocaleDateString()}.
               </div>
             )}
             <section>
               <h3 className="font-bold text-[var(--text-primary)] mb-2">Comando de Git</h3>
-              <div className="flex items-center gap-2 bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[6px] p-1">
+              <div className="flex items-center gap-2 bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-1">
                 <code className="flex-1 px-3 py-2 text-sm text-[var(--text-primary)] overflow-x-auto whitespace-nowrap">
                   {gitCommand}
                 </code>
                 <button
                   onClick={copyToClipboard}
-                  className="p-2 bg-[var(--bg-page)] text-[var(--text-secondary)] hover:bg-[var(--btn-primary-bg)] hover:text-[var(--btn-primary-text)] border border-[var(--border-card)] rounded-[6px] transition-colors"
+                  className="p-2 bg-[var(--bg-page)] text-[var(--text-secondary)] hover:bg-[var(--btn-primary-bg)] hover:text-[var(--btn-primary-text)] border border-[var(--border-card)] rounded-[12px] transition-colors"
                   title="Copiar comando"
                 >
                   {copied ? <Check size={18} className="text-[var(--btn-primary-bg)]" /> : <Copy size={18} />}
@@ -423,7 +423,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
                   <button
                     onClick={handleCreateBranchNow}
                     disabled={branchCreating}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[6px] text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--btn-primary-bg)] hover:border-[var(--btn-primary-bg)] transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--btn-primary-bg)] hover:border-[var(--btn-primary-bg)] transition-colors disabled:opacity-50"
                   >
                     <GitBranch size={14} /> {branchCreating ? 'Creando...' : 'Crear rama en GitHub'}
                   </button>
@@ -438,7 +438,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
 
             <section>
               <h3 className="font-bold text-[var(--text-primary)] mb-2">Especificación</h3>
-              <div className="prose prose-sm dark:prose-invert max-w-none bg-[var(--bg-column)] p-4 rounded-[6px] border border-[var(--border-card)] text-[var(--text-primary)]">
+              <div className="prose prose-sm dark:prose-invert max-w-none bg-[var(--bg-column)] p-4 rounded-[12px] border border-[var(--border-card)] text-[var(--text-primary)]">
                 {fullTask.description ? (
                   <ReactMarkdown>{fullTask.description}</ReactMarkdown>
                 ) : (
@@ -462,7 +462,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
                 <FileCode size={18} /> Script SQL Adjunto
               </h3>
               <textarea
-                className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[6px] p-3 text-sm font-mono text-[var(--text-primary)] h-32 focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-60"
+                className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-3 text-sm font-mono text-[var(--text-primary)] h-32 focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-60"
                 placeholder="Sin script SQL para esta tarea."
                 value={sqlDraft}
                 onChange={(e) => setSqlDraft(e.target.value)}
@@ -481,10 +481,10 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
           </div>
 
           <div className="w-full md:w-64 space-y-6">
-            <div className="bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[8px] p-4 space-y-4 shadow-[var(--shadow-subtle)]">
+            <div className="bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[20px] p-4 space-y-4 shadow-[var(--shadow-subtle)]">
               <div>
                 <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">Estado</span>
-                <span className="inline-block bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] px-2.5 py-1 rounded-[6px] text-sm font-bold">
+                <span className="inline-block bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] px-2.5 py-1 rounded-[12px] text-sm font-bold">
                   {STATUS_LABELS[fullTask.status] || fullTask.status}
                 </span>
               </div>
@@ -513,14 +513,14 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
                       type="date"
                       value={dueDateDraft}
                       onChange={(e) => setDueDateDraft(e.target.value)}
-                      className="flex-1 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[6px] p-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                      className="flex-1 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                     />
                     <input
                       type="time"
                       value={dueTimeDraft}
                       onChange={(e) => setDueTimeDraft(e.target.value)}
                       disabled={!dueDateDraft}
-                      className="flex-1 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[6px] p-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-50"
+                      className="flex-1 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-50"
                     />
                   </div>
                 ) : fullTask.due_date ? (
@@ -538,7 +538,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
                     value={prUrlDraft}
                     onChange={(e) => setPrUrlDraft(e.target.value)}
                     placeholder="https://github.com/.../pull/123"
-                    className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[6px] p-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                    className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                   />
                 ) : fullTask.pr_url ? (
                   <a href={fullTask.pr_url} target="_blank" rel="noreferrer" className="text-sm text-[var(--btn-primary-bg)] hover:underline break-all">
@@ -568,14 +568,14 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
               </div>
 
               {fullTask.is_locked && (
-                <div className="bg-red-900/10 text-red-500 p-3 rounded-[6px] text-xs border border-red-500/30">
+                <div className="bg-red-900/10 text-red-500 p-3 rounded-[12px] text-xs border border-red-500/30">
                   <span className="font-bold flex items-center gap-1 mb-1">Bloqueo Exclusivo Activo</span>
                   {lockedByEmail ? `Intervenida por ${lockedByEmail}.` : 'Esta tarea está siendo intervenida.'}
                 </div>
               )}
             </div>
 
-            <div className="bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[8px] p-4 space-y-3">
+            <div className="bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[20px] p-4 space-y-3">
               <h4 className="font-bold text-sm flex items-center gap-2 text-[var(--text-primary)]">
                 <Users size={16} /> Auditoría
               </h4>
@@ -589,20 +589,20 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
                     value={auditComment}
                     onChange={(e) => setAuditComment(e.target.value)}
                     placeholder="Comentario / cambios sugeridos (opcional para aprobar, recomendado al rechazar)"
-                    className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[6px] p-2 text-xs text-[var(--text-primary)] h-20 focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                    className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-xs text-[var(--text-primary)] h-20 focus:outline-none focus:border-[var(--btn-primary-bg)]"
                   />
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleDecision('approved')}
                       disabled={isAuditing}
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-[6px] text-sm transition-colors disabled:opacity-50"
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-[12px] text-sm transition-colors disabled:opacity-50"
                     >
                       <ShieldCheck size={16} /> Aprobar
                     </button>
                     <button
                       onClick={() => handleDecision('rejected')}
                       disabled={isAuditing}
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-red-600 hover:bg-red-500 text-white font-bold py-2 rounded-[6px] text-sm transition-colors disabled:opacity-50"
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-red-600 hover:bg-red-500 text-white font-bold py-2 rounded-[12px] text-sm transition-colors disabled:opacity-50"
                     >
                       <ShieldX size={16} /> Rechazar
                     </button>
@@ -615,12 +615,12 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
                     value={auditComment}
                     onChange={(e) => setAuditComment(e.target.value)}
                     placeholder="Qué revisaste y qué cambios sugieres (obligatorio)"
-                    className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[6px] p-2 text-xs text-[var(--text-primary)] h-20 focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                    className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-xs text-[var(--text-primary)] h-20 focus:outline-none focus:border-[var(--btn-primary-bg)]"
                   />
                   <button
                     onClick={handleReview}
                     disabled={isAuditing || !auditComment.trim()}
-                    className="w-full flex items-center justify-center gap-1.5 bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] font-bold py-2 rounded-[6px] text-sm transition-colors disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-1.5 bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] font-bold py-2 rounded-[12px] text-sm transition-colors disabled:opacity-50"
                   >
                     <Users size={16} /> {isAuditing ? 'Enviando...' : 'Enviar revisión'}
                   </button>
@@ -635,7 +635,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
                 <div className="pt-2 border-t border-[var(--border-column)] space-y-2">
                   <h5 className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Historial</h5>
                   {audits.map(a => (
-                    <div key={a.id} className="text-xs bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[6px] p-2">
+                    <div key={a.id} className="text-xs bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[12px] p-2">
                       <div className="flex justify-between items-center mb-1">
                         <span className={`font-bold ${a.status === 'approved' ? 'text-emerald-500' : a.status === 'rejected' ? 'text-red-500' : 'text-[var(--text-secondary)]'}`}>
                           {AUDIT_STATUS_LABELS[a.status]}
@@ -650,7 +650,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
             </div>
 
             {fullTask.status === 'ready' && (
-              <div className="bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[8px] p-4 space-y-3">
+              <div className="bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[20px] p-4 space-y-3">
                 <h4 className="font-bold text-sm flex items-center gap-2 text-[var(--text-primary)]">
                   <Rocket size={16} /> Despliegue
                 </h4>
@@ -666,7 +666,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
                     <button
                       onClick={handleDeploy}
                       disabled={isDeploying || !fullTask.pr_url || prBlocksDeploy}
-                      className="w-full flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-[6px] text-sm transition-colors disabled:opacity-50"
+                      className="w-full flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-[12px] text-sm transition-colors disabled:opacity-50"
                     >
                       <Rocket size={16} /> {isDeploying ? 'Desplegando...' : 'Marcar como Desplegado'}
                     </button>
@@ -682,14 +682,14 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
         )}
 
         <div className="px-6 py-4 border-t border-[var(--border-column)] bg-[var(--bg-column)] flex justify-end gap-3 flex-none">
-          <button onClick={onClose} className="px-6 py-2 border border-[var(--border-card)] text-[var(--text-primary)] rounded-[6px] font-bold hover:bg-[var(--bg-page)] transition-colors active:scale-[0.97]">
+          <button onClick={onClose} className="px-6 py-2 border border-[var(--border-card)] text-[var(--text-primary)] rounded-[12px] font-bold hover:bg-[var(--bg-page)] transition-colors active:scale-[0.97]">
             Cerrar
           </button>
           {canEdit && (
             <button
               onClick={handleSave}
               disabled={!fullTask || isSaving}
-              className="px-6 py-2 bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] rounded-[6px] font-bold hover:brightness-110 transition-colors disabled:opacity-50 flex items-center gap-2 active:scale-[0.97]"
+              className="px-6 py-2 bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] rounded-[12px] font-bold hover:brightness-110 transition-colors disabled:opacity-50 flex items-center gap-2 active:scale-[0.97]"
             >
               <Save size={16} />
               {isSaving ? 'Guardando...' : 'Guardar Cambios'}

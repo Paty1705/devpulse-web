@@ -6,6 +6,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Calendar, CheckCircle, Clock, AlertTriangle, FolderGit2, Plus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { TaskModal } from '@/components/kanban/TaskModal';
+import { Mascot } from '@/components/mascot/Mascot';
+import { usePreferences } from '@/components/providers/PreferencesProvider';
 
 type DashboardTask = {
   id: string;
@@ -18,6 +20,13 @@ type DashboardTask = {
   project_id: string | null;
 };
 
+function greeting(date = new Date()) {
+  const h = date.getHours();
+  if (h < 12) return 'Buenos días';
+  if (h < 19) return 'Buenas tardes';
+  return 'Buenas noches';
+}
+
 const STATUS_LABELS: Record<string, string> = {
   backlog: 'Backlog',
   in_progress: 'En Progreso',
@@ -28,6 +37,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function DashboardPage() {
   const { user, profile, loading } = useAuth();
+  const { preferences } = usePreferences();
   const router = useRouter();
   const isJefe = profile?.role === 'jefe';
   const [visibleTasks, setVisibleTasks] = useState<DashboardTask[]>([]);
@@ -96,11 +106,28 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-[var(--text-primary)]">Panel de Control</h1>
-        <p className="text-[var(--text-secondary)]">
-          {isJefe ? 'Bienvenido, este es el estado de las tareas de todo el equipo.' : 'Bienvenido, gestiona tus tareas y auditorías.'}
-        </p>
+      <header className="mb-8 glass-panel glass-iridescent rounded-[28px] p-6 md:p-7 flex flex-wrap items-center gap-6 overflow-hidden">
+        <Mascot kind={preferences.mascot} size={150} />
+        <div className="flex-1 min-w-[240px] space-y-3">
+          <p className="text-sm font-mono text-[var(--text-secondary)]">Panel de Control</p>
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--text-primary)]">{greeting()}</h1>
+          <p className="text-[var(--text-secondary)]">
+            {isJefe ? 'Este es el estado de las tareas de todo el equipo.' : 'Gestiona tus tareas y auditorías.'}
+          </p>
+          {!tasksLoading && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              <span className="px-3 py-1.5 rounded-[10px] bg-[var(--bg-page)] border border-[var(--border-card)] text-xs font-mono font-bold text-[var(--text-primary)]">
+                {urgentTasks.length} para hoy o vencidas
+              </span>
+              <span className="px-3 py-1.5 rounded-[10px] bg-[var(--bg-page)] border border-[var(--border-card)] text-xs font-mono font-bold text-[var(--text-primary)]">
+                {weekTasks.length} esta semana
+              </span>
+              <span className="px-3 py-1.5 rounded-[10px] bg-[var(--bg-page)] border border-[var(--border-card)] text-xs font-mono font-bold text-[var(--text-primary)]">
+                {pendingTasks.length} pendientes
+              </span>
+            </div>
+          )}
+        </div>
       </header>
 
       {(isJefe || leaderProjectIds.length > 0) && (

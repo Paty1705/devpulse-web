@@ -229,6 +229,57 @@
   display: none;
 }
 
+/* =========================================
+   PIEZAS DEL REDISEÑO
+========================================= */
+.font-display {
+  font-family: var(--font-display), var(--font-geist-sans), system-ui, sans-serif;
+}
+h1, h2, h3 {
+  font-family: var(--font-display), var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Ícono "de plastilina": volumen con sombras internas y sombra proyectada. */
+.tile-3d {
+  box-shadow:
+    inset -3px -4px 8px rgba(0, 0, 0, 0.22),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.45),
+    0 8px 18px color-mix(in srgb, var(--accent) 25%, rgba(0, 0, 0, 0.15));
+}
+
+/* Borde iridiscente más grueso para piezas protagonistas (sidebar, bienvenida). */
+.thick-iridescent::before {
+  padding: 3px !important;
+  opacity: min(1, calc(var(--iridescence) + 0.2)) !important;
+}
+
+/* Elemento activo de la navegación. */
+.nav-active {
+  color: var(--accent-contrast);
+  background-image: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 30%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+/* Fondo "chip": vidrio más claro dentro de una tarjeta. */
+.chip-glass {
+  background-color: var(--bg-page);
+  box-shadow: inset 0 1px 0 var(--glass-highlight, transparent);
+}
+
+/* Prioridades: claro y oscuro con contraste suficiente. */
+:root {
+  --prio-alta-bg: #FDE3D3; --prio-alta-text: #9A3412;
+  --prio-media-bg: #FEF3C7; --prio-media-text: #92400E;
+  --prio-baja-bg: #DCEFE7; --prio-baja-text: #166534;
+  --ok-text: #15803D;
+}
+:root.dark {
+  --prio-alta-bg: rgba(251, 146, 60, 0.18); --prio-alta-text: #FDBA74;
+  --prio-media-bg: rgba(250, 204, 21, 0.16); --prio-media-text: #FDE047;
+  --prio-baja-bg: rgba(74, 222, 128, 0.16); --prio-baja-text: #86EFAC;
+  --ok-text: #4ADE80;
+}
+
 /* Quien pide menos transparencia en su sistema: sin desenfoque.
    !important porque --glass-blur llega como estilo en línea de <html>. */
 @media (prefers-reduced-transparency: reduce) {

@@ -95,6 +95,8 @@ export function KanbanBoard() {
     const lockedByOther = task.is_locked && task.locked_by !== user?.id;
     if (isManagerOfTask(task)) return !lockedByOther;
     if (!user) return false;
+    // Tarea personal: su dueño la mueve libremente (no hay auditoría).
+    if (!task.project_id && task.assigned_to === user.id) return true;
     return task.assigned_to === user.id && task.status !== 'in_review' && task.status !== 'ready';
   }, [user, isManagerOfTask]);
 
@@ -156,7 +158,7 @@ export function KanbanBoard() {
         projectNames={projectNames}
         testDates={testDates}
         canModify={canModifyTask}
-        canCreate={profile?.role === 'jefe' || leaderProjectIds.size > 0}
+        canCreate={!!user && profile?.status === 'approved'}
         onCreate={() => setIsNewTaskModalOpen(true)}
         onOpen={setSelectedTask}
         onMove={moveTask}

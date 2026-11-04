@@ -48,6 +48,8 @@ export type Proposal = {
   source: 'ia' | 'manual';
   status: ProposalStatus;
   task_id: string | null;
+  /** Quien la agregó (null en las de IA anteriores a esta columna). */
+  created_by: string | null;
 };
 
 export const STATUS_LABEL: Record<MeetingStatus, string> = {

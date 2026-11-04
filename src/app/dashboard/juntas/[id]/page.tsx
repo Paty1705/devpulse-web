@@ -255,7 +255,9 @@ export default function MeetingRoomPage() {
             proposals={proposals}
             projects={projects}
             emailById={emailById}
+            attendees={attendees}
             isJefe={isJefe}
+            isAttendee={attendees.some((a) => a.id === user.id)}
             currentUserId={user.id}
             aiStatus={meeting.ai_status}
             aiError={meeting.ai_error}

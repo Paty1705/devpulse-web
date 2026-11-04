@@ -254,7 +254,7 @@ export function DashboardView({ tasks, projects, progressRows, meeting, resource
                       <span className="flex-1 min-w-0 flex flex-col gap-0.5">
                         <span className="text-sm font-semibold text-[var(--text-primary)] truncate">{t.title}</span>
                         <span className="font-mono text-xs text-[var(--text-secondary)] truncate">
-                          {t.project?.name ?? 'Sin proyecto'} · {t.due_date ? (
+                          {t.project?.name ?? 'Personal'} · {t.due_date ? (
                             <span style={isOverdue ? { color: 'var(--prio-alta-text)', fontWeight: 700 } : undefined}>
                               {isOverdue ? 'venció ' : 'límite '}{shortDate.format(new Date(t.due_date))}
                             </span>

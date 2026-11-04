@@ -241,15 +241,17 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
   const isManager = isJefe || (!!fullTask?.project_id && leaderProjectIds.has(fullTask.project_id));
   const isOwner = !!fullTask && !!user && fullTask.assigned_to === user.id;
   const lockedByOther = !!fullTask && fullTask.is_locked && fullTask.locked_by !== user?.id;
-  const isOwnerEditableStatus = !!fullTask && fullTask.status !== 'in_review' && fullTask.status !== 'ready';
+  // Tarea personal (sin proyecto): su dueño la maneja en cualquier estado.
+  const isPersonal = !!fullTask && !fullTask.project_id;
+  const isOwnerEditableStatus = !!fullTask && (isPersonal || (fullTask.status !== 'in_review' && fullTask.status !== 'ready'));
   const canEdit = !!fullTask && ((isManager && !lockedByOther) || (isOwner && isOwnerEditableStatus));
 
   // QA revisa y deja comentarios/sugerencias (no decide nada). La decisión
   // final de aprobar o rechazar -- que es lo que mueve la tarea -- la toma
   // el jefe o el líder del proyecto.
   const isQA = profile?.role === 'qa';
-  const canReview = !!fullTask && fullTask.status === 'in_review' && isQA && !isOwner;
-  const canDecide = !!fullTask && fullTask.status === 'in_review' && isManager && !isOwner;
+  const canReview = !!fullTask && !isPersonal && fullTask.status === 'in_review' && isQA && !isOwner;
+  const canDecide = !!fullTask && !isPersonal && fullTask.status === 'in_review' && isManager && !isOwner;
 
   // El despliegue final ("ready" -> "completed") también es una decisión
   // exclusiva del jefe. Si pudimos verificar el PR en GitHub y NO está

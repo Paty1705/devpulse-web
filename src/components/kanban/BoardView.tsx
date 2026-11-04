@@ -192,7 +192,7 @@ export function BoardView({
                                     </span>
 
                                     <span className="font-mono text-[11px] text-[var(--text-secondary)] truncate">
-                                      {(task.project_id && projectNames[task.project_id]) || 'Sin proyecto'} · {task.item_type ?? 'Feature'}
+                                      {task.project_id ? projectNames[task.project_id] ?? 'Proyecto' : 'Personal'} · {task.item_type ?? 'Feature'}
                                     </span>
 
                                     <span className="flex flex-wrap gap-1.5">

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { AlertTriangle, Check, Loader2, Plus, RotateCcw, Sparkles, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { formatDateOnly, PRIORITIES, prioStyle, shortName, type AiStatus, type Proposal } from '@/lib/meetings';
+import { formatDateOnly, PRIORITIES, prioStyle, shortName, type AiStatus, type PersonRef, type Proposal } from '@/lib/meetings';
 import { Avatar } from '@/components/juntas/Avatar';
 
 export type ProjectOption = { id: string; name: string; leader_id: string | null; leader: { email: string } | null };
@@ -14,7 +14,9 @@ type Props = {
   proposals: Proposal[];
   projects: ProjectOption[];
   emailById: Record<string, string>;
+  attendees: PersonRef[];
   isJefe: boolean;
+  isAttendee: boolean;
   currentUserId?: string;
   aiStatus: AiStatus;
   aiError: string | null;
@@ -28,7 +30,7 @@ const fieldClass =
   'min-h-9 rounded-[10px] px-2.5 text-[13px] surface-card border border-[var(--border-card)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)] disabled:opacity-70';
 
 export function ProposalsPanel({
-  meetingId, proposals, projects, emailById, isJefe, currentUserId, aiStatus, aiError, hasRecording, processing, onProcess, onChanged,
+  meetingId, proposals, projects, emailById, attendees, isJefe, isAttendee, currentUserId, aiStatus, aiError, hasRecording, processing, onProcess, onChanged,
 }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +40,9 @@ export function ProposalsPanel({
     return rank[a.status] - rank[b.status];
   });
   const pending = proposals.filter((p) => p.status === 'pendiente');
-  const ready = pending.filter((p) => p.project_id);
+  // Lista para aceptar = tiene responsable (sin proyecto se vuelve tarea personal).
+  const ready = pending.filter((p) => p.assigned_to);
+  const myProjects = projects.filter((x) => x.leader_id === currentUserId);
   const accepted = proposals.filter((p) => p.status === 'aceptada').length;
 
   const patch = async (id: string, values: Partial<Proposal>) => {
@@ -72,10 +76,20 @@ export function ProposalsPanel({
 
   const addManual = async () => {
     setError(null);
-    const { error: err } = await supabase
-      .from('meeting_task_proposals')
-      .insert({ meeting_id: meetingId, title: 'Nueva tarea', source: 'manual', priority: 'Media' });
+    // El jefe agrega una propuesta abierta; un asistente, una para sí mismo.
+    const values: Record<string, string | null | undefined> = {
+      meeting_id: meetingId, title: 'Nueva tarea', source: 'manual', priority: 'Media', created_by: currentUserId,
+    };
+    if (!isJefe) values.assigned_to = currentUserId;
+    const { error: err } = await supabase.from('meeting_task_proposals').insert(values);
     if (err) setError('No se pudo agregar la tarea.');
+    else onChanged();
+  };
+
+  const remove = async (id: string) => {
+    setError(null);
+    const { error: err } = await supabase.from('meeting_task_proposals').delete().eq('id', id);
+    if (err) setError('No se pudo quitar la propuesta.');
     else onChanged();
   };
 
@@ -120,7 +134,11 @@ export function ProposalsPanel({
 
       <ul className="flex flex-col gap-3">
         {ordered.map((p) => {
-          const editable = isJefe && p.status === 'pendiente';
+          const isAuthor = !!currentUserId && p.created_by === currentUserId;
+          const editable = p.status === 'pendiente' && (isJefe || isAuthor);
+          const projectOptions = isJefe ? projects : myProjects;
+          const proposer = p.source === 'manual' && p.created_by && p.created_by !== p.assigned_to ? emailById[p.created_by] : undefined;
+          const ownProposal = p.source === 'manual' && p.created_by && p.created_by === p.assigned_to && !isAuthor;
           const project = projects.find((x) => x.id === p.project_id);
           const assigneeEmail = p.assigned_to ? emailById[p.assigned_to] : undefined;
           const suggestedProjects = !p.project_id && p.assigned_to ? projects.filter((x) => x.leader_id === p.assigned_to) : [];
@@ -157,21 +175,35 @@ export function ProposalsPanel({
                       value={p.project_id ?? ''}
                       onChange={(e) => {
                         const proj = projects.find((x) => x.id === e.target.value);
-                        patch(p.id, { project_id: proj?.id ?? null, assigned_to: proj?.leader_id ?? p.assigned_to });
+                        patch(p.id, { project_id: proj?.id ?? null, assigned_to: proj?.leader_id ?? (isJefe ? p.assigned_to : currentUserId ?? null) });
                       }}
                       className={fieldClass}
                     >
-                      <option value="">Elegir proyecto…</option>
-                      {suggestedProjects.length > 0 && (
+                      <option value="">Personal · sin proyecto</option>
+                      {isJefe && suggestedProjects.length > 0 && (
                         <optgroup label={`De ${shortName(assigneeEmail)}`}>
                           {suggestedProjects.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
                         </optgroup>
                       )}
-                      <optgroup label="Todos">
-                        {projects.map((x) => <option key={x.id} value={x.id}>{x.name} · {shortName(x.leader?.email)}</option>)}
-                      </optgroup>
+                      {projectOptions.length > 0 && (
+                        <optgroup label={isJefe ? 'Todos' : 'Mis proyectos'}>
+                          {projectOptions.map((x) => <option key={x.id} value={x.id}>{x.name}{isJefe ? ` · ${shortName(x.leader?.email)}` : ''}</option>)}
+                        </optgroup>
+                      )}
                     </select>
                   </label>
+                  {isJefe && !p.project_id && (
+                    <label className="col-span-2 flex flex-col gap-1">
+                      <span className="text-[11px] text-[var(--text-secondary)]">Responsable (tarea personal)</span>
+                      <select value={p.assigned_to ?? ''} onChange={(e) => patch(p.id, { assigned_to: e.target.value || null })} className={fieldClass}>
+                        <option value="">Elegir responsable…</option>
+                        {attendees.map((a) => <option key={a.id} value={a.id}>{a.email}</option>)}
+                        {p.assigned_to && !attendees.some((a) => a.id === p.assigned_to) && (
+                          <option value={p.assigned_to}>{emailById[p.assigned_to] ?? 'Otra persona'}</option>
+                        )}
+                      </select>
+                    </label>
+                  )}
                   <label className="flex flex-col gap-1">
                     <span className="text-[11px] text-[var(--text-secondary)]">Prioridad</span>
                     <select value={p.priority} onChange={(e) => patch(p.id, { priority: e.target.value as Proposal['priority'] })} className={fieldClass} style={prioStyle(p.priority)}>
@@ -190,7 +222,7 @@ export function ProposalsPanel({
               ) : (
                 <div className="flex flex-wrap gap-1.5 font-mono text-[11px]">
                   <span className="px-2 py-1 rounded-[8px]" style={prioStyle(p.priority)}>{p.priority}</span>
-                  <span className="px-2 py-1 rounded-[8px] surface-card text-[var(--text-primary)]">{project?.name ?? 'sin proyecto'}</span>
+                  <span className="px-2 py-1 rounded-[8px] surface-card text-[var(--text-primary)]">{project?.name ?? 'personal'}</span>
                   {p.due_date && <span className="px-2 py-1 rounded-[8px] surface-card text-[var(--text-primary)]">límite {formatDateOnly(p.due_date)}</span>}
                   {p.test_date && <span className="px-2 py-1 rounded-[8px] surface-card text-[var(--text-primary)]">prueba {formatDateOnly(p.test_date)}</span>}
                 </div>
@@ -200,15 +232,26 @@ export function ProposalsPanel({
                 <Avatar email={assigneeEmail} highlight={p.assigned_to === currentUserId} size={26} />
                 <span className="flex-1 min-w-0 text-xs text-[var(--text-secondary)] truncate">
                   {assigneeEmail ? shortName(assigneeEmail) : 'Sin responsable'}
-                  {editable && !p.project_id && <span style={{ color: 'var(--prio-media-text)' }}> · elige el proyecto para aceptar</span>}
+                  {proposer && ` · propuesta por ${shortName(proposer)}`}
+                  {ownProposal && ' · la propuso para sí'}
+                  {isJefe && p.status === 'pendiente' && !p.assigned_to && <span style={{ color: 'var(--prio-media-text)' }}> · elige proyecto o responsable para aceptar</span>}
+                  {!isJefe && isAuthor && p.status === 'pendiente' && ' · espera a que el jefe la acepte'}
                 </span>
               </div>
 
-              {editable && (
+              {editable && !isJefe && (
+                <button
+                  onClick={() => remove(p.id)}
+                  className="self-start min-h-9 px-3 rounded-[10px] text-[13px] font-semibold surface-card border border-[var(--border-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] inline-flex items-center gap-1.5"
+                >
+                  <X size={14} /> Quitar mi propuesta
+                </button>
+              )}
+              {editable && isJefe && (
                 <div className="flex gap-2">
                   <button
                     onClick={() => accept(p.id)}
-                    disabled={!p.project_id || busy !== null}
+                    disabled={!p.assigned_to || busy !== null}
                     className="nav-active flex-1 min-h-10 rounded-[12px] text-[13px] font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {busy === p.id ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Aceptar
@@ -238,12 +281,12 @@ export function ProposalsPanel({
         })}
       </ul>
 
-      {isJefe && (
+      {(isJefe || isAttendee) && (
         <div className="flex flex-wrap gap-2">
           <button onClick={addManual} className="flex-1 min-w-[130px] min-h-11 rounded-[14px] text-[13px] font-semibold chip-glass border border-[var(--border-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] inline-flex items-center justify-center gap-1.5">
-            <Plus size={15} /> Tarea manual
+            <Plus size={15} /> {isJefe ? 'Tarea manual' : 'Proponer tarea para mí'}
           </button>
-          {ready.length > 1 && (
+          {isJefe && ready.length > 1 && (
             <button onClick={acceptAll} disabled={busy !== null} className="nav-active flex-1 min-w-[160px] min-h-11 rounded-[14px] text-[13px] font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-50">
               {busy === 'all' ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />} Aceptar {ready.length} listas
             </button>

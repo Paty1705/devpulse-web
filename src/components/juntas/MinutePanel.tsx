@@ -137,24 +137,109 @@ export function MinutePanel({ meetingId, items, notes, canWrite, isJefe, current
         );
       })}
 
-      <label className="flex flex-col gap-2">
-        <span className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Notas libres</span>
-        {isJefe && canWrite ? (
-          <textarea
-            rows={4}
-            value={notesDraft}
-            onChange={(e) => onNotes(e.target.value)}
-            placeholder="Lo que vaya surgiendo…"
-            className="rounded-[14px] px-3 py-2.5 text-sm leading-relaxed surface-card border border-[var(--border-card)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none focus:border-[var(--accent)] resize-y"
-          />
-        ) : (
-          <p className="chip-glass rounded-[14px] px-3 py-2.5 text-sm leading-relaxed text-[var(--text-primary)] whitespace-pre-wrap min-h-12">
-            {notes || <span className="text-[var(--text-secondary)] italic">Sin notas.</span>}
-          </p>
-        )}
-      </label>
+      {(isJefe && canWrite) || notes ? (
+        <label className="flex flex-col gap-2">
+          <span className="flex items-baseline justify-between gap-2">
+            <span className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Notas generales</span>
+            <span className="text-[11px] text-[var(--text-secondary)]">{isJefe ? 'las ven todos los asistentes' : 'del jefe'}</span>
+          </span>
+          {isJefe && canWrite ? (
+            <textarea
+              rows={3}
+              value={notesDraft}
+              onChange={(e) => onNotes(e.target.value)}
+              placeholder="Lo que todos deben ver…"
+              className="rounded-[14px] px-3 py-2.5 text-sm leading-relaxed surface-card border border-[var(--border-card)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none focus:border-[var(--accent)] resize-y"
+            />
+          ) : (
+            <p className="chip-glass rounded-[14px] px-3 py-2.5 text-sm leading-relaxed text-[var(--text-primary)] whitespace-pre-wrap">{notes}</p>
+          )}
+        </label>
+      ) : null}
+
+      <MyNotes meetingId={meetingId} userId={currentUserId} canWrite={canWrite} />
 
       {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
     </section>
+  );
+}
+
+/** Notas personales de cada asistente: privadas y con guardado automático. */
+function MyNotes({ meetingId, userId, canWrite }: { meetingId: string; userId?: string; canWrite: boolean }) {
+  const [text, setText] = useState('');
+  const [status, setStatus] = useState<'cargando' | 'listo' | 'guardando' | 'guardado' | 'error' | 'no-disponible'>('cargando');
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('meeting_notes')
+        .select('content, updated_at')
+        .eq('meeting_id', meetingId)
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (cancelled) return;
+      // 42P01 / PGRST205: la tabla aún no existe (migración sin aplicar).
+      if (error && (error.code === '42P01' || error.code === 'PGRST205')) {
+        setStatus('no-disponible');
+        return;
+      }
+      setText(data?.content ?? '');
+      setSavedAt(data?.updated_at ? new Date(data.updated_at) : null);
+      setStatus(error ? 'error' : 'listo');
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [meetingId, userId]);
+
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+
+  if (!userId || status === 'no-disponible') return null;
+
+  const onChange = (value: string) => {
+    setText(value);
+    setStatus('guardando');
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(async () => {
+      const now = new Date();
+      const { error } = await supabase
+        .from('meeting_notes')
+        .upsert({ meeting_id: meetingId, user_id: userId, content: value, updated_at: now.toISOString() }, { onConflict: 'meeting_id,user_id' });
+      if (error) {
+        setStatus('error');
+        return;
+      }
+      setSavedAt(now);
+      setStatus('guardado');
+    }, 700);
+  };
+
+  const hint =
+    status === 'guardando' ? 'guardando…'
+      : status === 'error' ? 'no se pudo guardar'
+        : savedAt ? `guardado ${savedAt.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`
+          : 'solo tú las ves';
+
+  return (
+    <label className="flex flex-col gap-2">
+      <span className="flex items-baseline justify-between gap-2">
+        <span className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Mis notas</span>
+        <span className="text-[11px]" style={{ color: status === 'error' ? 'var(--prio-alta-text)' : 'var(--text-secondary)' }}>{hint}</span>
+      </span>
+      <textarea
+        rows={5}
+        value={text}
+        disabled={status === 'cargando' || !canWrite}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={status === 'cargando' ? 'Cargando…' : 'Tus apuntes de la junta. Solo tú los ves.'}
+        className="rounded-[14px] px-3 py-2.5 text-sm leading-relaxed surface-card border border-[var(--border-card)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] outline-none focus:border-[var(--accent)] resize-y disabled:opacity-70"
+      />
+    </label>
   );
 }

@@ -53,7 +53,10 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
       // proyectos donde él mismo es leader_id.
       const visibleProjects = isJefe ? projs : projs.filter(p => p.leader_id === user?.id);
       setProjects(visibleProjects);
-      if (visibleProjects.length > 0) setProjectId(prev => prev || visibleProjects[0].id);
+      // Primer proyecto propio, o tarea personal si no lidera ninguno.
+      const first = visibleProjects[0];
+      setProjectId(first?.id ?? '');
+      setAssignedTo(first ? first.leader_id ?? '' : user?.id ?? '');
     }
 
     const { data: profs } = await supabase.from('profiles').select('id, email, role');
@@ -70,15 +73,17 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
 
   const selectedProject = projects.find(p => p.id === projectId) || null;
   // Los proyectos son individuales: sus tareas solo pueden ser del responsable.
+  // Proyecto → solo su responsable. Sin proyecto → tarea personal, para uno mismo.
   const assignableProfiles = !selectedProject
-    ? profiles
+    ? profiles.filter(p => p.id === user?.id)
     : profiles.filter(p => p.id === selectedProject.leader_id);
 
   // Al elegir proyecto, la tarea se asigna sola a su responsable (se hace en
   // el handler, no en un efecto, para no derivar estado en cascada).
   const handleProjectChange = (newProjectId: string) => {
     setProjectId(newProjectId);
-    setAssignedTo(projects.find(p => p.id === newProjectId)?.leader_id ?? '');
+    const proj = projects.find(p => p.id === newProjectId);
+    setAssignedTo(proj ? proj.leader_id ?? '' : user?.id ?? '');
   };
 
   // Precarga la fecha límite cada vez que el modal se abre (ej. al venir
@@ -214,9 +219,12 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
                   value={projectId} onChange={(e) => handleProjectChange(e.target.value)}
                   className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                 >
-                  <option value="">Selecciona un proyecto...</option>
                   {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  <option value="">Personal · sin proyecto</option>
                 </select>
+                {!selectedProject && (
+                  <p className="text-[11px] text-[var(--text-secondary)] mt-1">Tarea personal: es para ti, la mueves tú hasta terminarla y no pasa por auditoría.</p>
+                )}
               </div>
               
               <div>
@@ -294,13 +302,14 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
                 <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Asignar a</label>
                 <select
                   value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)}
-                  className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                  disabled={!selectedProject}
+                  className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-70"
                 >
-                  <option value="">Sin asignar</option>
+                  {selectedProject && <option value="">Sin asignar</option>}
                   {assignableProfiles.map(p => <option key={p.id} value={p.id}>{p.email} ({p.role})</option>)}
                 </select>
                 {selectedProject && assignableProfiles.length === 0 && (
-                  <p className="text-xs text-amber-500 mt-1">Este proyecto todavía no tiene líder/equipo asignado.</p>
+                  <p className="text-xs text-amber-500 mt-1">Este proyecto todavía no tiene responsable.</p>
                 )}
               </div>
               <div>

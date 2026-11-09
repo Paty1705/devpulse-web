@@ -254,7 +254,7 @@ export function DashboardView({ tasks, projects, progressRows, meeting, resource
                       <span className="flex-1 min-w-0 flex flex-col gap-0.5">
                         <span className="text-sm font-semibold text-[var(--text-primary)] truncate">{t.title}</span>
                         <span className="font-mono text-xs text-[var(--text-secondary)] truncate">
-                          {t.project?.name ?? 'Sin proyecto'} · {t.due_date ? (
+                          {t.project?.name ?? 'Personal'} · {t.due_date ? (
                             <span style={isOverdue ? { color: 'var(--prio-alta-text)', fontWeight: 700 } : undefined}>
                               {isOverdue ? 'venció ' : 'límite '}{shortDate.format(new Date(t.due_date))}
                             </span>
@@ -297,20 +297,29 @@ export function DashboardView({ tasks, projects, progressRows, meeting, resource
             </p>
           )}
           <div className="mt-auto flex flex-wrap gap-2.5">
-            <button
-              disabled
-              title="El modo junta llega en la siguiente fase"
-              className="nav-active flex-1 min-w-[140px] min-h-12 rounded-[16px] font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <Play size={16} fill="currentColor" /> Iniciar junta
-            </button>
-            <button
-              disabled
-              title="La grabación llega en la siguiente fase"
-              className="chip-glass flex-1 min-w-[110px] min-h-12 rounded-[16px] font-semibold text-sm text-[var(--text-primary)] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <Mic size={16} /> Grabar
-            </button>
+            {meeting ? (
+              <>
+                <Link
+                  href={`/dashboard/juntas/${meeting.id}`}
+                  className="nav-active flex-1 min-w-[140px] min-h-12 rounded-[16px] font-semibold text-sm flex items-center justify-center gap-2"
+                >
+                  <Play size={16} fill="currentColor" /> {meeting.status === 'en_curso' ? 'Entrar a la junta' : isJefe ? 'Iniciar junta' : 'Abrir junta'}
+                </Link>
+                <Link
+                  href="/dashboard/juntas"
+                  className="chip-glass flex-1 min-w-[110px] min-h-12 rounded-[16px] font-semibold text-sm text-[var(--text-primary)] flex items-center justify-center gap-2 hover:bg-[var(--bg-card-hover)]"
+                >
+                  <Mic size={16} /> Todas
+                </Link>
+              </>
+            ) : (
+              <Link
+                href="/dashboard/juntas"
+                className="chip-glass flex-1 min-h-12 rounded-[16px] font-semibold text-sm text-[var(--text-primary)] flex items-center justify-center gap-2 hover:bg-[var(--bg-card-hover)]"
+              >
+                <Mic size={16} /> {isJefe ? 'Programar junta' : 'Ver juntas'}
+              </Link>
+            )}
           </div>
           <span className="mt-3 text-xs text-[var(--text-secondary)] flex items-center gap-1.5">
             <Sparkles size={13} /> La IA propondrá tareas a partir de la grabación

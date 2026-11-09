@@ -107,18 +107,18 @@ export default function JefaturaPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-12">
-      <header className="mb-8 flex justify-between items-end">
+    <div className="max-w-[1400px] space-y-4 pb-8">
+      <header className="mb-2 flex flex-wrap justify-between items-end gap-3">
         <div className="flex flex-col gap-2">
           <div>
-            <h1 className="text-3xl font-bold text-[var(--text-primary)]">Gobernanza de Proyectos</h1>
+            <h1 className="text-2xl sm:text-[1.75rem] font-bold text-[var(--text-primary)]">Gobernanza de Proyectos</h1>
             <p className="text-[var(--text-secondary)] mt-1">Crea y administra los desarrollos activos.</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => router.push('/dashboard/jefatura/versiones')}
-            className="flex items-center gap-2 border border-[var(--border-card)] text-[var(--text-primary)] px-4 py-2.5 rounded-[12px] font-bold hover:bg-[var(--bg-page)] shadow-sm transition-all active:scale-[0.97]"
+            className="flex items-center gap-2 border border-[var(--border-card)] text-[var(--text-primary)] px-3.5 py-2 rounded-[12px] text-sm font-bold hover:bg-[var(--bg-page)] shadow-sm transition-all active:scale-[0.97]"
           >
             <GitBranch size={18} />
             Control de Versiones
@@ -126,7 +126,7 @@ export default function JefaturaPage() {
           {isJefe && (
             <button
               onClick={() => router.push('/dashboard/jefatura/usuarios')}
-              className="flex items-center gap-2 border border-[var(--border-card)] text-[var(--text-primary)] px-4 py-2.5 rounded-[12px] font-bold hover:bg-[var(--bg-page)] shadow-sm transition-all active:scale-[0.97]"
+              className="flex items-center gap-2 border border-[var(--border-card)] text-[var(--text-primary)] px-3.5 py-2 rounded-[12px] text-sm font-bold hover:bg-[var(--bg-page)] shadow-sm transition-all active:scale-[0.97]"
             >
               <Users size={18} />
               Usuarios

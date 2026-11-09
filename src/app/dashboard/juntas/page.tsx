@@ -63,10 +63,10 @@ export default function JuntasPage() {
   if (loading || !user) return <div className="p-8 text-[var(--text-secondary)]">Cargando…</div>;
 
   return (
-    <div className="max-w-[1400px] flex flex-col gap-6">
+    <div className="max-w-[1400px] flex flex-col gap-4 sm:gap-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--text-primary)]">Juntas</h1>
+          <h1 className="text-2xl sm:text-[1.75rem] font-bold tracking-tight text-[var(--text-primary)]">Juntas</h1>
           <p className="text-sm text-[var(--text-secondary)]">Minutas, grabaciones y tareas que salen de cada reunión.</p>
         </div>
         {isJefe && (

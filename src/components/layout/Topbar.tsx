@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Bell, Check, ExternalLink, Moon, Settings, Sun } from 'lucide-react';
+import { Bell, Check, ExternalLink, Menu, Moon, Sun } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { usePreferences } from '@/components/providers/PreferencesProvider';
 import { supabase } from '@/lib/supabase';
@@ -37,9 +37,9 @@ function initials(email?: string | null) {
 }
 
 const iconButton =
-  'glass-panel relative w-12 h-12 rounded-[16px] flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors active:scale-[0.97]';
+  'glass-panel relative w-10 h-10 rounded-[13px] flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors active:scale-[0.97]';
 
-export function Topbar({ onOpenSettings }: { onOpenSettings: () => void }) {
+export function Topbar({ onOpenSettings, onOpenMenu }: { onOpenSettings: () => void; onOpenMenu: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuth();
@@ -122,14 +122,19 @@ export function Topbar({ onOpenSettings }: { onOpenSettings: () => void }) {
     : '';
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-4">
-      {/* Solo la sección y la fecha: cada página pone su propio <h1>. */}
-      <div className="flex flex-col gap-0.5">
-        <span className="font-mono text-xs text-[var(--text-secondary)]">devpulse / {title.toLowerCase()}</span>
-        <span className="font-display text-lg font-semibold text-[var(--text-primary)] first-letter:uppercase min-h-7">{today}</span>
+    <header className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3 min-w-0">
+        <button onClick={onOpenMenu} aria-label="Abrir menú" className={`${iconButton} lg:hidden shrink-0`}>
+          <Menu size={19} />
+        </button>
+        {/* Solo la sección y la fecha: cada página pone su propio <h1>. */}
+        <div className="flex flex-col min-w-0">
+          <span className="font-mono text-[11px] text-[var(--text-secondary)] truncate">devpulse / {title.toLowerCase()}</span>
+          <span className="font-display text-base font-semibold text-[var(--text-primary)] first-letter:uppercase min-h-6 truncate">{today}</span>
+        </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 shrink-0">
         {user && (
           <div className="relative" ref={notifRef}>
             <button
@@ -138,16 +143,16 @@ export function Topbar({ onOpenSettings }: { onOpenSettings: () => void }) {
               aria-expanded={isNotifOpen}
               className={iconButton}
             >
-              <Bell size={20} />
+              <Bell size={18} />
               {unreadCount > 0 && (
-                <span className="absolute top-2 right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-[#E11D48] text-white text-[11px] font-bold flex items-center justify-center shadow-[0_0_10px_rgba(225,29,72,0.6)]">
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#E11D48] text-white text-[11px] font-bold flex items-center justify-center shadow-[0_0_10px_rgba(225,29,72,0.6)]">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
             </button>
 
             {isNotifOpen && (
-              <div className="absolute right-0 mt-2 w-80 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[18px] shadow-[var(--shadow-hover)] overflow-hidden z-50 animate-fade-in-up">
+              <div className="fixed left-3 right-3 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-80 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[18px] shadow-[var(--shadow-hover)] overflow-hidden z-50 animate-fade-in-up">
                 <div className="px-4 py-3 border-b border-[var(--border-column)] flex justify-between items-center">
                   <h2 className="font-bold text-[var(--text-primary)] text-sm">Notificaciones</h2>
                   {unreadCount > 0 && (
@@ -190,20 +195,19 @@ export function Topbar({ onOpenSettings }: { onOpenSettings: () => void }) {
           aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
           className={iconButton}
         >
-          {isDark ? <Sun size={20} /> : <Moon size={20} />}
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
-        <button onClick={onOpenSettings} aria-label="Preferencias" className={`${iconButton} lg:hidden`}>
-          <Settings size={20} />
-        </button>
 
-        <span
+        <button
+          onClick={onOpenSettings}
+          aria-label="Preferencias"
           title={user?.email ?? undefined}
-          className="tile-3d w-12 h-12 rounded-[16px] flex items-center justify-center font-display font-bold text-white"
+          className="tile-3d w-10 h-10 rounded-[13px] flex items-center justify-center font-display font-bold text-sm text-white"
           style={{ background: 'linear-gradient(150deg, var(--accent), var(--accent-2))' }}
         >
           {initials(user?.email)}
-        </span>
+        </button>
       </div>
     </header>
   );

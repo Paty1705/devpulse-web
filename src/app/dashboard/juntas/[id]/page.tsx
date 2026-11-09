@@ -239,7 +239,7 @@ export default function MeetingRoomPage() {
               </span>
               <span className="font-mono text-xs text-[var(--text-secondary)] first-letter:uppercase">{meetingDateTime.format(new Date(meeting.scheduled_at))}</span>
             </span>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[var(--text-primary)] truncate">{meeting.title}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)] truncate">{meeting.title}</h1>
             <span className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
               {series && (
                 <span className="chip-glass px-2 py-1 rounded-[8px] inline-flex items-center gap-1.5 text-[var(--text-primary)]">

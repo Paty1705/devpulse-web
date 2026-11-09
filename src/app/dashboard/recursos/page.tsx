@@ -190,10 +190,10 @@ function RecursosBoard() {
   );
 
   return (
-    <div className="max-w-[1400px] flex flex-col gap-6">
+    <div className="max-w-[1400px] flex flex-col gap-4 sm:gap-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--text-primary)]">Recursos</h1>
+          <h1 className="text-2xl sm:text-[1.75rem] font-bold tracking-tight text-[var(--text-primary)]">Recursos</h1>
           <p className="text-sm text-[var(--text-secondary)]">Videos, documentos y enlaces que el equipo recomienda.</p>
         </div>
         <button
@@ -296,13 +296,13 @@ function RecursosBoard() {
               <h2 className="text-lg font-semibold text-[var(--text-primary)] inline-flex items-center gap-2">
                 <Pin size={16} /> Fijados
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">{pinned.map(card)}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">{pinned.map(card)}</div>
             </section>
           )}
           {rest.length > 0 && (
             <section className="flex flex-col gap-3">
               {pinned.length > 0 && <h2 className="text-lg font-semibold text-[var(--text-primary)]">Todos</h2>}
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">{rest.map(card)}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">{rest.map(card)}</div>
             </section>
           )}
         </>

@@ -65,6 +65,8 @@ export default function AgendaPage() {
   const [tasksLoading, setTasksLoading] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [quickAddDate, setQuickAddDate] = useState<Date | null>(null);
+  // En el teléfono, tocar un día lo selecciona y su lista aparece abajo.
+  const [selectedDay, setSelectedDay] = useState(() => new Date());
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [viewDate, setViewDate] = useState(() => {
@@ -185,34 +187,34 @@ export default function AgendaPage() {
   const monthLabel = viewDate.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-[1400px] space-y-4">
       <header className="flex flex-col gap-2">
         <div className="flex justify-between items-end flex-wrap gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-[var(--text-primary)]">Mi Agenda</h1>
-            <p className="text-[var(--text-secondary)]">
+            <h1 className="text-2xl sm:text-[1.75rem] font-bold tracking-tight text-[var(--text-primary)]">Mi Agenda</h1>
+            <p className="text-sm text-[var(--text-secondary)]">
               {canManageTasks ? 'Vencimientos del equipo y tus notas personales.' : 'Tus tareas y notas personales por fecha.'}
-              {' '}Haz clic en un día para agregar algo.
+              <span className="hidden sm:inline">{' '}Haz clic en un día para agregar algo.</span>
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewDate(d => { const nd = new Date(d); nd.setMonth(nd.getMonth() - 1); return nd; })}
-              className="glass-panel w-11 h-11 rounded-[14px] flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors active:scale-[0.97]"
+              className="glass-panel w-10 h-10 rounded-[13px] flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors active:scale-[0.97]"
             >
               <ChevronLeft size={18} />
             </button>
-            <span className="font-display text-lg font-semibold text-[var(--text-primary)] capitalize w-44 text-center">{monthLabel}</span>
+            <span className="font-display text-base sm:text-lg font-semibold text-[var(--text-primary)] first-letter:uppercase min-w-[9.5rem] text-center">{monthLabel}</span>
             <button
               onClick={() => setViewDate(d => { const nd = new Date(d); nd.setMonth(nd.getMonth() + 1); return nd; })}
-              className="glass-panel w-11 h-11 rounded-[14px] flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors active:scale-[0.97]"
+              className="glass-panel w-10 h-10 rounded-[13px] flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors active:scale-[0.97]"
             >
               <ChevronRight size={18} />
             </button>
             <button
               onClick={() => setViewDate(() => { const d = new Date(); d.setDate(1); return d; })}
-              className="nav-active min-h-11 px-4 rounded-[14px] text-sm font-semibold transition-transform active:scale-[0.97]"
+              className="nav-active min-h-10 px-4 rounded-[13px] text-sm font-semibold transition-transform active:scale-[0.97]"
             >
               Hoy
             </button>
@@ -223,11 +225,12 @@ export default function AgendaPage() {
       {tasksLoading ? (
         <div className="text-[var(--text-secondary)] py-12 text-center">Cargando agenda...</div>
       ) : (
-        <div className="glass-panel glass-iridescent rounded-[28px] p-3 md:p-5 overflow-x-auto">
-        <div className="grid grid-cols-7 gap-2 min-w-[720px]">
+        <div className="glass-panel glass-iridescent rounded-[22px] p-2 sm:p-4">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {WEEKDAY_LABELS.map(l => (
-            <div key={l} className="text-center text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] py-1">
-              {l}
+            <div key={l} className="text-center text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] py-1">
+              <span className="sm:hidden">{l[0]}</span>
+              <span className="hidden sm:inline">{l}</span>
             </div>
           ))}
 
@@ -242,17 +245,33 @@ export default function AgendaPage() {
             return (
               <div
                 key={key}
-                onClick={() => setQuickAddDate(d)}
-                className={`min-h-[112px] rounded-[16px] border p-2 flex flex-col gap-1.5 transition-colors cursor-pointer hover:border-[var(--accent)] ${
+                onClick={() => {
+                  if (window.matchMedia('(max-width: 639px)').matches) setSelectedDay(d);
+                  else setQuickAddDate(d);
+                }}
+                className={`min-h-[3.3rem] sm:min-h-[6rem] min-w-0 rounded-[11px] sm:rounded-[14px] border p-1 sm:p-1.5 flex flex-col items-center sm:items-stretch gap-1 transition-colors cursor-pointer hover:border-[var(--accent)] ${
+                  key === dateKey(selectedDay) && !isToday ? 'max-sm:!border-[var(--accent)]' : ''
+                } ${
                   isCurrentMonth
                     ? 'surface-card border-[var(--border-card)]'
                     : 'chip-glass border-transparent opacity-45'
                 } ${isToday ? 'ring-2 ring-[var(--accent)] shadow-[0_8px_18px_color-mix(in_srgb,var(--accent)_25%,transparent)]' : ''}`}
               >
-                <span className={`font-mono text-xs font-bold self-start ${isToday ? 'nav-active px-2 py-0.5 rounded-[8px]' : 'text-[var(--text-secondary)]'}`}>
+                <span className={`font-mono text-xs font-bold sm:self-start ${isToday ? 'nav-active px-2 py-0.5 rounded-[8px]' : 'text-[var(--text-secondary)]'}`}>
                   {d.getDate()}
                 </span>
-                <div className="flex-1 overflow-y-auto space-y-1">
+                {/* Teléfono: puntos de color en lugar de nombres. */}
+                {totalCount > 0 && (
+                  <span className="sm:hidden flex flex-wrap justify-center gap-0.5">
+                    {dayTasks.slice(0, 3).map(t => (
+                      <span key={t.id} className="w-1.5 h-1.5 rounded-full" style={{ background: t.status !== 'completed' && new Date(t.due_date!) < startOfToday ? '#EF4444' : accentColorFor(t.item_type) }} />
+                    ))}
+                    {dayPersonal.slice(0, Math.max(0, 3 - dayTasks.length)).map(ev => (
+                      <span key={ev.id} className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]" />
+                    ))}
+                  </span>
+                )}
+                <div className="hidden sm:block flex-1 overflow-y-auto space-y-1">
                   {dayTasks.slice(0, 3).map(t => {
                     const isOverdue = t.status !== 'completed' && new Date(t.due_date!) < startOfToday;
                     return (
@@ -289,6 +308,56 @@ export default function AgendaPage() {
         </div>
         </div>
       )}
+
+      {/* Teléfono: lo del día seleccionado. */}
+      {!tasksLoading && (() => {
+        const key = dateKey(selectedDay);
+        const dayTasks = tasksByDate.get(key) || [];
+        const dayPersonal = personalEventsByDate.get(key) || [];
+        return (
+          <section className="sm:hidden glass-panel rounded-[20px] p-3 flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-[var(--text-primary)] first-letter:uppercase">
+                {selectedDay.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </h2>
+              <button onClick={() => setQuickAddDate(selectedDay)} className="nav-active min-h-9 px-3 rounded-[11px] text-[13px] font-semibold">Agregar</button>
+            </div>
+            {dayTasks.length + dayPersonal.length === 0 ? (
+              <p className="text-sm text-[var(--text-secondary)] py-2">Nada para este día.</p>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {dayTasks.map(t => {
+                  const isOverdue = t.status !== 'completed' && new Date(t.due_date!) < startOfToday;
+                  return (
+                    <li key={t.id}>
+                      <button
+                        onClick={() => setSelectedTaskId(t.id)}
+                        style={{ borderLeftColor: isOverdue ? '#EF4444' : accentColorFor(t.item_type) }}
+                        className="w-full flex items-center gap-2 text-left text-sm px-3 py-2.5 rounded-[12px] border-l-[3px] chip-glass text-[var(--text-primary)]"
+                      >
+                        {isOverdue && <AlertTriangle size={13} className="text-red-500 shrink-0" />}
+                        <span className="flex-1 min-w-0 truncate">{t.title}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+                {dayPersonal.map(ev => (
+                  <li key={ev.id}>
+                    <button
+                      onClick={(e) => handleDeletePersonal(ev, e)}
+                      className="w-full flex items-center gap-2 text-left text-sm px-3 py-2.5 rounded-[12px] border-l-[3px] border-dashed border-[var(--text-secondary)] chip-glass text-[var(--text-secondary)]"
+                    >
+                      <StickyNote size={13} className="shrink-0" />
+                      <span className="flex-1 min-w-0 truncate">{ev.title}</span>
+                      <span className="text-[11px]">quitar</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        );
+      })()}
 
       <TaskModal
         isOpen={!!selectedTaskId}

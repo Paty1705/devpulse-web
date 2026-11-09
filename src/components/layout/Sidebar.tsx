@@ -47,7 +47,7 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function Sidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
+export function Sidebar({ onOpenSettings, inDrawer = false, onNavigate }: { onOpenSettings: () => void; inDrawer?: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
   const { user, profile, signOut } = useAuth();
   const [isLeader, setIsLeader] = useState(false);
@@ -78,19 +78,21 @@ export function Sidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
   return (
     <aside
       aria-label="Navegación principal"
-      className="glass-panel glass-iridescent thick-iridescent rounded-[30px] p-4 flex flex-col gap-5 w-full lg:w-[248px] lg:shrink-0 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:overflow-y-auto no-scrollbar"
+      className={`glass-panel glass-iridescent thick-iridescent p-3 flex flex-col gap-3 overflow-y-auto no-scrollbar ${
+        inDrawer ? 'h-full w-[17rem] rounded-[24px]' : 'w-[212px] shrink-0 sticky top-4 h-[calc(100vh-2rem)] rounded-[24px]'
+      }`}
     >
-      <div className="flex items-center gap-3 px-2 pt-2">
-        <span className="tile-3d w-12 h-12 rounded-[16px] flex items-center justify-center" style={{ background: 'linear-gradient(150deg, var(--accent-2), var(--accent))' }}>
-          <Activity size={24} strokeWidth={2.4} className="text-white" />
+      <div className="flex items-center gap-2.5 px-1.5 pt-1.5">
+        <span className="tile-3d w-10 h-10 rounded-[13px] flex items-center justify-center" style={{ background: 'linear-gradient(150deg, var(--accent-2), var(--accent))' }}>
+          <Activity size={20} strokeWidth={2.4} className="text-white" />
         </span>
         <span className="flex flex-col">
-          <span className="font-display font-bold text-xl tracking-tight text-[var(--text-primary)]">DevPulse</span>
+          <span className="font-display font-bold text-lg leading-tight tracking-tight text-[var(--text-primary)]">DevPulse</span>
           <span className="font-mono text-[11px] text-[var(--text-secondary)]">área de sistemas</span>
         </span>
       </div>
 
-      <nav className="flex flex-col gap-1.5">
+      <nav className="flex flex-col gap-0.5">
         {NAV.filter(canSee).map((item) => {
           const Icon = item.icon;
           if (item.soon) {
@@ -99,9 +101,9 @@ export function Sidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
                 key={item.href}
                 aria-disabled="true"
                 title="Disponible en la siguiente fase"
-                className="flex items-center gap-3 min-h-[42px] px-3.5 rounded-[16px] text-[15px] font-medium text-[var(--text-secondary)] opacity-60 cursor-default"
+                className="flex items-center gap-2.5 min-h-[2.6rem] px-3 rounded-[13px] text-sm font-medium text-[var(--text-secondary)] opacity-60 cursor-default"
               >
-                <Icon size={20} />
+                <Icon size={18} />
                 <span className="flex-1">{item.label}</span>
                 <span className="font-mono text-[10px] px-2 py-0.5 rounded-[8px] bg-[var(--bg-page)]">pronto</span>
               </span>
@@ -113,13 +115,14 @@ export function Sidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
               key={item.href}
               href={item.href}
               aria-current={active ? 'page' : undefined}
-              className={`flex items-center gap-3 min-h-[42px] px-3.5 rounded-[16px] text-[15px] transition-colors ${
+              onClick={onNavigate}
+              className={`flex items-center gap-2.5 min-h-[2.6rem] px-3 rounded-[13px] text-sm transition-colors ${
                 active
                   ? 'nav-active font-semibold'
                   : 'font-medium text-[var(--text-primary)] hover:bg-[var(--bg-page)]'
               }`}
             >
-              <Icon size={20} />
+              <Icon size={18} />
               {item.label}
             </Link>
           );
@@ -127,7 +130,7 @@ export function Sidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
       </nav>
 
       {/* Widget estilo terminal con el avance personal */}
-      <div className="[@media(max-height:760px)]:hidden rounded-[20px] p-4 font-mono text-xs leading-relaxed bg-[#0A0F1E]/85 text-[#A9B4CC] shadow-[inset_0_2px_6px_rgba(0,0,0,0.5)]">
+      <div className="[@media(max-height:860px)]:hidden rounded-[16px] p-3 font-mono text-[11px] leading-relaxed bg-[#0A0F1E]/85 text-[#A9B4CC] shadow-[inset_0_2px_6px_rgba(0,0,0,0.5)]">
         <div className="flex gap-1.5 mb-2.5" aria-hidden="true">
           <span className="w-2.5 h-2.5 rounded-full bg-[#F87171]" />
           <span className="w-2.5 h-2.5 rounded-full bg-[#FBBF24]" />
@@ -146,20 +149,23 @@ export function Sidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
         </div>
       </div>
 
-      <div className="mt-auto flex flex-col gap-1.5">
+      <div className="mt-auto flex flex-col gap-0.5">
         <button
-          onClick={onOpenSettings}
-          className="flex items-center gap-3 min-h-[42px] px-3.5 rounded-[16px] text-[15px] font-medium text-[var(--text-primary)] hover:bg-[var(--bg-page)] transition-colors text-left"
+          onClick={() => {
+            onNavigate?.();
+            onOpenSettings();
+          }}
+          className="flex items-center gap-2.5 min-h-[2.6rem] px-3 rounded-[13px] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-page)] transition-colors text-left"
         >
-          <Settings size={20} />
+          <Settings size={18} />
           Preferencias
         </button>
         {user && (
           <button
             onClick={signOut}
-            className="flex items-center gap-3 min-h-[42px] px-3.5 rounded-[16px] text-[15px] font-medium text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-500 transition-colors text-left"
+            className="flex items-center gap-2.5 min-h-[2.6rem] px-3 rounded-[13px] text-sm font-medium text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-500 transition-colors text-left"
           >
-            <LogOut size={20} />
+            <LogOut size={18} />
             Cerrar sesión
           </button>
         )}

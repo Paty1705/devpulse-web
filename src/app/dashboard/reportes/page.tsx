@@ -262,10 +262,10 @@ export default function ReportesPage() {
   const periodLabel = `${rangeFmt.format(parseDate(from))} – ${rangeFmt.format(parseDate(to))}`;
 
   return (
-    <div className="max-w-[1400px] flex flex-col gap-6">
+    <div className="max-w-[1400px] flex flex-col gap-4 sm:gap-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--text-primary)]">
+          <h1 className="text-2xl sm:text-[1.75rem] font-bold tracking-tight text-[var(--text-primary)]">
             {selected && isJefe ? `Reporte de ${shortName(selected.person.email)}` : isJefe ? 'Reporte del equipo' : 'Mi reporte'}
           </h1>
           <p className="text-sm text-[var(--text-secondary)]">{periodLabel}</p>
@@ -306,7 +306,7 @@ export default function ReportesPage() {
             value={personId}
             onChange={(e) => setPersonId(e.target.value)}
             aria-label="Persona"
-            className="ml-auto min-h-11 rounded-[14px] px-3 text-sm font-semibold surface-card border border-[var(--border-card)] text-[var(--text-primary)]"
+            className="w-full sm:w-auto sm:ml-auto min-h-11 rounded-[14px] px-3 text-sm font-semibold surface-card border border-[var(--border-card)] text-[var(--text-primary)]"
           >
             <option value="todos">Todo el equipo</option>
             {people.map((p) => <option key={p.id} value={p.id}>{p.email}</option>)}

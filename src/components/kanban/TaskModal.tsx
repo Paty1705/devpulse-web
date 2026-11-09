@@ -521,19 +521,19 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
                   <CalendarIcon size={12} /> Fecha límite
                 </span>
                 {canEdit ? (
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-[1fr_auto] gap-2">
                     <input
                       type="date"
                       value={dueDateDraft}
                       onChange={(e) => setDueDateDraft(e.target.value)}
-                      className="flex-1 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                      className="min-w-0 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                     />
                     <input
                       type="time"
                       value={dueTimeDraft}
                       onChange={(e) => setDueTimeDraft(e.target.value)}
                       disabled={!dueDateDraft}
-                      className="flex-1 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-50"
+                      className="w-[6.5rem] bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-50"
                     />
                   </div>
                 ) : fullTask.due_date ? (

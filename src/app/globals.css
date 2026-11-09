@@ -341,3 +341,30 @@ body {
   color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+/* ---------------------------------------------------------------------------
+   Escala general. Casi todo usa rem, así que bajar el tamaño base compacta
+   textos, espacios y botones de forma pareja:
+   - teléfono: 15px · laptop (1024–1599px): 14px · pantallas grandes: 16px.
+   --------------------------------------------------------------------------- */
+html {
+  font-size: 15px;
+}
+@media (min-width: 1024px) and (max-width: 1599px) {
+  html {
+    font-size: 14px;
+  }
+}
+@media (min-width: 1600px) {
+  html {
+    font-size: 16px;
+  }
+}
+/* En iPhone, un campo con letra menor a 16px hace zoom al tocarlo. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

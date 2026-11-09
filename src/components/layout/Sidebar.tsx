@@ -25,7 +25,7 @@ const NAV: NavItem[] = [
   { href: '/dashboard/kanban', label: 'Tablero', icon: SquareKanban },
   { href: '/dashboard/agenda', label: 'Agenda', icon: CalendarDays },
   { href: '/dashboard/juntas', label: 'Juntas', icon: Mic },
-  { href: '/dashboard/recursos', label: 'Recursos', icon: BookOpen, soon: true },
+  { href: '/dashboard/recursos', label: 'Recursos', icon: BookOpen },
   { href: '/dashboard/jefatura', label: 'Proyectos', icon: FolderKanban, access: 'manager' },
   { href: '/dashboard/jefatura/versiones', label: 'Versiones', icon: GitBranch, access: 'manager' },
   { href: '/dashboard/jefatura/usuarios', label: 'Usuarios', icon: Users, access: 'jefe' },

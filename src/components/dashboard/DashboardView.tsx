@@ -366,7 +366,15 @@ export function DashboardView({ tasks, projects, progressRows, meeting, resource
         </Card>
 
         <Card className="flex-[1_1_300px] min-w-0">
-          <CardTitle>Recursos recomendados</CardTitle>
+          <CardTitle
+            action={
+              <Link href="/dashboard/recursos" className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                Ver todos
+              </Link>
+            }
+          >
+            Recursos recomendados
+          </CardTitle>
           {dataLoading ? (
             <Empty>Cargando…</Empty>
           ) : resources.length === 0 ? (
@@ -398,7 +406,7 @@ export function DashboardView({ tasks, projects, progressRows, meeting, resource
                         {body}
                       </a>
                     ) : (
-                      <span className="chip-glass flex items-center gap-3 p-2.5 rounded-[18px]">{body}</span>
+                      <Link href="/dashboard/recursos" className="chip-glass flex items-center gap-3 p-2.5 rounded-[18px] hover:bg-[var(--bg-card-hover)] transition-colors">{body}</Link>
                     )}
                   </li>
                 );

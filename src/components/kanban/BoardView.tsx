@@ -103,7 +103,7 @@ export function BoardView({
     <div className="flex flex-col gap-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--text-primary)]">Tablero</h1>
+          <h1 className="text-2xl sm:text-[1.75rem] font-bold tracking-tight text-[var(--text-primary)]">Tablero</h1>
           <p className="text-[var(--text-secondary)] text-sm">
             {loading ? 'Cargando tareas…' : shown === total ? `${total} tareas` : `${shown} de ${total} tareas con estos filtros`}
           </p>
@@ -137,12 +137,13 @@ export function BoardView({
         <div className="glass-panel rounded-[24px] py-16 text-center text-[var(--text-secondary)]">Cargando tareas…</div>
       ) : (
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="overflow-x-auto pb-3 -mx-1 px-1">
-            <div className="grid grid-cols-5 gap-4 min-w-[1180px]">
+          <div className="overflow-x-auto pb-3 -mx-1 px-1 snap-x snap-mandatory sm:snap-none">
+            {/* Teléfono: una columna casi completa por vista, deslizando. */}
+            <div className="grid grid-flow-col auto-cols-[85%] sm:grid-flow-row sm:auto-cols-auto sm:grid-cols-5 gap-3 sm:min-w-[64rem]">
               {COLUMN_DEFS.map((def) => {
                 const list = visible[def.id] ?? [];
                 return (
-                  <section key={def.id} className="relative rounded-[24px] p-3.5 flex flex-col gap-3 min-h-[60vh]">
+                  <section key={def.id} className="relative rounded-[20px] p-3 flex flex-col gap-2.5 min-h-[60vh] snap-start">
                     {/* El vidrio va en una capa hermana y no envuelve a las tarjetas:
                         backdrop-filter en un ancestro rompe la posición de la
                         tarjeta mientras se arrastra (crea un nuevo bloque
@@ -151,7 +152,7 @@ export function BoardView({
                     <div className="relative flex items-center justify-between gap-2 px-1 pt-1">
                       <span className="flex items-center gap-2 min-w-0">
                         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: def.dot, boxShadow: `0 0 8px ${def.dot}` }} />
-                        <h2 className="text-[15px] font-semibold text-[var(--text-primary)] truncate">{def.title}</h2>
+                        <h2 className="text-sm font-semibold text-[var(--text-primary)] truncate">{def.title}</h2>
                       </span>
                       <span className="chip-glass font-mono text-xs font-bold px-2 py-0.5 rounded-[8px] text-[var(--text-primary)]">{list.length}</span>
                     </div>

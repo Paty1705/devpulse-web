@@ -83,11 +83,11 @@ export default function VersionesPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-12">
-      <header className="mb-8 flex justify-between items-end flex-wrap gap-4">
+    <div className="max-w-[1400px] space-y-4 pb-8">
+      <header className="mb-2 flex justify-between items-end flex-wrap gap-3">
         <div className="flex flex-col gap-2">
           <div>
-            <h1 className="text-3xl font-bold text-[var(--text-primary)]">Control de Versiones</h1>
+            <h1 className="text-2xl sm:text-[1.75rem] font-bold text-[var(--text-primary)]">Control de Versiones</h1>
             <p className="text-[var(--text-secondary)] mt-1">
               Auditoría de ramas Git creadas desde DevPulse: quién, en qué proyecto y cuándo.
             </p>
@@ -108,7 +108,7 @@ export default function VersionesPage() {
         )}
       </header>
 
-      <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[20px] shadow-[var(--shadow-subtle)] overflow-hidden">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[20px] shadow-[var(--shadow-subtle)] overflow-x-auto">
         {filteredLogs.length === 0 ? (
           <div className="text-center py-12 text-[var(--text-secondary)]">
             <GitBranch size={48} className="mx-auto mb-4 opacity-50" />
@@ -116,7 +116,7 @@ export default function VersionesPage() {
             <p className="text-sm mt-1 opacity-70">Se registran automáticamente al crear una tarea o al usar &quot;Crear rama en GitHub&quot;.</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[40rem] text-sm">
             <thead>
               <tr className="bg-[var(--bg-column)] border-b border-[var(--border-column)] text-left text-[var(--text-secondary)] uppercase text-xs tracking-wider">
                 <th className="px-4 py-3">Rama</th>

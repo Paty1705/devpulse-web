@@ -61,7 +61,7 @@ const meetingTime = new Intl.DateTimeFormat('es-MX', { weekday: 'long', day: 'nu
 
 function Card({ children, className = '', thick = false }: { children: ReactNode; className?: string; thick?: boolean }) {
   return (
-    <section className={`glass-panel glass-iridescent ${thick ? 'thick-iridescent' : ''} rounded-[28px] p-6 ${className}`}>
+    <section className={`glass-panel glass-iridescent ${thick ? 'thick-iridescent' : ''} rounded-[22px] p-4 sm:p-5 ${className}`}>
       {children}
     </section>
   );
@@ -157,12 +157,13 @@ export function DashboardView({ tasks, projects, progressRows, meeting, resource
   return (
     <div className="max-w-[1400px] flex flex-col gap-5">
       {/* Fila 1: bienvenida + KPIs */}
-      <div className="flex flex-wrap gap-5">
-        <Card thick className="flex-[2_1_420px] flex flex-wrap items-center gap-6 overflow-hidden">
-          <Mascot kind={mascot} size={160} />
-          <div className="flex-1 min-w-[220px] flex flex-col gap-2.5">
-            <h1 className="text-3xl font-bold tracking-tight text-[var(--text-primary)]">{greeting()}</h1>
-            <p className="text-[15px] leading-relaxed text-[var(--text-primary)]/85">{summary}</p>
+      <div className="flex flex-wrap gap-4">
+        <Card thick className="flex-[2_1_380px] flex items-center gap-4 sm:gap-5 overflow-hidden">
+          <Mascot kind={mascot} size={76} className="sm:hidden" />
+          <Mascot kind={mascot} size={116} className="hidden sm:block" />
+          <div className="flex-1 min-w-0 flex flex-col gap-2">
+            <h1 className="text-2xl sm:text-[1.75rem] font-bold tracking-tight text-[var(--text-primary)]">{greeting()}</h1>
+            <p className="text-sm leading-relaxed text-[var(--text-primary)]/85">{summary}</p>
             <div className="flex flex-wrap gap-2 pt-1">
               <span className="chip-glass font-mono text-xs px-2.5 py-1.5 rounded-[10px] text-[var(--text-primary)]">{view.dueWeek.length} esta semana</span>
               <span className="chip-glass font-mono text-xs px-2.5 py-1.5 rounded-[10px] text-[var(--text-primary)]">{view.inReview.length} en pruebas</span>
@@ -215,7 +216,7 @@ export function DashboardView({ tasks, projects, progressRows, meeting, resource
       </div>
 
       {/* Fila 2: gráfica + mis tareas */}
-      <div className="flex flex-wrap gap-5">
+      <div className="flex flex-wrap gap-4">
         <Card className="flex-[3_1_460px] min-w-0">
           <CardTitle>
             <span className="flex flex-col">
@@ -275,7 +276,7 @@ export function DashboardView({ tasks, projects, progressRows, meeting, resource
       </div>
 
       {/* Fila 3: junta + avance por proyecto + recursos */}
-      <div className="flex flex-wrap gap-5">
+      <div className="flex flex-wrap gap-4">
         <Card thick className="flex-[1_1_300px] min-w-0 flex flex-col">
           <CardTitle
             action={meeting && (
@@ -431,9 +432,9 @@ function Kpi({ label, value, detail, detailStyle, icon: Icon, tile, loading }: {
   loading: boolean;
 }) {
   return (
-    <section className="glass-panel glass-iridescent flex-[1_1_180px] rounded-[28px] p-5 flex flex-col gap-3.5">
+    <section className="glass-panel glass-iridescent flex-[1_1_150px] rounded-[22px] p-4 flex flex-col gap-2.5">
       <h2 className="font-sans text-sm font-semibold text-[var(--text-secondary)]">{label}</h2>
-      <span className="tile-3d w-[52px] h-[52px] rounded-[16px] flex items-center justify-center" style={{ background: tile }}>
+      <span className="tile-3d w-10 h-10 rounded-[13px] flex items-center justify-center" style={{ background: tile }}>
         <Icon size={24} className="text-white" strokeWidth={2.2} />
       </span>
       <span className="font-display text-[40px] font-bold leading-none text-[var(--text-primary)]">{loading ? '—' : value}</span>

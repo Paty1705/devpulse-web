@@ -77,9 +77,9 @@ export default function UsuariosPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-[var(--text-primary)]">Usuarios</h1>
+    <div className="max-w-5xl space-y-5 pb-8">
+      <header className="mb-2">
+        <h1 className="text-2xl sm:text-[1.75rem] font-bold text-[var(--text-primary)]">Usuarios</h1>
         <p className="text-[var(--text-secondary)] mt-1">
           Cuentas nuevas creadas por Google/GitHub quedan pendientes hasta que las apruebes.
         </p>
@@ -130,8 +130,8 @@ export default function UsuariosPage() {
 
       <section>
         <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-3">Todos los usuarios</h2>
-        <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[20px] shadow-[var(--shadow-subtle)] overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[20px] shadow-[var(--shadow-subtle)] overflow-x-auto">
+          <table className="w-full min-w-[36rem] text-sm">
             <thead>
               <tr className="bg-[var(--bg-column)] border-b border-[var(--border-column)] text-left text-[var(--text-secondary)] uppercase text-xs tracking-wider">
                 <th className="px-4 py-3">Email</th>

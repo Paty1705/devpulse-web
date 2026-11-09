@@ -55,7 +55,7 @@ export default function Home() {
         {/* Lado de acceso */}
         <div className="flex-[1_1_320px] flex flex-col gap-4">
           <div className="flex flex-col gap-1 mb-2">
-            <h1 className="text-3xl font-bold tracking-tight text-[var(--text-primary)]">Bienvenido</h1>
+            <h1 className="text-2xl sm:text-[1.75rem] font-bold tracking-tight text-[var(--text-primary)]">Bienvenido</h1>
             <p className="text-sm text-[var(--text-secondary)]">Inicia sesión para continuar.</p>
           </div>
 

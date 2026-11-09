@@ -1,12 +1,13 @@
 'use client';
 
-import { X, Copy, Check, FileCode, Users, Save, ShieldCheck, ShieldX, Rocket, AlertTriangle, Calendar as CalendarIcon, GitBranch, GitPullRequest } from 'lucide-react';
+import { X, Copy, Check, FileCode, Users, Save, ShieldCheck, ShieldX, Rocket, AlertTriangle, Calendar as CalendarIcon, GitBranch, GitPullRequest, Repeat } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { branchNameForTask } from '@/lib/github';
 import { TaskProgressSection } from '@/components/kanban/TaskProgressSection';
+import { describeRecurrence, formatShort, type Frequency } from '@/lib/recurrence';
 
 type FullTask = {
   id: string;
@@ -22,6 +23,7 @@ type FullTask = {
   acceptance_criteria: string[] | null;
   due_date: string | null;
   project_id: string | null;
+  recurrence?: { frequency: Frequency; every_n: number; starts_on: string | null; next_run: string; active: boolean } | null;
 };
 
 type PrStatus = { state: 'open' | 'closed'; merged: boolean; draft: boolean };
@@ -104,7 +106,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
     setLoading(true);
     const { data, error } = await supabase
       .from('tasks')
-      .select('id, title, description, status, is_locked, locked_by, requires_sql, sql_script, pr_url, assigned_to, acceptance_criteria, due_date, project_id')
+      .select('id, title, description, status, is_locked, locked_by, requires_sql, sql_script, pr_url, assigned_to, acceptance_criteria, due_date, project_id, recurrence:task_recurrences(frequency, every_n, starts_on, next_run, active)')
       .eq('id', taskId)
       .single();
 
@@ -114,7 +116,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
       return;
     }
 
-    setFullTask(data as FullTask);
+    setFullTask(data as unknown as FullTask);
     setSqlDraft(data.sql_script || '');
     setPrUrlDraft(data.pr_url || '');
     const { date, time } = toLocalDateTimeParts(data.due_date);
@@ -401,6 +403,15 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
         <div className="flex-1 overflow-y-auto p-6 flex flex-col md:flex-row gap-8">
 
           <div className="flex-1 space-y-6">
+            {fullTask.recurrence && (
+              <div className="surface-card border border-[var(--border-card)] rounded-[12px] px-4 py-3 text-sm text-[var(--text-primary)] flex items-center gap-2">
+                <Repeat size={16} className="shrink-0 text-[var(--text-secondary)]" />
+                <span>
+                  {describeRecurrence(fullTask.recurrence.frequency, fullTask.recurrence.every_n, fullTask.recurrence.starts_on ?? fullTask.recurrence.next_run)}
+                  {fullTask.recurrence.active ? ` · la siguiente se crea el ${formatShort(fullTask.recurrence.next_run)}` : ' · en pausa'}
+                </span>
+              </div>
+            )}
             {fullTask.status !== 'completed' && fullTask.due_date && new Date(fullTask.due_date) < new Date(new Date().toDateString()) && (
               <div className="bg-red-900/10 text-red-500 border border-red-500/30 rounded-[12px] px-4 py-3 text-sm font-bold flex items-center gap-2">
                 <AlertTriangle size={16} /> Tarea atrasada: venció el {new Date(fullTask.due_date).toLocaleDateString()}.

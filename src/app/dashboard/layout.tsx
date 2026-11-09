@@ -18,9 +18,9 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen p-4 md:p-6 flex flex-col lg:flex-row gap-6 items-start">
-      <Sidebar onOpenSettings={openSettings} />
+      <div className="contents print:hidden"><Sidebar onOpenSettings={openSettings} /></div>
       <div className="flex-1 min-w-0 w-full flex flex-col gap-6">
-      <Topbar onOpenSettings={openSettings} />
+      <div className="contents print:hidden"><Topbar onOpenSettings={openSettings} /></div>
       <main className="flex-1">
         {!loading && profile?.status === 'pending' ? (
           <div className="max-w-lg mx-auto mt-16 text-center bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[8px] p-8 shadow-[var(--shadow-subtle)]">

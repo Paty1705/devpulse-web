@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { TaskModal } from '@/components/kanban/TaskModal';
 import { NewTaskModal } from '@/components/kanban/NewTaskModal';
+import { RecurrencesModal } from '@/components/kanban/RecurrencesModal';
 import { BoardView, COLUMN_DEFS, type BoardColumn, type BoardTask } from '@/components/kanban/BoardView';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { supabase } from '@/lib/supabase';
@@ -19,6 +20,7 @@ export function KanbanBoard() {
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
+  const [isRecurrencesOpen, setIsRecurrencesOpen] = useState(false);
   const [leaderProjectIds, setLeaderProjectIds] = useState<Set<string>>(new Set());
   const [projectNames, setProjectNames] = useState<Record<string, string>>({});
   const [testDates, setTestDates] = useState<Record<string, string>>({});
@@ -160,10 +162,12 @@ export function KanbanBoard() {
         canModify={canModifyTask}
         canCreate={!!user && profile?.status === 'approved'}
         onCreate={() => setIsNewTaskModalOpen(true)}
+        onOpenRecurrences={() => setIsRecurrencesOpen(true)}
         onOpen={setSelectedTask}
         onMove={moveTask}
       />
 
+      <RecurrencesModal isOpen={isRecurrencesOpen} onClose={() => setIsRecurrencesOpen(false)} onChanged={fetchTasks} />
       <TaskModal isOpen={!!selectedTask} onClose={() => setSelectedTask(null)} task={selectedTask} onUpdated={fetchTasks} />
       <NewTaskModal
         isOpen={isNewTaskModalOpen}

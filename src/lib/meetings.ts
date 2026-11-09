@@ -21,7 +21,39 @@ export type Meeting = {
   transcript: string | null;
   ai_status: AiStatus;
   ai_error: string | null;
+  series_id?: string | null;
+  reminder_minutes?: number | null;
+  google_event_id?: string | null;
+  video_url?: string | null;
 };
+
+export type MeetingSeries = {
+  id: string;
+  title: string;
+  starts_at: string;
+  frequency: 'diaria' | 'semanal' | 'mensual';
+  every_n: number;
+  end_date: string | null;
+  attendee_ids: string[];
+  reminder_minutes: number | null;
+  google_event_id: string | null;
+  video_url: string | null;
+  active: boolean;
+};
+
+export const REMINDER_OPTIONS: { value: number | null; label: string }[] = [
+  { value: null, label: 'Sin recordatorio' },
+  { value: 5, label: '5 min antes' },
+  { value: 10, label: '10 min antes' },
+  { value: 15, label: '15 min antes' },
+  { value: 30, label: '30 min antes' },
+  { value: 60, label: '1 hora antes' },
+  { value: 1440, label: '1 día antes' },
+];
+
+export function reminderLabel(minutes: number | null | undefined) {
+  return REMINDER_OPTIONS.find((o) => o.value === (minutes ?? null))?.label ?? `${minutes} min antes`;
+}
 
 export type PersonRef = { id: string; email: string };
 

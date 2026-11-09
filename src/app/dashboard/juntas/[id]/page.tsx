@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, FileText, Play, Square, XCircle } from 'lucide-react';
+import { Bell, ChevronLeft, FileText, Play, Repeat, Square, Video, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { AvatarStack } from '@/components/juntas/Avatar';
@@ -12,7 +12,9 @@ import { ProposalsPanel, type ProjectOption } from '@/components/juntas/Proposal
 import { RecorderBar } from '@/components/juntas/RecorderBar';
 import { ReviewPanel } from '@/components/juntas/ReviewPanel';
 import { extensionFor, useRecorder } from '@/components/juntas/useRecorder';
-import { meetingDateTime, STATUS_LABEL, statusStyle, type Meeting, type MinuteItem, type PersonRef, type Proposal } from '@/lib/meetings';
+import { meetingDateTime, REMINDER_OPTIONS, reminderLabel, STATUS_LABEL, statusStyle, toDateInput, type Meeting, type MeetingSeries, type MinuteItem, type PersonRef, type Proposal } from '@/lib/meetings';
+import { describeRecurrence } from '@/lib/recurrence';
+import { cancelMeetingEvent, endRecurringEvent } from '@/lib/calendar';
 
 // Límite de subida de Supabase Storage en el plan gratuito.
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
@@ -35,6 +37,8 @@ export default function MeetingRoomPage() {
   const [processing, setProcessing] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [series, setSeries] = useState<MeetingSeries | null>(null);
+  const [confirmStop, setConfirmStop] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push('/');
@@ -47,6 +51,12 @@ export default function MeetingRoomPage() {
       return;
     }
     setMeeting(data as Meeting);
+    if (data.series_id) {
+      const { data: s } = await supabase.from('meeting_series').select('*').eq('id', data.series_id).maybeSingle();
+      setSeries((s as MeetingSeries | null) ?? null);
+    } else {
+      setSeries(null);
+    }
   }, [id]);
 
   const fetchItems = useCallback(async () => {
@@ -159,6 +169,42 @@ export default function MeetingRoomPage() {
     if (status === 'terminada') values.ended_at = new Date().toISOString();
     const { error: err } = await supabase.from('meetings').update(values).eq('id', id);
     if (err) setError('No se pudo cambiar el estado de la junta.');
+    // Cancelada: también se quita de Google Calendar (avisa a los invitados).
+    if (!err && status === 'cancelada' && meeting) {
+      const eventId = meeting.google_event_id ?? series?.google_event_id;
+      if (eventId) {
+        const ok = await cancelMeetingEvent(eventId, meeting.google_event_id ? undefined : new Date(meeting.scheduled_at));
+        if (!ok) setError('La junta se canceló aquí, pero no se pudo quitar de Google Calendar (inicia sesión con Google o cancélala allá).');
+      }
+    }
+    await fetchMeeting();
+  };
+
+  const updateReminder = async (minutes: number | null) => {
+    setError(null);
+    const { error: err } = await supabase.from('meetings').update({ reminder_minutes: minutes }).eq('id', id);
+    if (err) setError('No se pudo cambiar el recordatorio.');
+    await fetchMeeting();
+  };
+
+  // Deja esta junta como la última de la serie.
+  const stopSeries = async () => {
+    if (!series || !meeting) return;
+    setConfirmStop(false);
+    setError(null);
+    const { error: err } = await supabase.from('meeting_series').update({ active: false }).eq('id', series.id);
+    if (err) {
+      setError('No se pudo detener la repetición.');
+      return;
+    }
+    if (series.google_event_id) {
+      const ok = await endRecurringEvent(
+        series.google_event_id,
+        { frequency: series.frequency, everyN: series.every_n, start: new Date(series.starts_at) },
+        toDateInput(new Date(meeting.scheduled_at)),
+      );
+      if (!ok) setError('Ya no se repite aquí, pero no se pudo actualizar Google Calendar (inicia sesión con Google o edítala allá).');
+    }
     await fetchMeeting();
   };
 
@@ -194,12 +240,54 @@ export default function MeetingRoomPage() {
               <span className="font-mono text-xs text-[var(--text-secondary)] first-letter:uppercase">{meetingDateTime.format(new Date(meeting.scheduled_at))}</span>
             </span>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[var(--text-primary)] truncate">{meeting.title}</h1>
+            <span className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
+              {series && (
+                <span className="chip-glass px-2 py-1 rounded-[8px] inline-flex items-center gap-1.5 text-[var(--text-primary)]">
+                  <Repeat size={12} />
+                  {series.active ? describeRecurrence(series.frequency, series.every_n, toDateInput(new Date(series.starts_at))) : 'Última de la serie'}
+                </span>
+              )}
+              {meeting.status === 'programada' && (
+                isJefe ? (
+                  <label className="chip-glass pl-2 pr-1 py-0.5 rounded-[8px] inline-flex items-center gap-1.5 text-[var(--text-primary)]">
+                    <Bell size={12} />
+                    <span className="sr-only">Recordatorio</span>
+                    <select
+                      value={meeting.reminder_minutes ?? ''}
+                      onChange={(e) => updateReminder(e.target.value === '' ? null : Number(e.target.value))}
+                      className="bg-transparent text-xs font-semibold outline-none cursor-pointer"
+                    >
+                      {REMINDER_OPTIONS.map((o) => <option key={o.label} value={o.value ?? ''}>{o.label}</option>)}
+                    </select>
+                  </label>
+                ) : (
+                  <span className="chip-glass px-2 py-1 rounded-[8px] inline-flex items-center gap-1.5 text-[var(--text-primary)]">
+                    <Bell size={12} /> {reminderLabel(meeting.reminder_minutes)}
+                  </span>
+                )
+              )}
+              {isJefe && series?.active && (
+                confirmStop ? (
+                  <span className="inline-flex items-center gap-1">
+                    <button onClick={stopSeries} className="px-2 py-1 rounded-[8px] font-semibold bg-red-500/15 text-red-500 hover:bg-red-500/25">Sí, que esta sea la última</button>
+                    <button onClick={() => setConfirmStop(false)} className="px-2 py-1 rounded-[8px] font-semibold hover:bg-[var(--bg-card-hover)]">No</button>
+                  </span>
+                ) : (
+                  <button onClick={() => setConfirmStop(true)} className="px-2 py-1 rounded-[8px] font-semibold hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]">Dejar de repetir</button>
+                )
+              )}
+            </span>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <AvatarStack emails={attendeeEmails} currentEmail={user.email} max={6} />
           <span className="text-[13px] text-[var(--text-secondary)]">{attendees.length} asistentes</span>
+          {meeting.video_url && (meeting.status === 'programada' || meeting.status === 'en_curso') && (
+            <a href={meeting.video_url} target="_blank" rel="noopener noreferrer" className="chip-glass min-h-11 px-4 rounded-[14px] text-sm font-semibold border border-[var(--border-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] inline-flex items-center gap-2">
+              <Video size={16} /> Unirse por Meet
+            </a>
+          )}
           {isJefe && meeting.status === 'programada' && (
             <>
               <button onClick={() => setStatus('cancelada')} className="chip-glass min-h-11 px-4 rounded-[14px] text-sm font-semibold border border-[var(--border-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] inline-flex items-center gap-2">

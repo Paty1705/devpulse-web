@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarClock, ChevronRight, FileAudio, Mic, Plus, Sparkles } from 'lucide-react';
+import { Bell, CalendarClock, ChevronRight, FileAudio, Mic, Plus, Repeat, Sparkles, Video } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { AvatarStack } from '@/components/juntas/Avatar';
@@ -142,6 +142,21 @@ function MeetingCard({ meeting: m, currentEmail }: { meeting: MeetingRow; curren
       </span>
 
       <span className="flex flex-wrap gap-2">
+        {m.series_id && (
+          <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
+            <Repeat size={11} /> se repite
+          </span>
+        )}
+        {m.video_url && (m.status === 'programada' || live) && (
+          <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
+            <Video size={11} /> Meet
+          </span>
+        )}
+        {m.status === 'programada' && m.reminder_minutes != null && (
+          <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1" title="Recordatorio">
+            <Bell size={11} /> {m.reminder_minutes < 60 ? `${m.reminder_minutes} min` : m.reminder_minutes === 1440 ? '1 día' : `${m.reminder_minutes / 60} h`}
+          </span>
+        )}
         <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)]">{m.minutes.length} en minuta</span>
         {m.recording_path && (
           <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">

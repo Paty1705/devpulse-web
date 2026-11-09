@@ -79,91 +79,238 @@
 }
 
 /* =========================================
-   ACCENTS
+   ACENTOS
+   --accent, --accent-2 y --accent-contrast los pone
+   applyPreferencesToDOM (src/lib/theme.ts) según el preset
+   elegido o los colores personalizados. Aquí solo se derivan
+   los tokens que ya usa toda la app.
 ========================================= */
-
-/* Neón (Cian) */
-:root[data-accent="neon"] {
-  --btn-primary-bg: #11DBDC;
-  --btn-primary-hover: #D15EEE;
-  --border-card: rgba(17, 219, 220, 0.2);
-}
-:root.dark[data-accent="neon"] {
-  --btn-primary-bg: #11DBDC;
-  --btn-primary-hover: #D15EEE;
-  --border-card: rgba(17, 219, 220, 0.25);
-  --badge-bg: rgba(17, 219, 220, 0.15);
-  --badge-text: #11DBDC;
+:root {
+  --accent: #4F46E5;
+  --accent-2: #06B6D4;
+  --accent-contrast: #FFFFFF;
+  --glass-blur: 22px;
+  --iridescence: 0.8;
+  --page-base: var(--bg-page);
 }
 
-/* Magenta Orquídea */
-:root[data-accent="magenta"] {
-  --btn-primary-bg: #D15EEE;
-  --btn-primary-hover: #11DBDC;
-  --border-card: rgba(209, 94, 238, 0.2);
+:root[data-accent] {
+  --btn-primary-bg: var(--accent);
+  --btn-primary-hover: var(--accent-2);
+  --btn-primary-text: var(--accent-contrast);
+  --border-card: color-mix(in srgb, var(--accent) 22%, transparent);
+  --badge-bg: color-mix(in srgb, var(--accent) 12%, transparent);
+  --badge-text: color-mix(in srgb, var(--accent) 80%, #000);
+  --shadow-hover: 0 10px 20px -5px color-mix(in srgb, var(--accent) 22%, transparent);
 }
-:root.dark[data-accent="magenta"] {
-  --btn-primary-bg: #D15EEE;
-  --btn-primary-hover: #11DBDC;
-  --border-card: rgba(209, 94, 238, 0.25);
-  --badge-bg: rgba(209, 94, 238, 0.15);
-  --badge-text: #D15EEE;
-}
-
-/* Azul Eléctrico */
-:root[data-accent="azul"] {
-  --btn-primary-bg: #2983D0;
-  --btn-primary-hover: #515ADA;
-  --border-card: rgba(41, 131, 208, 0.2);
-}
-:root.dark[data-accent="azul"] {
-  --btn-primary-bg: #2983D0;
-  --btn-primary-hover: #515ADA;
-  --border-card: rgba(41, 131, 208, 0.25);
-  --badge-bg: rgba(41, 131, 208, 0.15);
-  --badge-text: #2983D0;
+:root.dark[data-accent] {
+  --border-card: color-mix(in srgb, var(--accent) 28%, transparent);
+  --badge-bg: color-mix(in srgb, var(--accent) 16%, transparent);
+  --badge-text: color-mix(in srgb, var(--accent) 70%, #fff);
 }
 
-/* Índigo / Violeta */
-:root[data-accent="indigo"] {
-  --btn-primary-bg: #515ADA;
-  --btn-primary-hover: #6942D7;
-  --border-card: rgba(81, 90, 218, 0.2);
+/* =========================================
+   SUPERFICIE: VIDRIO
+   Se activa con <html data-surface="vidrio">. Reemplaza los
+   tokens de superficie por versiones translúcidas y agrega
+   desenfoque y borde iridiscente a tarjetas y columnas, sin
+   tener que tocar cada componente.
+========================================= */
+:root[data-surface="vidrio"] {
+  --page-base: #E9EEF8;
+  --bg-page: rgba(255, 255, 255, 0.55);
+  --bg-navbar: rgba(255, 255, 255, 0.45);
+  --bg-column: rgba(255, 255, 255, 0.32);
+  --bg-card: rgba(255, 255, 255, 0.5);
+  --bg-card-hover: rgba(255, 255, 255, 0.7);
+  --bg-solid: rgba(250, 251, 255, 0.92);
+  --border-subtle: rgba(255, 255, 255, 0.6);
+  --border-column: rgba(255, 255, 255, 0.6);
+  --border-card: rgba(255, 255, 255, 0.75);
+  --text-primary: #121933;
+  --text-secondary: #47506A;
+  --glass-highlight: rgba(255, 255, 255, 0.9);
+  --shadow-subtle: 0 10px 30px rgba(40, 50, 110, 0.12);
+  --shadow-hover: 0 16px 36px rgba(40, 50, 110, 0.18);
+  --card-bevel: rgba(255, 255, 255, 0.8);
+  --blob-opacity: 0.55;
 }
-:root.dark[data-accent="indigo"] {
-  --btn-primary-bg: #515ADA;
-  --btn-primary-hover: #6942D7;
-  --border-card: rgba(81, 90, 218, 0.25);
-  --badge-bg: rgba(81, 90, 218, 0.15);
-  --badge-text: #A5B4FC;
+:root.dark[data-surface="vidrio"] {
+  --page-base: #0A0F1E;
+  --bg-page: rgba(255, 255, 255, 0.06);
+  --bg-navbar: rgba(10, 15, 30, 0.45);
+  --bg-column: rgba(255, 255, 255, 0.04);
+  --bg-card: rgba(255, 255, 255, 0.07);
+  --bg-card-hover: rgba(255, 255, 255, 0.11);
+  --bg-solid: rgba(16, 20, 36, 0.92);
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-column: rgba(255, 255, 255, 0.1);
+  --border-card: rgba(255, 255, 255, 0.14);
+  --text-primary: #EEF2FF;
+  --text-secondary: #A9B4CC;
+  --glass-highlight: rgba(255, 255, 255, 0.18);
+  --shadow-subtle: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --shadow-hover: 0 16px 36px rgba(0, 0, 0, 0.55);
+  --card-bevel: rgba(255, 255, 255, 0.12);
+  --blob-opacity: 0.4;
 }
 
-/* Menta Teal */
-:root[data-accent="mint"] {
-  --btn-primary-bg: #3E9B94;
-  --btn-primary-hover: #88C9C4;
-  --border-card: rgba(62, 155, 148, 0.2);
+/* Fondo: color base + manchas de los acentos, fijas detrás de todo.
+   Sin ellas el vidrio no tiene nada que desenfocar y se ve plano. */
+:root[data-surface="vidrio"] {
+  background-color: var(--page-base);
 }
-:root.dark[data-accent="mint"] {
-  --btn-primary-bg: #3E9B94;
-  --btn-primary-hover: #88C9C4;
-  --border-card: rgba(62, 155, 148, 0.25);
-  --badge-bg: rgba(62, 155, 148, 0.15);
-  --badge-text: #88C9C4;
+:root[data-surface="vidrio"] body {
+  background-color: transparent;
+}
+:root[data-surface="vidrio"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--blob-opacity);
+  background:
+    radial-gradient(40vmax 40vmax at 0% 0%, var(--accent), transparent 70%),
+    radial-gradient(36vmax 36vmax at 100% 45%, var(--accent-2), transparent 70%),
+    radial-gradient(30vmax 30vmax at 45% 105%, #F0ABFC, transparent 70%);
 }
 
-/* Ámbar Solar */
-:root[data-accent="amber"] {
-  --btn-primary-bg: #F59E0B;
-  --btn-primary-hover: #D97706;
-  --border-card: rgba(245, 158, 11, 0.2);
+/* Desenfoque en las tarjetas y la navegación. --bg-column (encabezados de
+   modales, bloques internos, botones secundarios) queda solo translúcido:
+   ponerle desenfoque y sombra a cada uno es ruido visual y cuesta rendimiento. */
+:root[data-surface="vidrio"] :is([class~="bg-[var(--bg-card)]"], [class~="bg-[var(--bg-navbar)]"]) {
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  box-shadow: var(--shadow-subtle), inset 0 1px 0 var(--glass-highlight);
 }
-:root.dark[data-accent="amber"] {
-  --btn-primary-bg: #F59E0B;
-  --btn-primary-hover: #D97706;
-  --border-card: rgba(245, 158, 11, 0.25);
-  --badge-bg: rgba(245, 158, 11, 0.15);
-  --badge-text: #FBBF24;
+
+/* Modales y menús flotantes: casi opacos para que el texto se lea
+   sobre el oscurecido del overlay o sobre el contenido de abajo. */
+:root[data-surface="vidrio"] :is([class~="fixed"] > [class~="bg-[var(--bg-card)]"], [class~="absolute"][class~="bg-[var(--bg-card)]"]) {
+  background-color: var(--bg-solid);
+}
+
+/* Borde iridiscente en tarjetas (no en elementos posicionados, para no
+   romper menús ni overlays). Usa el mismo radio que la tarjeta. */
+:root[data-surface="vidrio"] [class~="bg-[var(--bg-card)]"]:not([class~="absolute"]):not([class~="fixed"]):not([class~="sticky"]) {
+  position: relative;
+}
+:root[data-surface="vidrio"] [class~="bg-[var(--bg-card)]"]:not([class~="absolute"]):not([class~="fixed"]):not([class~="sticky"])::before,
+.glass-iridescent::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from 210deg, var(--accent), #5EEAD4, #F0ABFC, #FDE68A, var(--accent-2), var(--accent));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: var(--iridescence);
+  pointer-events: none;
+}
+
+/* Selectores con ~= (palabra exacta en class): así "hover:bg-[...]" o
+   "bg-[...]/10" no cuentan como si el elemento tuviera ese fondo. */
+
+/* Botones principales: degradado entre los dos acentos. */
+:root[data-surface="vidrio"] [class~="bg-[var(--btn-primary-bg)]"] {
+  background-image: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 30%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Utilidad para componentes nuevos (ej. la tarjeta de bienvenida). */
+.glass-panel {
+  position: relative;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-card);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  box-shadow: var(--shadow-subtle), inset 0 1px 0 var(--glass-highlight, transparent);
+}
+:root:not([data-surface="vidrio"]) .glass-iridescent::before {
+  display: none;
+}
+
+/* =========================================
+   PIEZAS DEL REDISEÑO
+========================================= */
+.font-display {
+  font-family: var(--font-display), var(--font-geist-sans), system-ui, sans-serif;
+}
+h1, h2, h3 {
+  font-family: var(--font-display), var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Ícono "de plastilina": volumen con sombras internas y sombra proyectada. */
+.tile-3d {
+  box-shadow:
+    inset -3px -4px 8px rgba(0, 0, 0, 0.22),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.45),
+    0 8px 18px color-mix(in srgb, var(--accent) 25%, rgba(0, 0, 0, 0.15));
+}
+
+/* Borde iridiscente más grueso para piezas protagonistas (sidebar, bienvenida). */
+.thick-iridescent::before {
+  padding: 3px !important;
+  opacity: min(1, calc(var(--iridescence) + 0.2)) !important;
+}
+
+/* Barra lateral: scroll sin barra visible en pantallas bajas. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Elemento activo de la navegación. */
+.nav-active {
+  color: var(--accent-contrast);
+  background-image: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 30%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+/* Fondo de tarjeta para piezas pequeñas (chips, barras, campos) dentro de
+   otra tarjeta: mismo color, pero sin el desenfoque ni el borde iridiscente
+   que la regla global aplica a [class~="bg-[var(--bg-card)]"]. */
+.surface-card {
+  background-color: var(--bg-card);
+}
+:root[data-surface="vidrio"] .surface-card {
+  background-color: rgba(255, 255, 255, 0.78);
+}
+:root.dark[data-surface="vidrio"] .surface-card {
+  background-color: rgba(255, 255, 255, 0.09);
+}
+
+/* Fondo "chip": vidrio más claro dentro de una tarjeta. */
+.chip-glass {
+  background-color: var(--bg-page);
+  box-shadow: inset 0 1px 0 var(--glass-highlight, transparent);
+}
+
+/* Prioridades: claro y oscuro con contraste suficiente. */
+:root {
+  --prio-alta-bg: #FDE3D3; --prio-alta-text: #9A3412;
+  --prio-media-bg: #FEF3C7; --prio-media-text: #92400E;
+  --prio-baja-bg: #DCEFE7; --prio-baja-text: #166534;
+  --ok-text: #15803D;
+}
+:root.dark {
+  --prio-alta-bg: rgba(251, 146, 60, 0.18); --prio-alta-text: #FDBA74;
+  --prio-media-bg: rgba(250, 204, 21, 0.16); --prio-media-text: #FDE047;
+  --prio-baja-bg: rgba(74, 222, 128, 0.16); --prio-baja-text: #86EFAC;
+  --ok-text: #4ADE80;
+}
+
+/* Quien pide menos transparencia en su sistema: sin desenfoque.
+   !important porque --glass-blur llega como estilo en línea de <html>. */
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-surface="vidrio"] {
+    --glass-blur: 0px !important;
+  }
 }
 
 /* =========================================

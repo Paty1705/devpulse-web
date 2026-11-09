@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Bot, Save, Users, User as UserIcon, Check, Trash2, Pencil, Plus, Calendar as CalendarIcon } from 'lucide-react';
+import { X, Bot, Save, Check, Trash2, Pencil, Plus, Calendar as CalendarIcon } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { branchNameForTask, slugifyRepoName } from '@/lib/github';
@@ -51,11 +51,11 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
   const [repoUrl, setRepoUrl] = useState('');
   const [manualRepo, setManualRepo] = useState(false);
   const [repoName, setRepoName] = useState('');
-  const [mode, setMode] = useState<'individual' | 'team'>('individual');
+  // Todos los proyectos son individuales: un solo responsable (leader_id).
+  const mode = 'individual';
 
   // Asignaciones
   const [leaderId, setLeaderId] = useState('');
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [initialMemberIds, setInitialMemberIds] = useState<string[]>([]);
   
   // IA
@@ -77,7 +77,6 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
         setName(project.name);
         setDescription(project.description || '');
         setRepoUrl(project.repo_url || '');
-        setMode(project.mode === 'team' ? 'team' : 'individual');
         setLeaderId(project.leader_id || '');
       } else {
         setName('');
@@ -85,9 +84,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
         setRepoUrl('');
         setManualRepo(false);
         setRepoName('');
-        setMode('individual');
         setLeaderId('');
-        setSelectedMembers([]);
         setInitialMemberIds([]);
       }
       setSpec('');
@@ -109,14 +106,13 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
     }
   }, [isOpen, fetchProfiles]);
 
-  // En modo edición, trae el equipo actual del proyecto para poder
-  // comparar (agregar/quitar) contra lo que quede seleccionado al guardar.
+  // En modo edición, trae los colaboradores que hayan quedado de cuando
+  // existía el modo equipo, para quitarlos al guardar.
   useEffect(() => {
     if (isOpen && project) {
       (async () => {
         const { data } = await supabase.from('project_members').select('user_id').eq('project_id', project.id);
         const ids = (data || []).map(d => d.user_id);
-        setSelectedMembers(ids);
         setInitialMemberIds(ids);
       })();
     }
@@ -124,9 +120,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
 
   if (!isOpen) return null;
 
-  const assignableProfiles = mode === 'team'
-    ? profiles.filter(p => p.id === leaderId || selectedMembers.includes(p.id))
-    : profiles.filter(p => p.id === leaderId);
+  const assignableProfiles = profiles.filter(p => p.id === leaderId);
 
   const handleAssignGeneratedTask = (index: number, userId: string) => {
     setGeneratedTasks(prev => prev.map((t, i) => i === index ? { ...t, assignedTo: userId } : t));
@@ -173,14 +167,6 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
   };
 
   const acceptedCount = generatedTasks.filter(t => t.accepted).length;
-
-  const toggleMember = (id: string) => {
-    if (selectedMembers.includes(id)) {
-      setSelectedMembers(selectedMembers.filter(m => m !== id));
-    } else {
-      setSelectedMembers([...selectedMembers, id]);
-    }
-  };
 
   const handleGenerateTasks = async () => {
     if (!spec.trim()) return;
@@ -244,7 +230,8 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
 
         if (updateError) throw updateError;
 
-        const effectiveMembers = mode === 'team' ? selectedMembers : [];
+        // Al editar se quitan los colaboradores que quedaran de cuando existía el modo equipo.
+        const effectiveMembers: string[] = [];
         const toAdd = effectiveMembers.filter(id => !initialMemberIds.includes(id));
         const toRemove = initialMemberIds.filter(id => !effectiveMembers.includes(id));
 
@@ -284,20 +271,6 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
         .single();
 
       if (projectError) throw projectError;
-
-      // 2. Insertar Miembros si es equipo
-      if (mode === 'team' && selectedMembers.length > 0) {
-        const membersToInsert = selectedMembers.map(userId => ({
-          project_id: projectData.id,
-          user_id: userId
-        }));
-        
-        const { error: membersError } = await supabase
-          .from('project_members')
-          .insert(membersToInsert);
-          
-        if (membersError) throw membersError;
-      }
 
       // 3. Insertar Tareas Generadas por IA (solo las que el usuario aceptó explícitamente)
       const acceptedTasks = generatedTasks.filter(t => t.accepted);
@@ -357,11 +330,11 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[8px] shadow-[var(--shadow-hover)] w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[20px] shadow-[var(--shadow-hover)] w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
         
         <div className="px-6 py-5 flex justify-between items-center bg-[var(--bg-column)] border-b border-[var(--border-column)] flex-none z-10">
           <h2 className="text-xl font-bold text-[var(--text-primary)]">{isEdit ? 'Editar Proyecto' : 'Nuevo Proyecto'}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-[var(--bg-card-hover)] rounded-[6px] text-[var(--text-secondary)] transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-[var(--bg-card-hover)] rounded-[12px] text-[var(--text-secondary)] transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -380,7 +353,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                 <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Nombre del Proyecto</label>
                 <input 
                   type="text" required value={name} onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[6px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                  className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                   placeholder="Ej: DevPulse v2"
                 />
               </div>
@@ -395,7 +368,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                       <input
                         type="checkbox" checked={manualRepo}
                         onChange={(e) => setManualRepo(e.target.checked)}
-                        className="rounded-[4px] text-[var(--btn-primary-bg)] focus:ring-[var(--btn-primary-bg)] bg-[var(--bg-column)] border-[var(--border-card)]"
+                        className="rounded-[8px] text-[var(--btn-primary-bg)] focus:ring-[var(--btn-primary-bg)] bg-[var(--bg-column)] border-[var(--border-card)]"
                       />
                       Ingresar repo existente
                     </label>
@@ -404,14 +377,14 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                 {isEdit || manualRepo ? (
                   <input
                     type="url" required value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)}
-                    className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[6px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                    className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                     placeholder="https://github.com/..."
                   />
                 ) : (
                   <>
                     <input
                       type="text" value={repoName} onChange={(e) => setRepoName(e.target.value)}
-                      className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[6px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                      className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                       placeholder={slugifyRepoName(name || 'proyecto')}
                     />
                     <p className="text-[11px] text-[var(--text-secondary)] mt-1">
@@ -427,7 +400,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
               <textarea 
                 rows={2} value={description} onChange={(e) => setDescription(e.target.value)}
                 placeholder="Resumen general del sistema..."
-                className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[6px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
               />
             </div>
           </section>
@@ -436,42 +409,19 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
           <section className="space-y-4">
             <h3 className="font-bold text-lg text-[var(--text-primary)] pb-2 flex items-center gap-2 border-b border-[var(--border-column)]">
               <span className="bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] w-6 h-6 rounded flex items-center justify-center text-sm font-bold">2</span>
-              Modalidad y Equipo
+              Responsable
             </h3>
 
-            <div className="flex gap-4">
-              <label className={`flex-1 cursor-pointer border rounded-[8px] p-4 flex items-center gap-4 transition-colors ${mode === 'individual' ? 'border-[var(--btn-primary-bg)] bg-[var(--bg-column)]' : 'border-[var(--border-card)] hover:bg-[var(--bg-card-hover)]'}`}>
-                <input type="radio" name="mode" value="individual" checked={mode === 'individual'} onChange={() => setMode('individual')} className="hidden" />
-                <div className={`w-10 h-10 rounded-[6px] flex items-center justify-center ${mode === 'individual' ? 'bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)]' : 'bg-[var(--bg-page)] text-[var(--text-secondary)]'}`}>
-                  <UserIcon size={20} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-[var(--text-primary)]">Individual</h3>
-                  <p className="text-xs text-[var(--text-secondary)]">Un solo responsable</p>
-                </div>
-              </label>
-
-              <label className={`flex-1 cursor-pointer border rounded-[8px] p-4 flex items-center gap-4 transition-colors ${mode === 'team' ? 'border-[var(--btn-primary-bg)] bg-[var(--bg-column)]' : 'border-[var(--border-card)] hover:bg-[var(--bg-card-hover)]'}`}>
-                <input type="radio" name="mode" value="team" checked={mode === 'team'} onChange={() => setMode('team')} className="hidden" />
-                <div className={`w-10 h-10 rounded-[6px] flex items-center justify-center ${mode === 'team' ? 'bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)]' : 'bg-[var(--bg-page)] text-[var(--text-secondary)]'}`}>
-                  <Users size={20} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-[var(--text-primary)]">En Equipo</h3>
-                  <p className="text-xs text-[var(--text-secondary)]">Múltiples colaboradores</p>
-                </div>
-              </label>
-            </div>
-
-            <div className="bg-[var(--bg-column)] border border-[var(--border-card)] p-4 rounded-[8px] space-y-4">
+            <div className="bg-[var(--bg-column)] border border-[var(--border-card)] p-4 rounded-[20px] space-y-4">
               <div>
                 <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">
-                  {mode === 'individual' ? 'Responsable Único' : 'Líder del Proyecto'}
+                  Responsable del proyecto
                 </label>
+                <p className="text-[11px] text-[var(--text-secondary)] mb-2">Los proyectos son individuales: todas sus tareas se le asignan a esta persona.</p>
                 <select
                   value={leaderId} onChange={(e) => setLeaderId(e.target.value)}
                   disabled={!canChangeLeader}
-                  className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[6px] p-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <option value="">Seleccionar responsable...</option>
                   {profiles.map(p => <option key={p.id} value={p.id}>{p.email} ({p.role})</option>)}
@@ -481,30 +431,12 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                 )}
               </div>
 
-              {mode === 'team' && (
-                <div>
-                  <label className="block text-sm font-bold text-[var(--text-secondary)] mb-2">Colaboradores Autorizados</label>
-                  <div className="max-h-32 overflow-y-auto space-y-2 border border-[var(--border-card)] p-2 rounded-[6px] bg-[var(--bg-page)]">
-                    {profiles.map(p => (
-                      <label key={p.id} className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedMembers.includes(p.id)}
-                          onChange={() => toggleMember(p.id)}
-                          className="rounded-[4px] text-[var(--btn-primary-bg)] focus:ring-[var(--btn-primary-bg)] bg-[var(--bg-column)] border-[var(--border-card)]" 
-                        /> 
-                        {p.email} <span className="text-xs text-[var(--text-secondary)]">({p.role})</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </section>
 
           {/* Bloque 3: Asistente IA (solo al crear; editar no vuelve a generar backlog) */}
           {!isEdit && (
-          <section className="bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[8px] p-5 shadow-[var(--shadow-subtle)]">
+          <section className="bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[20px] p-5 shadow-[var(--shadow-subtle)]">
             <div className="flex items-center gap-3 mb-3 text-[var(--text-primary)]">
               <Bot size={24} className="text-[var(--btn-primary-bg)]" />
               <h3 className="font-bold">Asistente IA (Generación de Tareas)</h3>
@@ -512,7 +444,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
             <p className="text-sm text-[var(--text-secondary)] mb-3">Pega las especificaciones en bruto. El sistema conectará con IA para generar las tareas de backlog automáticamente.</p>
             <textarea 
               value={spec} onChange={(e) => setSpec(e.target.value)}
-              className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[6px] p-3 text-sm text-[var(--text-primary)] h-24 focus:outline-none focus:border-[var(--btn-primary-bg)] placeholder-[var(--text-secondary)] opacity-80 mb-3"
+              className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-3 text-sm text-[var(--text-primary)] h-24 focus:outline-none focus:border-[var(--btn-primary-bg)] placeholder-[var(--text-secondary)] opacity-80 mb-3"
               placeholder="Ej: 'El sistema debe tener un login, una tabla de usuarios y exportar a PDF...'"
             />
             
@@ -520,7 +452,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
               type="button" 
               onClick={handleGenerateTasks} 
               disabled={isGenerating || !spec.trim()}
-              className="w-full py-2 bg-[var(--bg-column)] border border-[var(--btn-primary-bg)] text-[var(--btn-primary-bg)] rounded-[6px] font-bold hover:bg-[var(--btn-primary-bg)] hover:text-[var(--btn-primary-text)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.97]"
+              className="w-full py-2 bg-[var(--bg-column)] border border-[var(--btn-primary-bg)] text-[var(--btn-primary-bg)] rounded-[12px] font-bold hover:bg-[var(--btn-primary-bg)] hover:text-[var(--btn-primary-text)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.97]"
             >
               {isGenerating ? (
                 <>
@@ -547,24 +479,24 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                   {generatedTasks.map((t, idx) => (
                     <div
                       key={idx}
-                      className={`animate-fade-in-up opacity-0 bg-[var(--bg-column)] border p-3 rounded-[6px] ${t.accepted ? 'border-emerald-500' : 'border-[var(--border-card)]'}`}
+                      className={`animate-fade-in-up opacity-0 bg-[var(--bg-column)] border p-3 rounded-[12px] ${t.accepted ? 'border-emerald-500' : 'border-[var(--border-card)]'}`}
                       style={{ animationDelay: `${idx * 50}ms` }}
                     >
                       {t.isEditing ? (
                         <div className="space-y-2 mb-2">
                           <input
                             type="text" value={t.title} onChange={(e) => updateGeneratedTaskField(idx, 'title', e.target.value)}
-                            className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[4px] p-1.5 text-[12px] font-bold text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                            className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[8px] p-1.5 text-[12px] font-bold text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                           />
                           <textarea
                             value={t.description} onChange={(e) => updateGeneratedTaskField(idx, 'description', e.target.value)}
-                            className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[4px] p-1.5 text-[11px] text-[var(--text-primary)] h-16 focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                            className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[8px] p-1.5 text-[11px] text-[var(--text-primary)] h-16 focus:outline-none focus:border-[var(--btn-primary-bg)]"
                           />
                           <div className="flex flex-wrap gap-1.5">
                             {ITEM_TYPES.map(type => (
                               <button
                                 key={type} type="button" onClick={() => updateGeneratedTaskField(idx, 'itemType', type)}
-                                className={`px-2 py-0.5 rounded-[4px] text-[10px] border transition-colors ${t.itemType === type ? 'bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] border-[var(--btn-primary-bg)] font-bold' : 'bg-[var(--bg-page)] border-[var(--border-column)] text-[var(--text-primary)]'}`}
+                                className={`px-2 py-0.5 rounded-[8px] text-[10px] border transition-colors ${t.itemType === type ? 'bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] border-[var(--btn-primary-bg)] font-bold' : 'bg-[var(--bg-page)] border-[var(--border-column)] text-[var(--text-primary)]'}`}
                               >
                                 {type}
                               </button>
@@ -572,14 +504,14 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                           </div>
                           <select
                             value={t.priority} onChange={(e) => updateGeneratedTaskField(idx, 'priority', e.target.value)}
-                            className="w-full bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[4px] p-1.5 text-[11px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                            className="w-full bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[8px] p-1.5 text-[11px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                           >
                             {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
                           </select>
                           <div>
                             <ul className="space-y-1 mb-1.5">
                               {(t.acceptanceCriteria || []).map((ac, ci) => (
-                                <li key={ci} className="flex items-center justify-between gap-2 text-[10px] bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[4px] px-2 py-1 text-[var(--text-primary)]">
+                                <li key={ci} className="flex items-center justify-between gap-2 text-[10px] bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[8px] px-2 py-1 text-[var(--text-primary)]">
                                   <span className="flex-1">{ac}</span>
                                   <button type="button" onClick={() => handleRemoveGeneratedCriterion(idx, ci)} className="text-red-500 hover:text-red-400 flex-shrink-0">
                                     <Trash2 size={11} />
@@ -593,9 +525,9 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                                 onChange={(e) => updateGeneratedTaskField(idx, 'newCriterion', e.target.value)}
                                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddGeneratedCriterion(idx); } }}
                                 placeholder="Nuevo criterio de aceptación"
-                                className="flex-1 bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[4px] p-1.5 text-[10px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                                className="flex-1 bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[8px] p-1.5 text-[10px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                               />
-                              <button type="button" onClick={() => handleAddGeneratedCriterion(idx)} className="bg-[var(--bg-page)] border border-[var(--border-column)] px-2 rounded-[4px] text-[var(--text-secondary)] hover:text-[var(--btn-primary-bg)]">
+                              <button type="button" onClick={() => handleAddGeneratedCriterion(idx)} className="bg-[var(--bg-page)] border border-[var(--border-column)] px-2 rounded-[8px] text-[var(--text-secondary)] hover:text-[var(--btn-primary-bg)]">
                                 <Plus size={13} />
                               </button>
                             </div>
@@ -630,7 +562,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                       <select
                         value={t.assignedTo || ''}
                         onChange={(e) => handleAssignGeneratedTask(idx, e.target.value)}
-                        className="w-full bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[4px] p-1.5 text-[11px] text-[var(--text-primary)] mb-2 focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                        className="w-full bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[8px] p-1.5 text-[11px] text-[var(--text-primary)] mb-2 focus:outline-none focus:border-[var(--btn-primary-bg)]"
                       >
                         <option value="">Sin asignar</option>
                         {assignableProfiles.map(p => <option key={p.id} value={p.id}>{p.email} ({p.role})</option>)}
@@ -640,19 +572,19 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                         <button
                           type="button" onClick={() => handleOpenAcceptModal(idx)}
                           title={t.accepted ? 'Aceptada: clic para cambiar la fecha' : 'Aceptar y elegir fecha de entrega'}
-                          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-[4px] text-[11px] font-bold transition-colors ${t.accepted ? 'bg-emerald-600 text-white' : 'bg-[var(--bg-page)] border border-[var(--border-column)] text-[var(--text-primary)] hover:border-emerald-500 hover:text-emerald-500'}`}
+                          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-[8px] text-[11px] font-bold transition-colors ${t.accepted ? 'bg-emerald-600 text-white' : 'bg-[var(--bg-page)] border border-[var(--border-column)] text-[var(--text-primary)] hover:border-emerald-500 hover:text-emerald-500'}`}
                         >
                           <Check size={12} /> {t.accepted ? 'Aceptada' : 'Aceptar'}
                         </button>
                         <button
                           type="button" onClick={() => handleToggleEditGeneratedTask(idx)}
-                          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-[4px] text-[11px] font-bold border transition-colors ${t.isEditing ? 'bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] border-[var(--btn-primary-bg)]' : 'bg-[var(--bg-page)] border-[var(--border-column)] text-[var(--text-primary)] hover:border-[var(--btn-primary-bg)] hover:text-[var(--btn-primary-bg)]'}`}
+                          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-[8px] text-[11px] font-bold border transition-colors ${t.isEditing ? 'bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] border-[var(--btn-primary-bg)]' : 'bg-[var(--bg-page)] border-[var(--border-column)] text-[var(--text-primary)] hover:border-[var(--btn-primary-bg)] hover:text-[var(--btn-primary-bg)]'}`}
                         >
                           <Pencil size={12} /> {t.isEditing ? 'Listo' : 'Editar'}
                         </button>
                         <button
                           type="button" onClick={() => handleDeleteGeneratedTask(idx)}
-                          className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-[4px] text-[11px] font-bold bg-[var(--bg-page)] border border-[var(--border-column)] text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors"
+                          className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-[8px] text-[11px] font-bold bg-[var(--bg-page)] border border-[var(--border-column)] text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors"
                         >
                           <Trash2 size={12} /> Borrar
                         </button>
@@ -668,10 +600,10 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
         </div>
 
         <div className="px-6 py-4 border-t border-[var(--border-column)] bg-[var(--bg-column)] flex justify-end gap-3 flex-none">
-          <button type="button" onClick={onClose} disabled={isSubmitting} className="px-6 py-2 border border-[var(--border-card)] text-[var(--text-primary)] rounded-[6px] font-bold hover:bg-[var(--bg-page)] transition-colors active:scale-[0.97]">
+          <button type="button" onClick={onClose} disabled={isSubmitting} className="px-6 py-2 border border-[var(--border-card)] text-[var(--text-primary)] rounded-[12px] font-bold hover:bg-[var(--bg-page)] transition-colors active:scale-[0.97]">
             Cancelar
           </button>
-          <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="px-6 py-2 bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] rounded-[6px] font-bold hover:brightness-110 transition-colors disabled:opacity-50 flex items-center gap-2 active:scale-[0.97]">
+          <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="px-6 py-2 bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] rounded-[12px] font-bold hover:brightness-110 transition-colors disabled:opacity-50 flex items-center gap-2 active:scale-[0.97]">
             <Save size={18} />
             {isSubmitting ? 'Guardando...' : isEdit ? 'Guardar Cambios' : 'Crear Proyecto'}
           </button>
@@ -680,7 +612,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
 
       {acceptModalIndex !== null && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[8px] shadow-[var(--shadow-hover)] w-full max-w-sm overflow-hidden">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[20px] shadow-[var(--shadow-hover)] w-full max-w-sm overflow-hidden">
             <div className="px-5 py-4 bg-[var(--bg-column)] border-b border-[var(--border-column)]">
               <h3 className="font-bold text-[var(--text-primary)] text-sm flex items-center gap-2">
                 <CalendarIcon size={16} /> Fecha de entrega
@@ -694,25 +626,25 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
               <div className="flex gap-2">
                 <input
                   type="date" value={modalDueDate} onChange={(e) => setModalDueDate(e.target.value)}
-                  className="flex-1 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[6px] p-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                  className="flex-1 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                 />
                 <input
                   type="time" value={modalDueTime} onChange={(e) => setModalDueTime(e.target.value)}
                   disabled={!modalDueDate}
-                  className="flex-1 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[6px] p-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-50"
+                  className="flex-1 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-50"
                 />
               </div>
             </div>
             <div className="px-5 py-4 bg-[var(--bg-column)] border-t border-[var(--border-column)] flex justify-end gap-2">
               <button
                 type="button" onClick={() => setAcceptModalIndex(null)}
-                className="px-4 py-2 text-sm font-bold border border-[var(--border-card)] text-[var(--text-primary)] rounded-[6px] hover:bg-[var(--bg-page)] transition-colors"
+                className="px-4 py-2 text-sm font-bold border border-[var(--border-card)] text-[var(--text-primary)] rounded-[12px] hover:bg-[var(--bg-page)] transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="button" onClick={handleConfirmAccept}
-                className="px-4 py-2 text-sm font-bold bg-emerald-600 text-white rounded-[6px] hover:bg-emerald-500 transition-colors flex items-center gap-2"
+                className="px-4 py-2 text-sm font-bold bg-emerald-600 text-white rounded-[12px] hover:bg-emerald-500 transition-colors flex items-center gap-2"
               >
                 <Check size={16} /> Confirmar
               </button>

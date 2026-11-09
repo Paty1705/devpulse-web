@@ -3,7 +3,7 @@
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, AlertTriangle, StickyNote } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertTriangle, StickyNote } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { TaskModal } from '@/components/kanban/TaskModal';
 import { NewTaskModal } from '@/components/kanban/NewTaskModal';
@@ -187,16 +187,9 @@ export default function AgendaPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <header className="flex flex-col gap-2">
-        <button
-          onClick={() => router.push('/dashboard')}
-          className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors self-start text-sm font-bold bg-[var(--bg-column)] border border-[var(--border-column)] px-3 py-1.5 rounded-[6px] shadow-[var(--shadow-subtle)] hover:border-[var(--btn-primary-bg)] active:scale-[0.97]"
-        >
-          <ArrowLeft size={16} />
-          Volver al Panel
-        </button>
         <div className="flex justify-between items-end flex-wrap gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[var(--text-primary)]">Mi Agenda</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-[var(--text-primary)]">Mi Agenda</h1>
             <p className="text-[var(--text-secondary)]">
               {canManageTasks ? 'Vencimientos del equipo y tus notas personales.' : 'Tus tareas y notas personales por fecha.'}
               {' '}Haz clic en un día para agregar algo.
@@ -206,20 +199,20 @@ export default function AgendaPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewDate(d => { const nd = new Date(d); nd.setMonth(nd.getMonth() - 1); return nd; })}
-              className="p-2 bg-[var(--bg-column)] border border-[var(--border-column)] rounded-[6px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--btn-primary-bg)] transition-colors active:scale-[0.97]"
+              className="glass-panel w-11 h-11 rounded-[14px] flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors active:scale-[0.97]"
             >
               <ChevronLeft size={18} />
             </button>
-            <span className="text-sm font-bold text-[var(--text-primary)] capitalize w-40 text-center">{monthLabel}</span>
+            <span className="font-display text-lg font-semibold text-[var(--text-primary)] capitalize w-44 text-center">{monthLabel}</span>
             <button
               onClick={() => setViewDate(d => { const nd = new Date(d); nd.setMonth(nd.getMonth() + 1); return nd; })}
-              className="p-2 bg-[var(--bg-column)] border border-[var(--border-column)] rounded-[6px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--btn-primary-bg)] transition-colors active:scale-[0.97]"
+              className="glass-panel w-11 h-11 rounded-[14px] flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors active:scale-[0.97]"
             >
               <ChevronRight size={18} />
             </button>
             <button
               onClick={() => setViewDate(() => { const d = new Date(); d.setDate(1); return d; })}
-              className="px-3 py-2 bg-[var(--bg-column)] border border-[var(--border-column)] rounded-[6px] text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--btn-primary-bg)] transition-colors active:scale-[0.97]"
+              className="nav-active min-h-11 px-4 rounded-[14px] text-sm font-semibold transition-transform active:scale-[0.97]"
             >
               Hoy
             </button>
@@ -230,7 +223,8 @@ export default function AgendaPage() {
       {tasksLoading ? (
         <div className="text-[var(--text-secondary)] py-12 text-center">Cargando agenda...</div>
       ) : (
-        <div className="grid grid-cols-7 gap-2">
+        <div className="glass-panel glass-iridescent rounded-[28px] p-3 md:p-5 overflow-x-auto">
+        <div className="grid grid-cols-7 gap-2 min-w-[720px]">
           {WEEKDAY_LABELS.map(l => (
             <div key={l} className="text-center text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] py-1">
               {l}
@@ -249,13 +243,13 @@ export default function AgendaPage() {
               <div
                 key={key}
                 onClick={() => setQuickAddDate(d)}
-                className={`min-h-[110px] rounded-[8px] border p-2 flex flex-col gap-1.5 transition-colors cursor-pointer hover:border-[var(--btn-primary-bg)] ${
+                className={`min-h-[112px] rounded-[16px] border p-2 flex flex-col gap-1.5 transition-colors cursor-pointer hover:border-[var(--accent)] ${
                   isCurrentMonth
-                    ? 'bg-[var(--bg-card)] border-[var(--border-card)]'
-                    : 'bg-[var(--bg-page)] border-[var(--border-column)] opacity-40'
-                } ${isToday ? 'ring-2 ring-[var(--btn-primary-bg)]' : ''}`}
+                    ? 'surface-card border-[var(--border-card)]'
+                    : 'chip-glass border-transparent opacity-45'
+                } ${isToday ? 'ring-2 ring-[var(--accent)] shadow-[0_8px_18px_color-mix(in_srgb,var(--accent)_25%,transparent)]' : ''}`}
               >
-                <span className={`text-xs font-bold ${isToday ? 'text-[var(--btn-primary-bg)]' : 'text-[var(--text-secondary)]'}`}>
+                <span className={`font-mono text-xs font-bold self-start ${isToday ? 'nav-active px-2 py-0.5 rounded-[8px]' : 'text-[var(--text-secondary)]'}`}>
                   {d.getDate()}
                 </span>
                 <div className="flex-1 overflow-y-auto space-y-1">
@@ -267,7 +261,7 @@ export default function AgendaPage() {
                         onClick={(e) => { e.stopPropagation(); setSelectedTaskId(t.id); }}
                         title={t.title}
                         style={{ borderLeftColor: isOverdue ? '#EF4444' : accentColorFor(t.item_type) }}
-                        className="w-full flex items-center gap-1 text-left text-[10px] leading-tight px-1.5 py-1 rounded-[4px] border-l-2 truncate bg-[var(--bg-page)] hover:bg-[var(--bg-column)] text-[var(--text-primary)] transition-colors"
+                        className="w-full flex items-center gap-1 text-left text-[10px] leading-tight px-1.5 py-1 rounded-[8px] border-l-2 truncate chip-glass hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] transition-colors"
                       >
                         {isOverdue && <AlertTriangle size={9} className="text-red-500 flex-shrink-0" />}
                         <span className="truncate">{t.title}</span>
@@ -279,7 +273,7 @@ export default function AgendaPage() {
                       key={ev.id}
                       onClick={(e) => handleDeletePersonal(ev, e)}
                       title={`${ev.title} (clic para eliminar)`}
-                      className="w-full flex items-center gap-1 text-left text-[10px] leading-tight px-1.5 py-1 rounded-[4px] border-l-2 border-dashed border-[var(--text-secondary)] truncate bg-[var(--bg-page)] hover:bg-red-500/10 hover:border-red-400 text-[var(--text-secondary)] transition-colors"
+                      className="w-full flex items-center gap-1 text-left text-[10px] leading-tight px-1.5 py-1 rounded-[8px] border-l-2 border-dashed border-[var(--text-secondary)] truncate chip-glass hover:bg-red-500/10 hover:border-red-400 text-[var(--text-secondary)] transition-colors"
                     >
                       <StickyNote size={9} className="flex-shrink-0" />
                       <span className="truncate">{ev.title}</span>
@@ -292,6 +286,7 @@ export default function AgendaPage() {
               </div>
             );
           })}
+        </div>
         </div>
       )}
 

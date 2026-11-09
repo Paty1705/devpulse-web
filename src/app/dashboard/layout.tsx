@@ -1,6 +1,9 @@
 'use client';
 
-import { Navbar } from "@/components/layout/Navbar";
+import { useState } from "react";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { Topbar } from "@/components/layout/Topbar";
+import { SettingsModal } from "@/components/layout/SettingsModal";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Hourglass, ShieldX } from "lucide-react";
 
@@ -10,11 +13,15 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { profile, loading, signOut } = useAuth();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const openSettings = () => setIsSettingsOpen(true);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-1 p-6">
+    <div className="min-h-screen p-4 md:p-6 flex flex-col lg:flex-row gap-6 items-start">
+      <Sidebar onOpenSettings={openSettings} />
+      <div className="flex-1 min-w-0 w-full flex flex-col gap-6">
+      <Topbar onOpenSettings={openSettings} />
+      <main className="flex-1">
         {!loading && profile?.status === 'pending' ? (
           <div className="max-w-lg mx-auto mt-16 text-center bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[8px] p-8 shadow-[var(--shadow-subtle)]">
             <Hourglass size={40} className="mx-auto mb-4 text-[var(--btn-primary-bg)]" />
@@ -48,6 +55,8 @@ export default function DashboardLayout({
           children
         )}
       </main>
+      </div>
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 }

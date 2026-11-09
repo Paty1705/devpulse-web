@@ -1,11 +1,12 @@
 'use client';
 
-import { X, Plus, Trash2, Calendar as CalendarIcon, Database, GitBranch, Save } from 'lucide-react';
+import { X, Plus, Trash2, Calendar as CalendarIcon, Database, GitBranch, Save, Repeat } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { createGoogleCalendarEvent } from '@/lib/calendar';
 import { branchNameForTask } from '@/lib/github';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { describeRecurrence, formatShort, FREQUENCY_UNIT, toISODate, upcoming, type Frequency } from '@/lib/recurrence';
 
 type Project = { id: string; name: string; leader_id: string | null; mode: string; repo_url: string | null };
 type Profile = { id: string; email: string; role: string };
@@ -40,6 +41,14 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
   const [assignedTo, setAssignedTo] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [dueTime, setDueTime] = useState('');
+
+  // Repetición (si se elige, se guarda en task_recurrences y la base
+  // genera cada tarea en su fecha).
+  const [repeat, setRepeat] = useState<Frequency | 'no'>('no');
+  const [everyN, setEveryN] = useState('1');
+  const [startsOn, setStartsOn] = useState(() => toISODate(new Date()));
+  const [dueInDays, setDueInDays] = useState('0');
+  const [endDate, setEndDate] = useState('');
 
   // BD y Git
   const [requiresSql, setRequiresSql] = useState(false);
@@ -116,9 +125,38 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!title.trim()) {
+      alert('Ponle un título a la tarea.');
+      return;
+    }
     setIsSubmitting(true);
 
     try {
+      if (repeat !== 'no') {
+        const n = Math.min(52, Math.max(1, Number(everyN) || 1));
+        const days = Math.min(60, Math.max(0, Number(dueInDays) || 0));
+        if (endDate && endDate < startsOn) throw new Error('La fecha final no puede ser antes del inicio.');
+        const { error } = await supabase.from('task_recurrences').insert({
+          project_id: projectId || null,
+          assigned_to: assignedTo || null,
+          title: title.trim(),
+          description,
+          item_type: itemType,
+          priority,
+          acceptance_criteria: criteria,
+          frequency: repeat,
+          every_n: n,
+          due_in_days: days,
+          starts_on: startsOn,
+          next_run: startsOn,
+          end_date: endDate || null,
+        });
+        if (error) throw error;
+        onTaskCreated();
+        onClose();
+        return;
+      }
+
       let isoDate = null;
       let googleEventId = null;
 
@@ -312,6 +350,7 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
                   <p className="text-xs text-amber-500 mt-1">Este proyecto todavía no tiene responsable.</p>
                 )}
               </div>
+              {repeat === 'no' ? (<>
               <div>
                 <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Fecha Límite</label>
                 <div className="relative">
@@ -323,10 +362,29 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
                 <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Hora Límite</label>
                 <input type="time" value={dueTime} onChange={(e) => setDueTime(e.target.value)} className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]" />
               </div>
+              </>) : (
+              <div className="md:col-span-2">
+                <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Empieza</label>
+                <input type="date" value={startsOn} min={toISODate(new Date())} onChange={(e) => e.target.value && setStartsOn(e.target.value)} className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]" />
+              </div>
+              )}
             </div>
+
+            <RepeatPicker
+              repeat={repeat} setRepeat={setRepeat}
+              everyN={everyN} setEveryN={setEveryN}
+              startsOn={startsOn}
+              dueInDays={dueInDays} setDueInDays={setDueInDays}
+              endDate={endDate} setEndDate={setEndDate}
+            />
           </section>
 
           {/* Bloque 3: Control de BD y Trazabilidad */}
+          {repeat !== 'no' ? (
+            <p className="text-sm text-[var(--text-secondary)] surface-card border border-[var(--border-card)] rounded-[14px] p-3">
+              Las tareas repetitivas no crean rama de GitHub ni evento de calendario. Si alguna lo necesita, ábrela cuando aparezca en el tablero.
+            </p>
+          ) : (
           <section className="space-y-4">
             <h3 className="font-bold text-lg text-[var(--text-primary)] pb-2 flex items-center gap-2 border-b border-[var(--border-column)]">
               <span className="bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] w-6 h-6 rounded flex items-center justify-center text-sm font-bold">3</span>
@@ -360,6 +418,7 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
               )}
             </div>
           </section>
+          )}
         </div>
 
         {/* Footer Fijo */}
@@ -369,10 +428,90 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
           </button>
           <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="px-6 py-2 bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] rounded-[12px] font-bold hover:brightness-110 transition-colors disabled:opacity-50 flex items-center gap-2 active:scale-[0.97]">
             <Save size={18} />
-            {isSubmitting ? 'Guardando...' : 'Crear Tarea'}
+            {isSubmitting ? 'Guardando...' : repeat !== 'no' ? 'Crear repetición' : 'Crear Tarea'}
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+type RepeatPickerProps = {
+  repeat: Frequency | 'no';
+  setRepeat: (v: Frequency | 'no') => void;
+  everyN: string;
+  setEveryN: (v: string) => void;
+  startsOn: string;
+  dueInDays: string;
+  setDueInDays: (v: string) => void;
+  endDate: string;
+  setEndDate: (v: string) => void;
+};
+
+const REPEAT_OPTIONS: { value: Frequency | 'no'; label: string }[] = [
+  { value: 'no', label: 'No se repite' },
+  { value: 'diaria', label: 'Diaria' },
+  { value: 'semanal', label: 'Semanal' },
+  { value: 'mensual', label: 'Mensual' },
+];
+
+const fieldClass = 'w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]';
+
+function RepeatPicker({ repeat, setRepeat, everyN, setEveryN, startsOn, dueInDays, setDueInDays, endDate, setEndDate }: RepeatPickerProps) {
+  const n = Math.min(52, Math.max(1, Number(everyN) || 1));
+  const next = repeat === 'no' ? [] : upcoming(startsOn, repeat, n, 3, endDate || null, startsOn);
+  const days = Math.max(0, Number(dueInDays) || 0);
+  return (
+    <div className="surface-card border border-[var(--border-card)] rounded-[18px] p-4 space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-sm font-bold text-[var(--text-primary)] inline-flex items-center gap-2"><Repeat size={16} /> Repetir</span>
+        <div role="group" aria-label="Frecuencia" className="flex flex-wrap gap-1.5">
+          {REPEAT_OPTIONS.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              aria-pressed={repeat === o.value}
+              onClick={() => setRepeat(o.value)}
+              className={`min-h-9 px-3 rounded-[10px] text-sm font-semibold border transition-colors ${repeat === o.value ? 'nav-active border-transparent' : 'border-[var(--border-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {repeat !== 'no' && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <label className="block">
+              <span className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Cada</span>
+              <span className="flex items-center gap-2">
+                <input type="number" min={1} max={52} value={everyN} onChange={(e) => setEveryN(e.target.value)} className={`${fieldClass} w-20`} />
+                <span className="text-sm text-[var(--text-secondary)]">{FREQUENCY_UNIT[repeat][n === 1 ? 0 : 1]}</span>
+              </span>
+            </label>
+            <label className="block">
+              <span className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Días para terminarla</span>
+              <input type="number" min={0} max={60} value={dueInDays} onChange={(e) => setDueInDays(e.target.value)} className={fieldClass} />
+            </label>
+            <label className="block">
+              <span className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Hasta <span className="font-normal">(opcional)</span></span>
+              <input type="date" value={endDate} min={startsOn} onChange={(e) => setEndDate(e.target.value)} className={fieldClass} />
+            </label>
+          </div>
+          <p className="text-sm text-[var(--text-primary)]">
+            <strong>{describeRecurrence(repeat, n, startsOn)}</strong>
+            {', '}
+            {days === 0 ? 'con fecha límite el mismo día' : `con ${days} ${days === 1 ? 'día' : 'días'} para terminarla`}.
+          </p>
+          {next.length > 0 && (
+            <p className="text-xs text-[var(--text-secondary)]">
+              Próximas: {next.map(formatShort).join(' · ')}
+              {startsOn === toISODate(new Date()) && ' · la de hoy se crea en cuanto guardes'}
+            </p>
+          )}
+        </>
+      )}
     </div>
   );
 }

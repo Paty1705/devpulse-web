@@ -66,13 +66,14 @@ type BoardViewProps = {
   canModify: (task: BoardTask) => boolean;
   canCreate: boolean;
   onCreate: () => void;
+  onOpenRecurrences: () => void;
   onOpen: (task: BoardTask) => void;
   /** Mueve la tarea a `to`, antes de `beforeId` (o al final si es null). */
   onMove: (taskId: string, to: string, beforeId: string | null) => void;
 };
 
 export function BoardView({
-  columns, loading, currentUserId, projectNames, testDates, canModify, canCreate, onCreate, onOpen, onMove,
+  columns, loading, currentUserId, projectNames, testDates, canModify, canCreate, onCreate, onOpenRecurrences, onOpen, onMove,
 }: BoardViewProps) {
   const [priority, setPriority] = useState<PriorityFilter>('Todas');
   const [onlyMine, setOnlyMine] = useState(false);
@@ -117,6 +118,9 @@ export function BoardView({
           </div>
           <button onClick={() => setOnlyMine(!onlyMine)} aria-pressed={onlyMine} className={`glass-panel ${filterButton(onlyMine)} min-h-11 px-4 rounded-[14px]`}>
             Solo mis tareas
+          </button>
+          <button onClick={onOpenRecurrences} className={`glass-panel ${filterButton(false)} min-h-11 px-4 rounded-[14px] inline-flex items-center gap-2`}>
+            <Repeat size={15} /> Repetitivas
           </button>
           {canCreate && (
             <button

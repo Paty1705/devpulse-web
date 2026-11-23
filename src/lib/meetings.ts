@@ -25,6 +25,7 @@ export type Meeting = {
   reminder_minutes?: number | null;
   google_event_id?: string | null;
   video_url?: string | null;
+  duration_minutes?: number | null;
 };
 
 export type MeetingSeries = {
@@ -38,6 +39,7 @@ export type MeetingSeries = {
   reminder_minutes: number | null;
   google_event_id: string | null;
   video_url: string | null;
+  duration_minutes?: number | null;
   active: boolean;
 };
 
@@ -149,4 +151,11 @@ export function statusStyle(status: MeetingStatus): React.CSSProperties {
     default:
       return { background: 'var(--badge-bg)', color: 'var(--badge-text)' };
   }
+}
+
+export function durationLabel(min: number) {
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m ? `${h} h ${m} min` : `${h} h`;
 }

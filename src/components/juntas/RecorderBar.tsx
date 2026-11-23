@@ -8,6 +8,8 @@ type Recorder = ReturnType<typeof useRecorder>;
 
 type Props = {
   recorder: Recorder;
+  /** Alguien (el jefe) está grabando esta junta ahora mismo. */
+  remoteRecording?: boolean;
   isJefe: boolean;
   canRecord: boolean;
   hasRecording: boolean;
@@ -16,14 +18,15 @@ type Props = {
   onUploadFile: (file: File) => void;
 };
 
-export function RecorderBar({ recorder, isJefe, canRecord, hasRecording, uploading, onStop, onUploadFile }: Props) {
+export function RecorderBar({ recorder, remoteRecording = false, isJefe, canRecord, hasRecording, uploading, onStop, onUploadFile }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
-  const { state, elapsed, levels, error, start, pause, resume } = recorder;
+  const { state, elapsed, levels, error, warning, start, pause, resume } = recorder;
   const live = state === 'recording';
+  const showLive = live || remoteRecording;
 
   const label = uploading
     ? 'Subiendo grabación…'
-    : live
+    : showLive
       ? 'Grabando'
       : state === 'paused'
         ? 'En pausa'
@@ -36,10 +39,10 @@ export function RecorderBar({ recorder, isJefe, canRecord, hasRecording, uploadi
       <div className="flex items-center gap-3 min-w-[170px]">
         <span
           aria-hidden="true"
-          className={`w-3.5 h-3.5 rounded-full ${live ? 'animate-pulse' : ''}`}
+          className={`w-3.5 h-3.5 rounded-full ${showLive ? 'animate-pulse' : ''}`}
           style={{
-            background: live ? '#F43F5E' : state === 'paused' ? 'var(--prio-media-text)' : hasRecording ? 'var(--ok-text)' : 'var(--text-secondary)',
-            boxShadow: live ? '0 0 0 6px rgba(244,63,94,0.2), 0 0 14px #F43F5E' : undefined,
+            background: showLive ? '#F43F5E' : state === 'paused' ? 'var(--prio-media-text)' : hasRecording ? 'var(--ok-text)' : 'var(--text-secondary)',
+            boxShadow: showLive ? '0 0 0 6px rgba(244,63,94,0.2), 0 0 14px #F43F5E' : undefined,
           }}
         />
         <span className="flex flex-col">
@@ -108,6 +111,15 @@ export function RecorderBar({ recorder, isJefe, canRecord, hasRecording, uploadi
         </div>
       ) : (
         <p className="text-xs text-[var(--text-secondary)] max-w-[260px]">El jefe graba la junta; la IA propone las tareas al terminar.</p>
+      )}
+
+      {warning && (
+        <p role="alert" className="basis-full text-xs font-semibold" style={{ color: 'var(--prio-alta-text)' }}>{warning}</p>
+      )}
+      {!isJefe && remoteRecording && (
+        <p role="status" className="basis-full text-xs font-semibold" style={{ color: 'var(--prio-alta-text)' }}>
+          Esta junta se está grabando. Al continuar en ella, aceptas que se grabe tu voz.
+        </p>
       )}
 
       {(error || (isJefe && state !== 'idle')) && (

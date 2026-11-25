@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { UserCheck, UserX, Users } from 'lucide-react';
+import { Trash2, UserCheck, UserX, Users } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { DeleteUserModal } from '@/components/jefatura/DeleteUserModal';
 
 type Profile = {
   id: string;
@@ -27,6 +28,7 @@ export default function UsuariosPage() {
   const [loaded, setLoaded] = useState(false);
   const [roleChoice, setRoleChoice] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [toDelete, setToDelete] = useState<Profile | null>(null);
 
   const fetchProfiles = useCallback(async () => {
     const { data } = await supabase.from('profiles').select('id, email, role, status').order('email');
@@ -121,6 +123,15 @@ export default function UsuariosPage() {
                   >
                     <UserX size={14} /> Rechazar
                   </button>
+                  <button
+                    disabled={busyId === p.id}
+                    onClick={() => setToDelete(p)}
+                    aria-label={`Eliminar ${p.email}`}
+                    title="Eliminar usuario"
+                    className="p-2 rounded-[12px] text-[var(--text-secondary)] hover:text-[#EF4444] hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                  >
+                    <Trash2 size={15} />
+                  </button>
                 </div>
               </div>
             ))}
@@ -151,14 +162,26 @@ export default function UsuariosPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {p.status === 'rejected' && p.id !== user?.id && (
-                      <button
-                        disabled={busyId === p.id}
-                        onClick={() => approve(p)}
-                        className="text-xs font-bold text-[var(--btn-primary-bg)] hover:underline disabled:opacity-50"
-                      >
-                        Re-aprobar como {ROLE_LABELS[roleChoice[p.id] || 'pasante']}
-                      </button>
+                    {p.id !== user?.id && (
+                      <span className="inline-flex items-center justify-end gap-3">
+                        {p.status === 'rejected' && (
+                          <button
+                            disabled={busyId === p.id}
+                            onClick={() => approve(p)}
+                            className="text-xs font-bold text-[var(--btn-primary-bg)] hover:underline disabled:opacity-50"
+                          >
+                            Re-aprobar como {ROLE_LABELS[roleChoice[p.id] || 'pasante']}
+                          </button>
+                        )}
+                        <button
+                          disabled={busyId === p.id}
+                          onClick={() => setToDelete(p)}
+                          aria-label={`Eliminar ${p.email}`}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[10px] text-xs font-bold text-[#EF4444] border border-[#EF4444]/30 hover:bg-[#EF4444] hover:text-white transition-colors disabled:opacity-50"
+                        >
+                          <Trash2 size={13} /> Eliminar
+                        </button>
+                      </span>
                     )}
                   </td>
                 </tr>
@@ -167,6 +190,19 @@ export default function UsuariosPage() {
           </table>
         </div>
       </section>
+
+      {toDelete && (
+        <DeleteUserModal
+          key={toDelete.id}
+          target={toDelete}
+          candidates={profiles.filter(p => p.status === 'approved' && p.id !== toDelete.id)}
+          onClose={() => setToDelete(null)}
+          onDeleted={() => {
+            setToDelete(null);
+            fetchProfiles();
+          }}
+        />
+      )}
     </div>
   );
 }

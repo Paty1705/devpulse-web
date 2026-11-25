@@ -111,7 +111,14 @@ export function ProposalsPanel({
       {aiStatus === 'procesando' || processing ? (
         <div className="chip-glass rounded-[16px] p-3 flex items-center gap-3 text-sm text-[var(--text-primary)]">
           <Loader2 size={18} className="animate-spin shrink-0" />
-          La IA está escuchando la grabación. Puede tardar unos minutos.
+          <span className="flex flex-col gap-1">
+            <span>La IA está escuchando la grabación. Puede tardar unos minutos (más o menos la mitad de lo que duró la junta); puedes seguir trabajando.</span>
+            {isJefe && hasRecording && !processing && (
+              <button onClick={onProcess} className="self-start inline-flex items-center gap-1.5 text-xs font-semibold underline underline-offset-2">
+                <RotateCcw size={12} /> ¿Lleva mucho? Reintentar
+              </button>
+            )}
+          </span>
         </div>
       ) : aiStatus === 'error' ? (
         <div className="rounded-[16px] p-3 flex flex-col gap-2 text-sm" style={{ background: 'var(--prio-alta-bg)', color: 'var(--prio-alta-text)' }}>

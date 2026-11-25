@@ -12,7 +12,7 @@ import { ProposalsPanel, type ProjectOption } from '@/components/juntas/Proposal
 import { RecorderBar } from '@/components/juntas/RecorderBar';
 import { ReviewPanel } from '@/components/juntas/ReviewPanel';
 import { extensionFor, useRecorder } from '@/components/juntas/useRecorder';
-import { meetingDateTime, REMINDER_OPTIONS, reminderLabel, STATUS_LABEL, statusStyle, toDateInput, type Meeting, type MeetingSeries, type MinuteItem, type PersonRef, type Proposal } from '@/lib/meetings';
+import { durationLabel, meetingDateTime, REMINDER_OPTIONS, reminderLabel, STATUS_LABEL, statusStyle, toDateInput, type Meeting, type MeetingSeries, type MinuteItem, type PersonRef, type Proposal } from '@/lib/meetings';
 import { describeRecurrence } from '@/lib/recurrence';
 import { cancelMeetingEvent, endRecurringEvent } from '@/lib/calendar';
 
@@ -39,6 +39,14 @@ export default function MeetingRoomPage() {
   const [error, setError] = useState<string | null>(null);
   const [series, setSeries] = useState<MeetingSeries | null>(null);
   const [confirmStop, setConfirmStop] = useState(false);
+  const [remoteRecording, setRemoteRecording] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  // Reloj ligero para saber si la junta ya excedió su duración.
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) router.push('/');
@@ -97,6 +105,23 @@ export default function MeetingRoomPage() {
     };
   }, [user, id, fetchMeeting, fetchItems, fetchProposals]);
 
+  // Aviso en vivo de "se está grabando": presencia de Realtime, sin tocar la base.
+  // Si el jefe cierra la pestaña o se desconecta, el aviso desaparece solo.
+  const isRecordingNow = recorder.state !== 'idle';
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase.channel(`recording_${id}`, { config: { presence: { key: user.id } } });
+    ch.on('presence', { event: 'sync' }, () => {
+      const all = Object.values(ch.presenceState()).flat() as unknown as { recording?: boolean }[];
+      setRemoteRecording(all.some((p) => p.recording));
+    }).subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') await ch.track({ recording: isRecordingNow });
+    });
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [user, id, isRecordingNow]);
+
   // URL firmada para escuchar la grabación (el bucket es privado).
   const recordingPath = meeting?.recording_path ?? null;
   useEffect(() => {
@@ -111,26 +136,52 @@ export default function MeetingRoomPage() {
     };
   }, [recordingPath]);
 
+  // Token vigente: si el navegador estuvo en segundo plano o en suspensión
+  // el token pudo vencer, así que se renueva antes de llamar a la API.
+  const freshToken = useCallback(async (forceRefresh: boolean) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const expiresSoon = !session?.expires_at || session.expires_at * 1000 - Date.now() < 2 * 60 * 1000;
+    if (session && !forceRefresh && !expiresSoon) return session.access_token;
+    const { data, error: refreshErr } = await supabase.auth.refreshSession();
+    return refreshErr ? null : data.session?.access_token ?? null;
+  }, []);
+
   const process = useCallback(async () => {
     setProcessing(true);
     setError(null);
-    const { data: { session } } = await supabase.auth.getSession();
-    try {
-      const res = await fetch('/api/ai/procesar-junta', {
+    const call = (token: string) =>
+      fetch('/api/ai/procesar-junta', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ meetingId: id }),
       });
-      if (!res.ok) {
+    let failure: string | null = null;
+    try {
+      let token = await freshToken(false);
+      let res = token ? await call(token) : null;
+      if (!res || res.status === 401) {
+        token = await freshToken(true);
+        res = token ? await call(token) : null;
+      }
+      if (!res) {
+        failure = 'Tu sesión expiró. La grabación está guardada: vuelve a iniciar sesión y presiona Reintentar.';
+      } else if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        setError(body.error ?? 'No se pudo procesar la grabación.');
+        failure = res.status === 401
+          ? 'Tu sesión expiró. La grabación está guardada: vuelve a iniciar sesión y presiona Reintentar.'
+          : body.error ?? 'No se pudo procesar la grabación.';
       }
     } catch {
-      setError('No se pudo contactar al servidor para procesar la grabación.');
+      failure = 'No se pudo contactar al servidor para procesar la grabación.';
+    }
+    if (failure) {
+      setError(failure);
+      // Si el servidor no alcanzó a marcar el error, evita que quede "procesando" para siempre.
+      await supabase.from('meetings').update({ ai_status: 'error', ai_error: failure }).eq('id', id).eq('ai_status', 'procesando');
     }
     setProcessing(false);
     await Promise.all([fetchMeeting(), fetchProposals()]);
-  }, [id, fetchMeeting, fetchProposals]);
+  }, [id, fetchMeeting, fetchProposals, freshToken]);
 
   const uploadAudio = useCallback(async (blob: Blob, ext: string) => {
     if (blob.size > MAX_UPLOAD_BYTES) {
@@ -160,6 +211,15 @@ export default function MeetingRoomPage() {
     const blob = await recorder.stop();
     if (blob) await uploadAudio(blob, extensionFor(blob.type));
   }, [recorder, uploadAudio]);
+
+  const extendDuration = async (extra: number) => {
+    if (!meeting) return;
+    setError(null);
+    const next = (meeting.duration_minutes ?? 60) + extra;
+    const { error: err } = await supabase.from('meetings').update({ duration_minutes: next }).eq('id', id);
+    if (err) setError('No se pudo extender la duración de la junta.');
+    await fetchMeeting();
+  };
 
   const setStatus = async (status: Meeting['status']) => {
     setError(null);
@@ -223,6 +283,9 @@ export default function MeetingRoomPage() {
   if (!meeting) return <div className="p-8 text-[var(--text-secondary)]">Cargando junta…</div>;
 
   const canWrite = meeting.status !== 'cancelada';
+  const plannedMin = meeting.duration_minutes ?? 60;
+  const startedMs = new Date(meeting.started_at ?? meeting.scheduled_at).getTime();
+  const overtimeMin = meeting.status === 'en_curso' ? Math.max(0, Math.floor((now - startedMs) / 60000) - plannedMin) : 0;
 
   return (
     <div className="max-w-[1400px] flex flex-col gap-5">
@@ -237,7 +300,7 @@ export default function MeetingRoomPage() {
                 {meeting.status === 'en_curso' && <span className="w-2 h-2 rounded-full bg-current animate-pulse" />}
                 {STATUS_LABEL[meeting.status]}
               </span>
-              <span className="font-mono text-xs text-[var(--text-secondary)] first-letter:uppercase">{meetingDateTime.format(new Date(meeting.scheduled_at))}</span>
+              <span className="font-mono text-xs text-[var(--text-secondary)] first-letter:uppercase">{meetingDateTime.format(new Date(meeting.scheduled_at))} · {durationLabel(plannedMin)}</span>
             </span>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)] truncate">{meeting.title}</h1>
             <span className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
@@ -309,6 +372,7 @@ export default function MeetingRoomPage() {
       {meeting.status !== 'cancelada' && (
         <RecorderBar
           recorder={recorder}
+          remoteRecording={remoteRecording}
           isJefe={isJefe}
           canRecord={meeting.status === 'en_curso'}
           hasRecording={!!meeting.recording_path}
@@ -316,6 +380,21 @@ export default function MeetingRoomPage() {
           onStop={stopAndProcess}
           onUploadFile={(f) => uploadAudio(f, f.name.split('.').pop()?.toLowerCase() || 'webm')}
         />
+      )}
+
+      {overtimeMin > 0 && (
+        <div role="alert" className="rounded-[16px] px-4 py-3 text-sm flex flex-wrap items-center justify-between gap-3" style={{ background: 'var(--prio-media-bg)', color: 'var(--prio-media-text)' }}>
+          <span>
+            Esta junta ya rebasó su duración de {durationLabel(plannedMin)} por {durationLabel(overtimeMin)}.
+            {recorder.state !== 'idle' && ' La grabación sigue activa.'}
+          </span>
+          {isJefe && (
+            <span className="flex gap-2">
+              <button onClick={() => extendDuration(15)} className="chip-glass min-h-9 px-3 rounded-[12px] text-[13px] font-semibold border border-[var(--border-card)] text-[var(--text-primary)]">Extender 15 min</button>
+              <button onClick={() => setStatus('terminada')} className="nav-active min-h-9 px-3 rounded-[12px] text-[13px] font-semibold">Terminar junta</button>
+            </span>
+          )}
+        </div>
       )}
 
       {error && (

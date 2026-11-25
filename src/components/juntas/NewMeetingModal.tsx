@@ -122,7 +122,7 @@ export function NewMeetingModal({ isOpen, onClose, onCreated }: Props) {
     if (repeat === 'no') {
       const { data: meeting, error: err } = await supabase
         .from('meetings')
-        .insert({ title: title.trim(), scheduled_at: start.toISOString(), review_from: reviewFrom || null, reminder_minutes: reminder })
+        .insert({ title: title.trim(), scheduled_at: start.toISOString(), review_from: reviewFrom || null, reminder_minutes: reminder, duration_minutes: duration })
         .select('id')
         .single();
       if (err || !meeting) {
@@ -150,6 +150,7 @@ export function NewMeetingModal({ isOpen, onClose, onCreated }: Props) {
           end_date: endDate || null,
           attendee_ids: [...selected],
           reminder_minutes: reminder,
+          duration_minutes: duration,
         })
         .select('id')
         .single();

@@ -32,6 +32,7 @@ export function useRecorder() {
   const [elapsed, setElapsed] = useState(0);
   const [levels, setLevels] = useState<number[]>(() => Array(LEVEL_BARS).fill(0));
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   const recorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
@@ -40,6 +41,22 @@ export function useRecorder() {
   const tick = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedAt = useRef(0);
   const accumulated = useRef(0);
+  const lastTick = useRef(0);
+  const wakeLock = useRef<WakeLockSentinel | null>(null);
+
+  // Evita que la pantalla se apague (y la compu se suspenda por inactividad) mientras se graba.
+  const acquireWakeLock = useCallback(async () => {
+    try {
+      if ('wakeLock' in navigator && !wakeLock.current) {
+        wakeLock.current = await navigator.wakeLock.request('screen');
+        wakeLock.current.addEventListener('release', () => {
+          wakeLock.current = null;
+        });
+      }
+    } catch {
+      /* sin soporte o sin permiso: se sigue grabando igual */
+    }
+  }, []);
 
   const cleanup = useCallback(() => {
     if (tick.current) clearInterval(tick.current);
@@ -48,6 +65,8 @@ export function useRecorder() {
     stream.current = null;
     audioCtx.current?.close().catch(() => {});
     audioCtx.current = null;
+    wakeLock.current?.release().catch(() => {});
+    wakeLock.current = null;
   }, []);
 
   useEffect(() => cleanup, [cleanup]);
@@ -62,8 +81,19 @@ export function useRecorder() {
     return () => window.removeEventListener('beforeunload', warn);
   }, [state]);
 
+  // El wake lock se pierde al cambiar de pestaña: se vuelve a pedir al regresar.
+  useEffect(() => {
+    if (state !== 'recording') return;
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') acquireWakeLock();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [state, acquireWakeLock]);
+
   const start = useCallback(async () => {
     setError(null);
+    setWarning(null);
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       setError('Este navegador no permite grabar audio.');
       return;
@@ -90,7 +120,19 @@ export function useRecorder() {
 
       accumulated.current = 0;
       startedAt.current = Date.now();
+      lastTick.current = Date.now();
+      acquireWakeLock();
       tick.current = setInterval(() => {
+        const now = Date.now();
+        // Si pasaron varios segundos sin tick, la compu se suspendió: ese tramo NO quedó grabado.
+        if (recorder.current?.state === 'recording' && now - lastTick.current > 5000) {
+          const gap = now - lastTick.current;
+          accumulated.current += lastTick.current - startedAt.current;
+          startedAt.current = now;
+          const min = Math.max(1, Math.round(gap / 60000));
+          setWarning(`La compu se suspendió o el navegador se congeló unos ${min} min: ese tramo no quedó grabado.`);
+        }
+        lastTick.current = now;
         if (recorder.current?.state === 'recording') {
           setElapsed(accumulated.current + (Date.now() - startedAt.current));
           analyser.getByteTimeDomainData(buf);
@@ -107,7 +149,7 @@ export function useRecorder() {
       const denied = e instanceof DOMException && (e.name === 'NotAllowedError' || e.name === 'SecurityError');
       setError(denied ? 'Da permiso al navegador para usar el micrófono.' : 'No se pudo iniciar la grabación.');
     }
-  }, [cleanup]);
+  }, [cleanup, acquireWakeLock]);
 
   const pause = useCallback(() => {
     if (recorder.current?.state !== 'recording') return;
@@ -121,6 +163,7 @@ export function useRecorder() {
     if (recorder.current?.state !== 'paused') return;
     recorder.current.resume();
     startedAt.current = Date.now();
+    lastTick.current = Date.now();
     setState('recording');
   }, []);
 
@@ -147,7 +190,7 @@ export function useRecorder() {
     [cleanup],
   );
 
-  return { state, elapsed, levels, error, start, pause, resume, stop };
+  return { state, elapsed, levels, error, warning, start, pause, resume, stop };
 }
 
 export function formatElapsed(ms: number) {

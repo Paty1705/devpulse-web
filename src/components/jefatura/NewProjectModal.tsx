@@ -339,8 +339,8 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Nombre del Proyecto</label>
-                <input 
+                <label htmlFor="proyecto-nombre" className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Nombre del Proyecto</label>
+                <input name="name" id="proyecto-nombre" 
                   type="text" required value={name} onChange={(e) => setName(e.target.value)}
                   className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                   placeholder="Ej: DevPulse v2"
@@ -354,7 +354,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                   </label>
                   {!isEdit && (
                     <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-secondary)] cursor-pointer select-none">
-                      <input
+                      <input name="manual-repo"
                         type="checkbox" checked={manualRepo}
                         onChange={(e) => setManualRepo(e.target.checked)}
                         className="rounded-[8px] text-[var(--btn-primary-bg)] focus:ring-[var(--btn-primary-bg)] bg-[var(--bg-column)] border-[var(--border-card)]"
@@ -364,14 +364,14 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                   )}
                 </div>
                 {isEdit || manualRepo ? (
-                  <input
+                  <input name="repo-url" aria-label="URL del repositorio"
                     type="url" required value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)}
                     className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                     placeholder="https://github.com/..."
                   />
                 ) : (
                   <>
-                    <input
+                    <input name="repo-name" aria-label="Nombre del repositorio"
                       type="text" value={repoName} onChange={(e) => setRepoName(e.target.value)}
                       className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                       placeholder={slugifyRepoName(name || 'proyecto')}
@@ -385,8 +385,8 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Descripción</label>
-              <textarea 
+              <label htmlFor="proyecto-descripcion" className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Descripción</label>
+              <textarea name="description" id="proyecto-descripcion" 
                 rows={2} value={description} onChange={(e) => setDescription(e.target.value)}
                 placeholder="Resumen general del sistema..."
                 className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
@@ -403,11 +403,11 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
 
             <div className="bg-[var(--bg-column)] border border-[var(--border-card)] p-4 rounded-[20px] space-y-4">
               <div>
-                <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">
+                <label htmlFor="proyecto-responsable" className="block text-sm font-bold text-[var(--text-secondary)] mb-1">
                   Responsable del proyecto
                 </label>
                 <p className="text-[11px] text-[var(--text-secondary)] mb-2">Los proyectos son individuales: todas sus tareas se le asignan a esta persona.</p>
-                <select
+                <select name="leader-id" id="proyecto-responsable"
                   value={leaderId} onChange={(e) => setLeaderId(e.target.value)}
                   disabled={!canChangeLeader}
                   className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-60 disabled:cursor-not-allowed"
@@ -431,7 +431,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
               <h3 className="font-bold">Asistente IA (Generación de Tareas)</h3>
             </div>
             <p className="text-sm text-[var(--text-secondary)] mb-3">Pega las especificaciones en bruto. El sistema conectará con IA para generar las tareas de backlog automáticamente.</p>
-            <textarea 
+            <textarea name="spec" aria-label="Especificaciones para generar tareas" 
               value={spec} onChange={(e) => setSpec(e.target.value)}
               className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-3 text-sm text-[var(--text-primary)] h-24 focus:outline-none focus:border-[var(--btn-primary-bg)] placeholder-[var(--text-secondary)] opacity-80 mb-3"
               placeholder="Ej: 'El sistema debe tener un login, una tabla de usuarios y exportar a PDF...'"
@@ -473,11 +473,11 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                     >
                       {t.isEditing ? (
                         <div className="space-y-2 mb-2">
-                          <input
+                          <input name="title" aria-label={`Título de la tarea ${idx + 1}`}
                             type="text" value={t.title} onChange={(e) => updateGeneratedTaskField(idx, 'title', e.target.value)}
                             className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[8px] p-1.5 text-[12px] font-bold text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                           />
-                          <textarea
+                          <textarea name="description" aria-label={`Descripción de la tarea ${idx + 1}`}
                             value={t.description} onChange={(e) => updateGeneratedTaskField(idx, 'description', e.target.value)}
                             className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[8px] p-1.5 text-[11px] text-[var(--text-primary)] h-16 focus:outline-none focus:border-[var(--btn-primary-bg)]"
                           />
@@ -491,7 +491,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                               </button>
                             ))}
                           </div>
-                          <select
+                          <select name="priority" aria-label={`Prioridad de la tarea ${idx + 1}`}
                             value={t.priority} onChange={(e) => updateGeneratedTaskField(idx, 'priority', e.target.value)}
                             className="w-full bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[8px] p-1.5 text-[11px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                           >
@@ -509,7 +509,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                               ))}
                             </ul>
                             <div className="flex gap-1.5">
-                              <input
+                              <input name="new-criterion" aria-label={`Nuevo criterio de la tarea ${idx + 1}`}
                                 type="text" value={t.newCriterion || ''}
                                 onChange={(e) => updateGeneratedTaskField(idx, 'newCriterion', e.target.value)}
                                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddGeneratedCriterion(idx); } }}
@@ -548,7 +548,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                         </>
                       )}
 
-                      <select
+                      <select name="assigned-to" aria-label={`Persona asignada a la tarea ${idx + 1}`}
                         value={t.assignedTo || ''}
                         onChange={(e) => handleAssignGeneratedTask(idx, e.target.value)}
                         className="w-full bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[8px] p-1.5 text-[11px] text-[var(--text-primary)] mb-2 focus:outline-none focus:border-[var(--btn-primary-bg)]"
@@ -613,11 +613,11 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                 Opcional: elegí día y hora límite para esta tarea. Podés dejarlo en blanco y asignarlo después.
               </p>
               <div className="flex gap-2">
-                <input
+                <input name="modal-due-date" aria-label="Fecha límite"
                   type="date" value={modalDueDate} onChange={(e) => setModalDueDate(e.target.value)}
                   className="flex-1 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                 />
-                <input
+                <input name="modal-due-time" aria-label="Hora límite"
                   type="time" value={modalDueTime} onChange={(e) => setModalDueTime(e.target.value)}
                   disabled={!modalDueDate}
                   className="flex-1 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-50"

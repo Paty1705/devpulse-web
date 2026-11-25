@@ -213,7 +213,7 @@ function RecursosBoard() {
           <label className="relative flex-[1_1_220px] min-w-0">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none" />
             <span className="sr-only">Buscar</span>
-            <input
+            <input name="query"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por título, etiqueta o sitio…"

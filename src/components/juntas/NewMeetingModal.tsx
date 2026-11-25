@@ -206,17 +206,17 @@ export function NewMeetingModal({ isOpen, onClose, onCreated }: Props) {
         <div className="p-6 space-y-5 overflow-y-auto">
           <label className="block space-y-1.5">
             <span className="text-sm font-semibold text-[var(--text-primary)]">Título</span>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
+            <input name="title" value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
           </label>
 
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px] gap-4">
             <label className="block space-y-1.5">
               <span className="text-sm font-semibold text-[var(--text-primary)]">Fecha y hora</span>
-              <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} className={inputClass} />
+              <input name="when" type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} className={inputClass} />
             </label>
             <label className="block space-y-1.5">
               <span className="text-sm font-semibold text-[var(--text-primary)]">Duración</span>
-              <select value={duration} onChange={(e) => setDuration(Number(e.target.value))} className={inputClass}>
+              <select name="duration" value={duration} onChange={(e) => setDuration(Number(e.target.value))} className={inputClass}>
                 {DURATIONS.map((d) => <option key={d} value={d}>{d < 60 ? `${d} min` : `${d / 60} h`.replace('.5', ':30')}</option>)}
               </select>
             </label>
@@ -244,13 +244,13 @@ export function NewMeetingModal({ isOpen, onClose, onCreated }: Props) {
                   <label className="block space-y-1">
                     <span className="text-xs font-semibold text-[var(--text-secondary)]">Cada</span>
                     <span className="flex items-center gap-2">
-                      <input type="number" min={1} max={52} value={everyN} onChange={(e) => setEveryN(e.target.value)} className={inputClass.replace('w-full', 'w-20')} />
+                      <input name="every-n" type="number" min={1} max={52} value={everyN} onChange={(e) => setEveryN(e.target.value)} className={inputClass.replace('w-full', 'w-20')} />
                       <span className="text-sm text-[var(--text-secondary)]">{FREQUENCY_UNIT[repeat][n === 1 ? 0 : 1]}</span>
                     </span>
                   </label>
                   <label className="block space-y-1">
                     <span className="text-xs font-semibold text-[var(--text-secondary)]">Hasta (opcional)</span>
-                    <input type="date" value={endDate} min={toDateInput(start)} onChange={(e) => setEndDate(e.target.value)} className={inputClass} />
+                    <input name="end-date" type="date" value={endDate} min={toDateInput(start)} onChange={(e) => setEndDate(e.target.value)} className={inputClass} />
                   </label>
                 </div>
                 <p className="text-[13px] text-[var(--text-primary)]">
@@ -267,14 +267,14 @@ export function NewMeetingModal({ isOpen, onClose, onCreated }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="block space-y-1.5">
               <span className="text-sm font-semibold text-[var(--text-primary)] inline-flex items-center gap-1.5"><Bell size={14} /> Recordatorio</span>
-              <select value={reminder ?? ''} onChange={(e) => setReminder(e.target.value === '' ? null : Number(e.target.value))} className={inputClass}>
+              <select name="reminder" value={reminder ?? ''} onChange={(e) => setReminder(e.target.value === '' ? null : Number(e.target.value))} className={inputClass}>
                 {REMINDER_OPTIONS.map((o) => <option key={o.label} value={o.value ?? ''}>{o.label}</option>)}
               </select>
             </label>
             {repeat === 'no' && (
               <label className="block space-y-1.5">
                 <span className="text-sm font-semibold text-[var(--text-primary)]">Revisar avances desde</span>
-                <input type="date" value={reviewFrom} onChange={(e) => setReviewFrom(e.target.value)} className={inputClass} />
+                <input name="review-from" type="date" value={reviewFrom} onChange={(e) => setReviewFrom(e.target.value)} className={inputClass} />
               </label>
             )}
           </div>
@@ -282,7 +282,7 @@ export function NewMeetingModal({ isOpen, onClose, onCreated }: Props) {
           {/* Google Calendar */}
           <div className="surface-card border border-[var(--border-card)] rounded-[16px] p-4 space-y-2">
             <label className={`flex items-start gap-3 ${googleReady === false ? 'opacity-60' : 'cursor-pointer'}`}>
-              <input
+              <input name="use-calendar"
                 type="checkbox"
                 checked={useCalendar}
                 disabled={!googleReady}
@@ -300,7 +300,7 @@ export function NewMeetingModal({ isOpen, onClose, onCreated }: Props) {
             </label>
             {useCalendar && (
               <label className="flex items-center gap-3 pl-7 cursor-pointer">
-                <input type="checkbox" checked={withMeet} onChange={(e) => setWithMeet(e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
+                <input name="with-meet" type="checkbox" checked={withMeet} onChange={(e) => setWithMeet(e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
                 <span className="text-sm text-[var(--text-primary)] inline-flex items-center gap-1.5"><Video size={14} /> Con enlace de Google Meet</span>
               </label>
             )}

@@ -49,8 +49,9 @@ export default function AgendaPage() {
   const { user, profile, loading } = useAuth();
   const router = useRouter();
   const isJefe = profile?.role === 'jefe';
-  const [leaderProjectIds, setLeaderProjectIds] = useState<string[]>([]);
-  const canManageTasks = isJefe || leaderProjectIds.length > 0;
+  // null = todavía no se sabe; evita pedir las tareas dos veces.
+  const [leaderProjectIds, setLeaderProjectIds] = useState<string[] | null>(null);
+  const canManageTasks = isJefe || (leaderProjectIds?.length ?? 0) > 0;
 
   useEffect(() => {
     if (!user) return;
@@ -82,7 +83,7 @@ export default function AgendaPage() {
   }, [user, loading, router]);
 
   const fetchTasks = useCallback(async () => {
-    if (!user || !profile) return;
+    if (!user || !profile || !leaderProjectIds) return;
     setTasksLoading(true);
     let query = supabase
       .from('tasks')
@@ -114,10 +115,18 @@ export default function AgendaPage() {
     if (user && profile) {
       (async () => {
         await fetchTasks();
+      })();
+    }
+  }, [user, profile, fetchTasks]);
+
+  // Aparte: las notas no dependen de qué proyectos lidera la persona.
+  useEffect(() => {
+    if (user && profile) {
+      (async () => {
         await fetchPersonalEvents();
       })();
     }
-  }, [user, profile, fetchTasks, fetchPersonalEvents]);
+  }, [user, profile, fetchPersonalEvents]);
 
   const tasksByDate = useMemo(() => {
     const map = new Map<string, AgendaTask[]>();

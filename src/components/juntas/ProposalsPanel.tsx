@@ -156,7 +156,7 @@ export function ProposalsPanel({
             >
               <div className="flex items-start gap-2">
                 {editable ? (
-                  <input
+                  <input name="titulo-propuesta"
                     key={`${p.id}-${p.title}`}
                     defaultValue={p.title}
                     aria-label="Título de la tarea"
@@ -178,7 +178,7 @@ export function ProposalsPanel({
                 <div className="grid grid-cols-2 gap-2">
                   <label className="col-span-2 flex flex-col gap-1">
                     <span className="text-[11px] text-[var(--text-secondary)]">Proyecto · responsable</span>
-                    <select
+                    <select name="project_id"
                       value={p.project_id ?? ''}
                       onChange={(e) => {
                         const proj = projects.find((x) => x.id === e.target.value);
@@ -202,7 +202,7 @@ export function ProposalsPanel({
                   {isJefe && !p.project_id && (
                     <label className="col-span-2 flex flex-col gap-1">
                       <span className="text-[11px] text-[var(--text-secondary)]">Responsable (tarea personal)</span>
-                      <select value={p.assigned_to ?? ''} onChange={(e) => patch(p.id, { assigned_to: e.target.value || null })} className={fieldClass}>
+                      <select name="assigned_to" value={p.assigned_to ?? ''} onChange={(e) => patch(p.id, { assigned_to: e.target.value || null })} className={fieldClass}>
                         <option value="">Elegir responsable…</option>
                         {attendees.map((a) => <option key={a.id} value={a.id}>{a.email}</option>)}
                         {p.assigned_to && !attendees.some((a) => a.id === p.assigned_to) && (
@@ -213,17 +213,17 @@ export function ProposalsPanel({
                   )}
                   <label className="flex flex-col gap-1">
                     <span className="text-[11px] text-[var(--text-secondary)]">Prioridad</span>
-                    <select value={p.priority} onChange={(e) => patch(p.id, { priority: e.target.value as Proposal['priority'] })} className={fieldClass} style={prioStyle(p.priority)}>
+                    <select name="priority" value={p.priority} onChange={(e) => patch(p.id, { priority: e.target.value as Proposal['priority'] })} className={fieldClass} style={prioStyle(p.priority)}>
                       {PRIORITIES.map((x) => <option key={x} value={x}>{x}</option>)}
                     </select>
                   </label>
                   <label className="flex flex-col gap-1">
                     <span className="text-[11px] text-[var(--text-secondary)]">Fecha límite</span>
-                    <input type="date" value={p.due_date ?? ''} onChange={(e) => patch(p.id, { due_date: e.target.value || null })} className={fieldClass} />
+                    <input name="due_date" type="date" value={p.due_date ?? ''} onChange={(e) => patch(p.id, { due_date: e.target.value || null })} className={fieldClass} />
                   </label>
                   <label className="col-span-2 flex flex-col gap-1">
                     <span className="text-[11px] text-[var(--text-secondary)]">Fecha de prueba (opcional)</span>
-                    <input type="date" value={p.test_date ?? ''} onChange={(e) => patch(p.id, { test_date: e.target.value || null })} className={fieldClass} />
+                    <input name="test_date" type="date" value={p.test_date ?? ''} onChange={(e) => patch(p.id, { test_date: e.target.value || null })} className={fieldClass} />
                   </label>
                 </div>
               ) : (

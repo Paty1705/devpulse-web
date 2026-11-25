@@ -186,7 +186,7 @@ export function TaskProgressSection({ taskId, canManage, onChanged, onDirtyChang
                 <span className="font-semibold">Nuevo avance</span>
                 <span className="font-mono font-bold">{value === current ? `${value}% (sin cambio)` : `${current}% → ${value}%`}</span>
               </span>
-              <input
+              <input name="percent"
                 type="range" min={0} max={100} step={5}
                 value={value}
                 onChange={(e) => setPercent(Number(e.target.value))}
@@ -195,7 +195,7 @@ export function TaskProgressSection({ taskId, canManage, onChanged, onDirtyChang
             </label>
             <label className="block">
               <span className="block text-sm text-[var(--text-primary)] mb-1.5">¿Qué hiciste?</span>
-              <textarea
+              <textarea name="note"
                 rows={2}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
@@ -259,7 +259,7 @@ export function TaskProgressSection({ taskId, canManage, onChanged, onDirtyChang
               <CalendarCheck size={16} className="text-[var(--text-secondary)]" />
               <span className="flex-1 min-w-[120px] text-sm font-semibold text-[var(--text-primary)] first-letter:uppercase">{formatDateOnly(t.test_date)}</span>
               {canSetResult(t) ? (
-                <select
+                <select name="result"
                   value={t.result}
                   onChange={(e) => setResult(t.id, e.target.value as TestDate['result'])}
                   aria-label="Resultado de la prueba"

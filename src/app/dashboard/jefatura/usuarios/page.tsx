@@ -102,7 +102,7 @@ export default function UsuariosPage() {
               <div key={p.id} className="flex items-center justify-between gap-4 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[20px] p-4 shadow-[var(--shadow-subtle)]">
                 <span className="font-medium text-[var(--text-primary)]">{p.email}</span>
                 <div className="flex items-center gap-2">
-                  <select
+                  <select name="rol" aria-label={`Rol para ${p.email}`}
                     value={roleChoice[p.id] || 'pasante'}
                     onChange={e => setRoleChoice(prev => ({ ...prev, [p.id]: e.target.value }))}
                     className="bg-[var(--bg-page)] border border-[var(--border-column)] text-[var(--text-primary)] rounded-[12px] px-2 py-1.5 text-sm"

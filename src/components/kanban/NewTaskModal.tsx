@@ -249,8 +249,8 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-bold text-[var(--text-secondary)] mb-2 uppercase tracking-wider">Proyecto</label>
-                <select 
+                <label htmlFor="tarea-proyecto" className="block text-sm font-bold text-[var(--text-secondary)] mb-2 uppercase tracking-wider">Proyecto</label>
+                <select name="project-id" id="tarea-proyecto" 
                   value={projectId} onChange={(e) => handleProjectChange(e.target.value)}
                   className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                 >
@@ -263,8 +263,8 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-[var(--text-secondary)] mb-2 uppercase tracking-wider">Título</label>
-                <input 
+                <label htmlFor="tarea-titulo" className="block text-sm font-bold text-[var(--text-secondary)] mb-2 uppercase tracking-wider">Título</label>
+                <input name="title" id="tarea-titulo" 
                   type="text" required value={title} onChange={(e) => setTitle(e.target.value)}
                   className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] font-medium focus:outline-none focus:border-[var(--btn-primary-bg)]"
                 />
@@ -285,8 +285,8 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Prioridad</label>
-                <select 
+                <label htmlFor="tarea-prioridad" className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Prioridad</label>
+                <select name="priority" id="tarea-prioridad" 
                   value={priority} onChange={(e) => setPriority(e.target.value)}
                   className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                 >
@@ -296,8 +296,8 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Descripción Técnica</label>
-              <textarea 
+              <label htmlFor="tarea-descripcion" className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Descripción Técnica</label>
+              <textarea name="description" id="tarea-descripcion" 
                 rows={3} value={description} onChange={(e) => setDescription(e.target.value)}
                 placeholder="Requerimientos, contexto técnico..."
                 className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
@@ -305,9 +305,9 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Criterios de Aceptación (Definition of Done)</label>
+              <label htmlFor="tarea-criterio" className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Criterios de Aceptación (Definition of Done)</label>
               <div className="flex gap-2 mb-2">
-                <input 
+                <input name="new-criterion" id="tarea-criterio" 
                   type="text" value={newCriterion} onChange={(e) => setNewCriterion(e.target.value)} onKeyDown={handleAddCriterion}
                   placeholder="Ej: El endpoint devuelve 200 OK"
                   className="flex-1 bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
@@ -334,8 +334,8 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Asignar a</label>
-                <select
+                <label htmlFor="tarea-asignada" className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Asignar a</label>
+                <select name="assigned-to" id="tarea-asignada"
                   value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)}
                   disabled={!selectedProject}
                   className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-70"
@@ -349,20 +349,20 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
               </div>
               {repeat === 'no' ? (<>
               <div>
-                <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Fecha Límite</label>
+                <label htmlFor="tarea-fecha" className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Fecha Límite</label>
                 <div className="relative">
                   <CalendarIcon className="absolute left-3 top-2.5 text-[var(--text-secondary)]" size={18} />
-                  <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 pl-10 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]" />
+                  <input name="due-date" id="tarea-fecha" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 pl-10 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Hora Límite</label>
-                <input type="time" value={dueTime} onChange={(e) => setDueTime(e.target.value)} className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]" />
+                <label htmlFor="tarea-hora" className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Hora Límite</label>
+                <input name="due-time" id="tarea-hora" type="time" value={dueTime} onChange={(e) => setDueTime(e.target.value)} className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]" />
               </div>
               </>) : (
               <div className="md:col-span-2">
-                <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Empieza</label>
-                <input type="date" value={startsOn} min={toISODate(new Date())} onChange={(e) => e.target.value && setStartsOn(e.target.value)} className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]" />
+                <label htmlFor="tarea-inicio" className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Empieza</label>
+                <input name="starts-on" id="tarea-inicio" type="date" value={startsOn} min={toISODate(new Date())} onChange={(e) => e.target.value && setStartsOn(e.target.value)} className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]" />
               </div>
               )}
             </div>
@@ -389,10 +389,10 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
             </h3>
             
             <div>
-              <label className="block text-sm font-bold text-[var(--text-secondary)] mb-1 flex items-center gap-2">
+              <label htmlFor="tarea-rama" className="block text-sm font-bold text-[var(--text-secondary)] mb-1 flex items-center gap-2">
                 <GitBranch size={16} /> Nombre de Rama (vista previa)
               </label>
-              <input type="text" readOnly value={branchNamePreview} className="w-full bg-[var(--bg-page)] border border-[var(--border-column)] text-[var(--text-secondary)] rounded-[12px] p-2.5 font-mono text-sm cursor-not-allowed" />
+              <input name="branch-name-preview" id="tarea-rama" type="text" readOnly value={branchNamePreview} className="w-full bg-[var(--bg-page)] border border-[var(--border-column)] text-[var(--text-secondary)] rounded-[12px] p-2.5 font-mono text-sm cursor-not-allowed" />
               <p className="text-xs text-[var(--text-secondary)] mt-1">
                 {selectedProject?.repo_url
                   ? 'Se creará automáticamente en GitHub al guardar la tarea.'
@@ -402,12 +402,12 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
 
             <div className="bg-[var(--bg-column)] border border-[var(--border-card)] p-4 rounded-[20px]">
               <label className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)] cursor-pointer mb-2">
-                <input type="checkbox" checked={requiresSql} onChange={(e) => setRequiresSql(e.target.checked)} className="rounded text-[var(--btn-primary-bg)] focus:ring-[var(--btn-primary-bg)] bg-[var(--bg-page)] border-[var(--border-card)]" />
+                <input name="requires-sql" type="checkbox" checked={requiresSql} onChange={(e) => setRequiresSql(e.target.checked)} className="rounded text-[var(--btn-primary-bg)] focus:ring-[var(--btn-primary-bg)] bg-[var(--bg-page)] border-[var(--border-card)]" />
                 <Database size={18} className="text-[var(--btn-primary-bg)]" /> ¿Requiere cambios en Base de Datos?
               </label>
               
               {requiresSql && (
-                <textarea 
+                <textarea name="sql-script" aria-label="Script SQL" 
                   value={sqlScript} onChange={(e) => setSqlScript(e.target.value)}
                   placeholder="Pega el script SQL de migración o ingresa la ruta del archivo .sql"
                   className="w-full mt-3 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-3 font-mono text-sm text-[var(--text-primary)] h-24 focus:outline-none focus:border-[var(--btn-primary-bg)]"
@@ -483,17 +483,17 @@ function RepeatPicker({ repeat, setRepeat, everyN, setEveryN, startsOn, dueInDay
             <label className="block">
               <span className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Cada</span>
               <span className="flex items-center gap-2">
-                <input type="number" min={1} max={52} value={everyN} onChange={(e) => setEveryN(e.target.value)} className={`${fieldClass} w-20`} />
+                <input name="every-n" type="number" min={1} max={52} value={everyN} onChange={(e) => setEveryN(e.target.value)} className={`${fieldClass} w-20`} />
                 <span className="text-sm text-[var(--text-secondary)]">{FREQUENCY_UNIT[repeat][n === 1 ? 0 : 1]}</span>
               </span>
             </label>
             <label className="block">
               <span className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Días para terminarla</span>
-              <input type="number" min={0} max={60} value={dueInDays} onChange={(e) => setDueInDays(e.target.value)} className={fieldClass} />
+              <input name="due-in-days" type="number" min={0} max={60} value={dueInDays} onChange={(e) => setDueInDays(e.target.value)} className={fieldClass} />
             </label>
             <label className="block">
               <span className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Hasta <span className="font-normal">(opcional)</span></span>
-              <input type="date" value={endDate} min={startsOn} onChange={(e) => setEndDate(e.target.value)} className={fieldClass} />
+              <input name="end-date" type="date" value={endDate} min={startsOn} onChange={(e) => setEndDate(e.target.value)} className={fieldClass} />
             </label>
           </div>
           <p className="text-sm text-[var(--text-primary)]">

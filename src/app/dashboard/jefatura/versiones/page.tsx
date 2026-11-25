@@ -95,7 +95,7 @@ export default function VersionesPage() {
         </div>
 
         {visibleProjects.length > 1 && (
-          <select
+          <select name="project-filter" aria-label="Filtrar por proyecto"
             value={projectFilter}
             onChange={e => setProjectFilter(e.target.value)}
             className="bg-[var(--bg-page)] border border-[var(--border-column)] text-[var(--text-primary)] rounded-[12px] px-3 py-2 text-sm font-bold"

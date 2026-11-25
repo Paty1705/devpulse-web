@@ -98,12 +98,12 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
   const [leaderProjectIds, setLeaderProjectIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isOpen) return; // con la tarea cerrada no hace falta
     (async () => {
       const { data } = await supabase.from('projects').select('id').eq('leader_id', user.id);
       setLeaderProjectIds(new Set((data || []).map(p => p.id)));
     })();
-  }, [user]);
+  }, [user, isOpen]);
 
   const fetchTaskDetail = useCallback(async (taskId: string) => {
     setLoading(true);
@@ -492,7 +492,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
               <h3 className="font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
                 <FileCode size={18} /> Script SQL Adjunto
               </h3>
-              <textarea
+              <textarea name="sql" aria-label="Script SQL adjunto"
                 className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-3 text-sm font-mono text-[var(--text-primary)] h-32 focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-60"
                 placeholder="Sin script SQL para esta tarea."
                 value={sqlDraft}
@@ -540,13 +540,13 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
                 </span>
                 {canEdit ? (
                   <div className="grid grid-cols-1 gap-2">
-                    <input
+                    <input name="due-date" aria-label="Fecha límite"
                       type="date"
                       value={dueDateDraft}
                       onChange={(e) => setDueDateDraft(e.target.value)}
                       className="min-w-0 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                     />
-                    <input
+                    <input name="due-time" aria-label="Hora límite"
                       type="time"
                       value={dueTimeDraft}
                       onChange={(e) => setDueTimeDraft(e.target.value)}
@@ -564,7 +564,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
               <div>
                 <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase tracking-wider">Pull Request</span>
                 {canEdit ? (
-                  <input
+                  <input name="pr-url" aria-label="URL del Pull Request"
                     type="url"
                     value={prUrlDraft}
                     onChange={(e) => setPrUrlDraft(e.target.value)}
@@ -616,7 +616,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
               ) : canDecide ? (
                 <>
                   <p className="text-xs text-[var(--text-secondary)]">Revisa el trabajo (y los comentarios de QA si los hay) y apruébalo, o recházalo indicando los cambios necesarios.</p>
-                  <textarea
+                  <textarea name="audit-comment" aria-label="Comentario de revisión"
                     value={auditComment}
                     onChange={(e) => setAuditComment(e.target.value)}
                     placeholder="Comentario / cambios sugeridos (opcional para aprobar, recomendado al rechazar)"
@@ -642,7 +642,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
               ) : canReview ? (
                 <>
                   <p className="text-xs text-[var(--text-secondary)]">Deja tu revisión y los cambios que sugieres. El jefe decide si se aprueba o se rechaza.</p>
-                  <textarea
+                  <textarea name="audit-comment" aria-label="Comentario de revisión"
                     value={auditComment}
                     onChange={(e) => setAuditComment(e.target.value)}
                     placeholder="Qué revisaste y qué cambios sugieres (obligatorio)"

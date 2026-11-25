@@ -83,6 +83,8 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
   const [dueDateDraft, setDueDateDraft] = useState('');
   const [dueTimeDraft, setDueTimeDraft] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [progressDirty, setProgressDirty] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
   const [audits, setAudits] = useState<AuditRecord[]>([]);
   const [auditComment, setAuditComment] = useState('');
@@ -178,6 +180,8 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
     setBranchResult(null);
     setPrStatus(null);
     setPrStatusFailed(false);
+    setProgressDirty(false);
+    setConfirmClose(false);
   }
 
   useEffect(() => {
@@ -262,6 +266,23 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
 
   const branchName = fullTask ? branchNameForTask(fullTask.id, fullTask.title) : 'feature/TASK-000-tarea';
   const gitCommand = `git checkout -b ${branchName}`;
+
+  // Cambios en fecha, PR o SQL que todavía no se guardan (el avance tiene su propio botón).
+  const savedDue = toLocalDateTimeParts(fullTask?.due_date ?? null);
+  const detailsDirty = !!fullTask && canEdit && (
+    sqlDraft !== (fullTask.sql_script || '') ||
+    prUrlDraft.trim() !== (fullTask.pr_url || '') ||
+    dueDateDraft !== savedDue.date ||
+    (!!dueDateDraft && dueTimeDraft !== savedDue.time)
+  );
+  const hasUnsaved = detailsDirty || progressDirty;
+  const unsavedLabel = detailsDirty && progressDirty
+    ? 'Falta guardar el avance y los cambios en fecha, PR o SQL.'
+    : progressDirty ? 'Falta guardar el avance con «Guardar avance».' : 'Hay cambios sin guardar en fecha, PR o SQL.';
+  const requestClose = () => {
+    if (hasUnsaved) setConfirmClose(true);
+    else onClose();
+  };
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(gitCommand);
@@ -381,17 +402,17 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
             <span className="font-mono bg-[var(--badge-bg)] text-[var(--badge-text)] px-2 py-1 rounded-[12px] font-bold text-sm flex-shrink-0">
               TASK-{(fullTask?.id || '000').slice(0, 6)}
             </span>
-            <h2 className="text-xl font-bold text-[var(--text-primary)] truncate">{loading ? 'Cargando...' : fullTask?.title || 'Tarea'}</h2>
+            <h2 className="text-xl font-bold text-[var(--text-primary)] truncate">{fullTask?.title || (loading ? 'Cargando...' : 'Tarea')}</h2>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-[var(--bg-card-hover)] rounded-[12px] text-[var(--text-secondary)] transition-colors flex-shrink-0">
+          <button onClick={requestClose} aria-label="Cerrar" className="p-2 hover:bg-[var(--bg-card-hover)] rounded-[12px] text-[var(--text-secondary)] transition-colors flex-shrink-0">
             <X size={20} />
           </button>
         </div>
 
-        {loading ? (
-          <div className="flex-1 p-12 text-center text-[var(--text-secondary)]">Cargando detalle de la tarea...</div>
-        ) : !fullTask ? (
-          <div className="flex-1 p-12 text-center text-[var(--text-secondary)]">No se pudo cargar la tarea.</div>
+        {!fullTask ? (
+          <div className="flex-1 p-12 text-center text-[var(--text-secondary)]">
+            {loading ? 'Cargando detalle de la tarea...' : 'No se pudo cargar la tarea.'}
+          </div>
         ) : (
         <div className="flex-1 overflow-y-auto p-6 flex flex-col md:flex-row gap-8">
 
@@ -410,37 +431,41 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
                 <AlertTriangle size={16} /> Tarea atrasada: venció el {new Date(fullTask.due_date).toLocaleDateString()}.
               </div>
             )}
-            <section>
-              <h3 className="font-bold text-[var(--text-primary)] mb-2">Comando de Git</h3>
-              <div className="flex items-center gap-2 bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-1">
-                <code className="flex-1 px-3 py-2 text-sm text-[var(--text-primary)] overflow-x-auto whitespace-nowrap">
-                  {gitCommand}
-                </code>
-                <button
-                  onClick={copyToClipboard}
-                  className="p-2 bg-[var(--bg-page)] text-[var(--text-secondary)] hover:bg-[var(--btn-primary-bg)] hover:text-[var(--btn-primary-text)] border border-[var(--border-card)] rounded-[12px] transition-colors"
-                  title="Copiar comando"
-                >
-                  {copied ? <Check size={18} className="text-[var(--btn-primary-bg)]" /> : <Copy size={18} />}
-                </button>
-              </div>
-              {projectRepoUrl ? (
-                <div className="mt-2 flex items-center gap-2">
-                  <button
-                    onClick={handleCreateBranchNow}
-                    disabled={branchCreating}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--btn-primary-bg)] hover:border-[var(--btn-primary-bg)] transition-colors disabled:opacity-50"
-                  >
-                    <GitBranch size={14} /> {branchCreating ? 'Creando...' : 'Crear rama en GitHub'}
-                  </button>
-                  {branchResult && (
-                    <span className={`text-xs ${branchResult.ok ? 'text-emerald-500' : 'text-red-500'}`}>{branchResult.message}</span>
-                  )}
-                </div>
-              ) : (
-                <p className="text-xs text-[var(--text-secondary)] mt-1">Este proyecto no tiene repositorio de GitHub configurado.</p>
-              )}
-            </section>
+            {fullTask.project_id && (
+              <section>
+                <h3 className="font-bold text-[var(--text-primary)] mb-2">Comando de Git</h3>
+                {projectRepoUrl ? (
+                  <>
+                  <div className="flex items-center gap-2 bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-1">
+                    <code className="flex-1 px-3 py-2 text-sm text-[var(--text-primary)] overflow-x-auto whitespace-nowrap">
+                      {gitCommand}
+                    </code>
+                    <button
+                      onClick={copyToClipboard}
+                      className="p-2 bg-[var(--bg-page)] text-[var(--text-secondary)] hover:bg-[var(--btn-primary-bg)] hover:text-[var(--btn-primary-text)] border border-[var(--border-card)] rounded-[12px] transition-colors"
+                      title="Copiar comando"
+                    >
+                      {copied ? <Check size={18} className="text-[var(--btn-primary-bg)]" /> : <Copy size={18} />}
+                    </button>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      onClick={handleCreateBranchNow}
+                      disabled={branchCreating}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--btn-primary-bg)] hover:border-[var(--btn-primary-bg)] transition-colors disabled:opacity-50"
+                    >
+                      <GitBranch size={14} /> {branchCreating ? 'Creando...' : 'Crear rama en GitHub'}
+                    </button>
+                    {branchResult && (
+                      <span className={`text-xs ${branchResult.ok ? 'text-emerald-500' : 'text-red-500'}`}>{branchResult.message}</span>
+                    )}
+                  </div>
+                  </>
+                ) : (
+                  <p className="text-xs text-[var(--text-secondary)]">Este proyecto no tiene repositorio de GitHub configurado.</p>
+                )}
+              </section>
+            )}
 
             <section>
               <h3 className="font-bold text-[var(--text-primary)] mb-2">Especificación</h3>
@@ -461,7 +486,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
               )}
             </section>
 
-            <TaskProgressSection taskId={fullTask.id} canManage={isOwner || isManager} onChanged={onUpdated} />
+            <TaskProgressSection taskId={fullTask.id} canManage={isOwner || isManager} onChanged={onUpdated} onDirtyChange={setProgressDirty} />
 
             <section>
               <h3 className="font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
@@ -514,7 +539,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
                   <CalendarIcon size={12} /> Fecha límite
                 </span>
                 {canEdit ? (
-                  <div className="grid grid-cols-[1fr_auto] gap-2">
+                  <div className="grid grid-cols-1 gap-2">
                     <input
                       type="date"
                       value={dueDateDraft}
@@ -526,7 +551,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
                       value={dueTimeDraft}
                       onChange={(e) => setDueTimeDraft(e.target.value)}
                       disabled={!dueDateDraft}
-                      className="w-[6.5rem] bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-50"
+                      className="min-w-0 bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[12px] p-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-50"
                     />
                   </div>
                 ) : fullTask.due_date ? (
@@ -687,18 +712,32 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
         </div>
         )}
 
-        <div className="px-6 py-4 border-t border-[var(--border-column)] bg-[var(--bg-column)] flex justify-end gap-3 flex-none">
-          <button onClick={onClose} className="px-6 py-2 border border-[var(--border-card)] text-[var(--text-primary)] rounded-[12px] font-bold hover:bg-[var(--bg-page)] transition-colors active:scale-[0.97]">
-            Cerrar
-          </button>
+        <div className="px-6 py-4 border-t border-[var(--border-column)] bg-[var(--bg-column)] flex flex-wrap items-center justify-end gap-3 flex-none">
+          {hasUnsaved && (
+            <p role="status" className="mr-auto text-xs font-semibold text-amber-500">{unsavedLabel}</p>
+          )}
+          {confirmClose && hasUnsaved ? (
+            <>
+              <button onClick={() => setConfirmClose(false)} className="px-6 py-2 border border-[var(--border-card)] text-[var(--text-primary)] rounded-[12px] font-bold hover:bg-[var(--bg-page)] transition-colors active:scale-[0.97]">
+                Seguir editando
+              </button>
+              <button onClick={onClose} className="px-6 py-2 border border-red-500/40 text-red-500 rounded-[12px] font-bold hover:bg-red-500/10 transition-colors active:scale-[0.97]">
+                Cerrar sin guardar
+              </button>
+            </>
+          ) : (
+            <button onClick={requestClose} className="px-6 py-2 border border-[var(--border-card)] text-[var(--text-primary)] rounded-[12px] font-bold hover:bg-[var(--bg-page)] transition-colors active:scale-[0.97]">
+              Cerrar
+            </button>
+          )}
           {canEdit && (
             <button
               onClick={handleSave}
-              disabled={!fullTask || isSaving}
-              className="px-6 py-2 bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] rounded-[12px] font-bold hover:brightness-110 transition-colors disabled:opacity-50 flex items-center gap-2 active:scale-[0.97]"
+              disabled={!detailsDirty || isSaving}
+              className="px-6 py-2 bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] rounded-[12px] font-bold hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-[0.97]"
             >
               <Save size={16} />
-              {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+              {isSaving ? 'Guardando...' : 'Guardar fecha, PR y SQL'}
             </button>
           )}
         </div>

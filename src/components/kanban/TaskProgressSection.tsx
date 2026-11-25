@@ -47,9 +47,11 @@ type Props = {
   canManage: boolean;
   /** Para refrescar el tablero cuando cambia el % de la tarea. */
   onChanged?: () => void;
+  /** Avisa si hay un avance escrito o movido que todavía no se guarda. */
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
-export function TaskProgressSection({ taskId, canManage, onChanged }: Props) {
+export function TaskProgressSection({ taskId, canManage, onChanged, onDirtyChange }: Props) {
   const { user } = useAuth();
   const [entries, setEntries] = useState<ProgressEntry[]>([]);
   const [tests, setTests] = useState<TestDate[]>([]);
@@ -90,10 +92,16 @@ export function TaskProgressSection({ taskId, canManage, onChanged }: Props) {
     })();
   }, [load]);
 
-  if (unavailable) return null;
-
   const current = entries[0]?.percent ?? 0;
   const value = percent ?? current;
+  const dirty = canManage && (value !== current || note.trim() !== '');
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+
+  if (unavailable) return null;
+
   const canSetResult = (t: TestDate) => canManage || t.tester_id === user?.id;
 
   const saveProgress = async () => {
@@ -168,15 +176,15 @@ export function TaskProgressSection({ taskId, canManage, onChanged }: Props) {
           <div className="flex-1 h-2.5 rounded-full bg-[var(--bg-page)] overflow-hidden">
             <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${current}%`, background: 'linear-gradient(90deg, var(--accent-2), var(--accent))' }} />
           </div>
-          <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{current}%</span>
+          <span className="font-mono text-sm font-bold text-[var(--text-primary)]">Actual: {current}%</span>
         </div>
 
         {canManage && (
           <div className="chip-glass rounded-[16px] p-4 space-y-3 mb-4 border border-[var(--border-card)]">
             <label className="block">
               <span className="flex justify-between text-sm text-[var(--text-primary)] mb-1.5">
-                <span className="font-semibold">Registrar avance</span>
-                <span className="font-mono font-bold">{value}%</span>
+                <span className="font-semibold">Nuevo avance</span>
+                <span className="font-mono font-bold">{value === current ? `${value}% (sin cambio)` : `${current}% → ${value}%`}</span>
               </span>
               <input
                 type="range" min={0} max={100} step={5}

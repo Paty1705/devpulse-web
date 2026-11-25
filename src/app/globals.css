@@ -384,3 +384,61 @@ html {
     font-size: 16px !important;
   }
 }
+
+/* =========================================
+   IMPRESIÓN / PDF
+   El papel es blanco: siempre colores claros y sin efectos de vidrio,
+   aunque la app esté en modo oscuro. Sin esto las tarjetas salen en
+   blanco y el texto, casi invisible.
+========================================= */
+@page {
+  margin: 12mm;
+}
+@media print {
+  :root {
+    color-scheme: light !important;
+    --page-base: #FFFFFF !important;
+    --bg-page: #F3F4F8 !important;
+    --bg-column: #F3F4F8 !important;
+    --bg-card: #FFFFFF !important;
+    --bg-card-hover: #FFFFFF !important;
+    --border-column: #D9DCE8 !important;
+    --border-card: #D9DCE8 !important;
+    --text-primary: #111827 !important;
+    --text-secondary: #374151 !important;
+    --prio-alta-bg: #FDE3D3 !important; --prio-alta-text: #9A3412 !important;
+    --prio-media-bg: #FEF3C7 !important; --prio-media-text: #92400E !important;
+    --prio-baja-bg: #DCEFE7 !important; --prio-baja-text: #166534 !important;
+    --ok-text: #15803D !important;
+  }
+  html,
+  body {
+    background: #FFFFFF !important;
+  }
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    /* Conserva los colores de las barras y las etiquetas. */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .animate-fade-in-up {
+    opacity: 1 !important;
+  }
+  /* El borde iridiscente y las manchas del fondo tapan el contenido al imprimir. */
+  body::before,
+  .glass-iridescent::before,
+  [class~="bg-[var(--bg-card)]"]::before {
+    display: none !important;
+  }
+  .glass-panel,
+  .surface-card {
+    background: #FFFFFF !important;
+    border: 1px solid #D9DCE8 !important;
+  }
+}

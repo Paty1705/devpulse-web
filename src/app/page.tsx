@@ -13,6 +13,8 @@ const TEST_USERS = [
   { email: 'back.senior@devpulse.com', label: 'Developer Back' },
   { email: 'qa.tester@devpulse.com', label: 'QA Tester' },
   { email: 'dev.junior@devpulse.com', label: 'Dev Junior' },
+  { email: 'pablo@devpulse.com', label: 'Pablo' },
+  { email: 'adri@devpulse.com', label: 'Adri' },
 ];
 
 export default function Home() {

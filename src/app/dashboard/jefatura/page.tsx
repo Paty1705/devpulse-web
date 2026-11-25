@@ -141,9 +141,9 @@ export default function JefaturaPage() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
         {visibleProjects.length === 0 ? (
-          <div className="col-span-3 text-center py-12 text-[var(--text-secondary)] border-2 border-dashed border-[var(--border-column)] rounded-[24px] bg-[var(--bg-column)]">
+          <div className="col-span-full text-center py-12 text-[var(--text-secondary)] border-2 border-dashed border-[var(--border-column)] rounded-[24px] bg-[var(--bg-column)]">
             <FolderGit2 size={48} className="mx-auto mb-4 opacity-50" />
             <p>No hay proyectos activos.</p>
             {isJefe && <p className="text-sm mt-1 opacity-70">Haz clic en &quot;Nuevo Proyecto&quot; para comenzar.</p>}
@@ -175,7 +175,7 @@ export default function JefaturaPage() {
                 </a>
                 
                 {/* Botones de acción secundaria */}
-                <div className="flex gap-2 w-full mt-1">
+                <div className="flex flex-wrap gap-2 w-full mt-1">
                   <button onClick={() => setSelectedProject(p)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-[12px] text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-page)] hover:bg-[var(--bg-column)] transition-colors border border-[var(--border-column)]">
                     <Info size={14} /> Detalles
                   </button>

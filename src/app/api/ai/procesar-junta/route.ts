@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { GoogleGenerativeAI, SchemaType, type Part, type ResponseSchema } from '@google/generative-ai';
+import { GoogleGenerativeAI, type Part } from '@google/generative-ai';
 import { GoogleAIFileManager, FileState } from '@google/generative-ai/server';
+import { extractProposals, PRIORITIES, transcribeMeeting, type MeetingContext } from '@/lib/ai-junta';
 
 // Transcribir y analizar una junta larga puede tardar; Vercel lo respeta
 // (hasta 300 s en el plan Hobby con Fluid Compute).
@@ -10,45 +11,7 @@ export const maxDuration = 300;
 // Hasta este tamaño el audio va dentro de la petición; más grande se sube
 // primero a la Files API de Gemini (el límite de una petición es ~20 MB).
 const INLINE_LIMIT_BYTES = 15 * 1024 * 1024;
-const MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
-const PRIORITIES = ['Baja', 'Media', 'Alta', 'Crítica'] as const;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-type AiProposal = {
-  title: string;
-  description?: string | null;
-  assignee_email?: string | null;
-  project_name?: string | null;
-  priority?: string | null;
-  due_date?: string | null;
-  test_date?: string | null;
-  quote?: string | null;
-};
-
-const responseSchema: ResponseSchema = {
-  type: SchemaType.OBJECT,
-  properties: {
-    transcript: { type: SchemaType.STRING, description: 'Transcripción completa en español, con "Nombre:" al inicio de cada intervención cuando se pueda identificar.' },
-    proposals: {
-      type: SchemaType.ARRAY,
-      items: {
-        type: SchemaType.OBJECT,
-        properties: {
-          title: { type: SchemaType.STRING },
-          description: { type: SchemaType.STRING, nullable: true },
-          assignee_email: { type: SchemaType.STRING, nullable: true },
-          project_name: { type: SchemaType.STRING, nullable: true },
-          priority: { type: SchemaType.STRING, format: 'enum', enum: [...PRIORITIES] },
-          due_date: { type: SchemaType.STRING, nullable: true, description: 'YYYY-MM-DD' },
-          test_date: { type: SchemaType.STRING, nullable: true, description: 'YYYY-MM-DD' },
-          quote: { type: SchemaType.STRING, nullable: true },
-        },
-        required: ['title', 'priority'],
-      },
-    },
-  },
-  required: ['transcript', 'proposals'],
-};
 
 function geminiMime(type: string, path: string) {
   const base = type.split(';')[0].trim();
@@ -135,63 +98,30 @@ export async function POST(req: Request) {
     const dateLabel = new Intl.DateTimeFormat('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/Mexico_City' }).format(meetingDate);
     const isoDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(meetingDate);
 
-    const prompt = `Eres el asistente de juntas de un área de ingeniería de software.
-Escucha la grabación de la junta "${meeting.title}" del ${dateLabel} (${isoDate}) y:
-
-1. Transcríbela completa en español. Si puedes identificar quién habla, empieza cada intervención con su nombre.
-2. Extrae TODAS las tareas, compromisos y pendientes que se asignaron o acordaron. Para cada una:
-   - "title": corto y accionable (máx. 70 caracteres), empezando con verbo.
-   - "description": detalle útil de lo que se pidió, o null.
-   - "assignee_email": el correo de la persona responsable, SOLO de la lista de asistentes; null si no queda claro.
-   - "project_name": el nombre EXACTO de uno de los proyectos de la lista; null si no queda claro.
-   - "priority": "Baja", "Media", "Alta" o "Crítica" según la urgencia que se expresó (por defecto "Media").
-   - "due_date": fecha límite en formato YYYY-MM-DD si se mencionó (convierte expresiones como "el viernes" o "la próxima semana" tomando como referencia la fecha de la junta); null si no.
-   - "test_date": fecha de prueba YYYY-MM-DD si se mencionó; null si no.
-   - "quote": la frase textual de la grabación de donde sale la tarea.
-No inventes tareas que no se mencionaron. Si no hubo ninguna, devuelve una lista vacía.
-
-Asistentes (correo · rol):
-${attendees.map((a) => `- ${a.profile!.email} · ${a.profile!.role}`).join('\n') || '- (sin asistentes registrados)'}
-
-Proyectos (nombre · responsable). Cada proyecto es individual: sus tareas son de su responsable.
-${projects.map((p) => `- ${p.name} · ${p.leader?.email ?? 'sin responsable'}`).join('\n') || '- (sin proyectos)'}
-
-Minuta escrita durante la junta (puede ayudarte a entender el contexto):
-${(minuteRows ?? []).map((m) => `- [${m.kind}] ${m.content}`).join('\n') || '- (vacía)'}`;
+    const context: MeetingContext = {
+      title: meeting.title,
+      dateLabel,
+      isoDate,
+      attendees: attendees.map((a) => a.profile!),
+      projects: projects.map((p) => ({ name: p.name, leaderEmail: p.leader?.email ?? null })),
+      minutes: minuteRows ?? [],
+    };
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const part = await audioPart(apiKey, bytes, mimeType, `junta-${meetingId}`);
 
-    let raw = '';
-    let lastError: unknown = null;
-    for (const name of MODELS) {
-      try {
-        const model = genAI.getGenerativeModel({
-          model: name,
-          generationConfig: { responseMimeType: 'application/json', responseSchema, temperature: 0.2 },
-        });
-        const result = await model.generateContent([part, { text: prompt }]);
-        raw = result.response.text();
-        break;
-      } catch (e) {
-        lastError = e;
-        console.warn(`procesar-junta: falló ${name}`, e instanceof Error ? e.message : e);
-      }
-    }
-    if (!raw) throw new Error(`Gemini no respondió: ${lastError instanceof Error ? lastError.message : 'error desconocido'}`);
+    // Paso 1: transcribir. Se guarda de una vez para no perderla si falla el paso 2.
+    const transcript = await transcribeMeeting(genAI, part, context);
+    await db.from('meetings').update({ transcript }).eq('id', meetingId);
 
-    let parsed: { transcript?: string; proposals?: AiProposal[] };
-    try {
-      parsed = JSON.parse(raw.replace(/```json\n?|```\n?/g, '').trim());
-    } catch {
-      throw new Error('La IA no devolvió un JSON válido.');
-    }
+    // Paso 2: buscar las tareas en el texto.
+    const proposals = await extractProposals(genAI, transcript, context);
 
     // Normaliza: correos/proyectos deben existir; en proyectos individuales
     // la tarea es del responsable del proyecto.
     const byEmail = new Map(attendees.map((a) => [a.profile!.email.toLowerCase(), a.user_id]));
     const byProject = new Map(projects.map((p) => [p.name.trim().toLowerCase(), p]));
-    const rows = (parsed.proposals ?? [])
+    const rows = proposals
       .filter((p) => p && typeof p.title === 'string' && p.title.trim())
       .map((p) => {
         const project = p.project_name ? byProject.get(p.project_name.trim().toLowerCase()) : undefined;
@@ -234,7 +164,7 @@ ${(minuteRows ?? []).map((m) => `- [${m.kind}] ${m.content}`).join('\n') || '- (
 
     await db
       .from('meetings')
-      .update({ transcript: parsed.transcript?.trim() || null, ai_status: 'listo', ai_error: null })
+      .update({ ai_status: 'listo', ai_error: null })
       .eq('id', meetingId);
 
     return NextResponse.json({ proposals: rows.length }, { status: 200 });

@@ -13,12 +13,14 @@ type Props = {
   isJefe: boolean;
   canRecord: boolean;
   hasRecording: boolean;
+  /** Duración de la grabación guardada; null mientras no se conoce. */
+  savedMs: number | null;
   uploading: boolean;
   onStop: () => void;
   onUploadFile: (file: File) => void;
 };
 
-export function RecorderBar({ recorder, remoteRecording = false, isJefe, canRecord, hasRecording, uploading, onStop, onUploadFile }: Props) {
+export function RecorderBar({ recorder, remoteRecording = false, isJefe, canRecord, hasRecording, savedMs, uploading, onStop, onUploadFile }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
   const { state, elapsed, levels, error, warning, start, pause, resume } = recorder;
   const live = state === 'recording';
@@ -34,6 +36,10 @@ export function RecorderBar({ recorder, remoteRecording = false, isJefe, canReco
           ? 'Grabación guardada'
           : 'Sin grabar';
 
+  // Sin grabar en este momento, el contador muestra lo que dura lo guardado.
+  const showSaved = state === 'idle' && !uploading && !remoteRecording && hasRecording;
+  const time = !showSaved ? formatElapsed(elapsed) : savedMs === null ? '--:--:--' : formatElapsed(savedMs);
+
   return (
     <section className="glass-panel glass-iridescent thick-iridescent rounded-[26px] px-5 py-4 flex flex-wrap items-center gap-x-5 gap-y-3">
       <div className="flex items-center gap-3 min-w-[170px]">
@@ -47,7 +53,7 @@ export function RecorderBar({ recorder, remoteRecording = false, isJefe, canReco
         />
         <span className="flex flex-col">
           <span className="text-sm font-semibold text-[var(--text-primary)]" aria-live="polite">{label}</span>
-          <span className="font-mono text-xl font-bold tracking-wide text-[var(--text-primary)]">{formatElapsed(elapsed)}</span>
+          <span className="font-mono text-xl font-bold tracking-wide text-[var(--text-primary)]">{time}</span>
         </span>
       </div>
 

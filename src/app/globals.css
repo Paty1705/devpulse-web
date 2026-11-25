@@ -78,6 +78,22 @@
   --card-bevel: rgba(81, 90, 218, 0.3);
 }
 
+/* Controles nativos (listas desplegables, calendario, barras de scroll):
+   sin color-scheme el navegador los pinta en claro aunque la app esté en
+   oscuro, y las opciones quedan con letra blanca sobre fondo blanco. */
+:root {
+  color-scheme: light;
+}
+:root.dark {
+  color-scheme: dark;
+}
+/* Colores explícitos y opacos para las opciones: algunos navegadores
+   (Linux, Windows) toman el fondo translúcido y el texto del <select>. */
+:root.dark :is(option, optgroup) {
+  background-color: var(--page-base);
+  color: var(--text-primary);
+}
+
 /* =========================================
    ACENTOS
    --accent, --accent-2 y --accent-contrast los pone

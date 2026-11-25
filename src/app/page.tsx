@@ -8,11 +8,10 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 const TEST_USERS = [
-  { email: 'jefa.tecnica@devpulse.com', label: 'Jefatura' },
-  { email: 'front.senior@devpulse.com', label: 'Developer Front' },
-  { email: 'back.senior@devpulse.com', label: 'Developer Back' },
-  { email: 'qa.tester@devpulse.com', label: 'QA Tester' },
-  { email: 'dev.junior@devpulse.com', label: 'Dev Junior' },
+  { email: 'erick@devpulse.com', label: 'Erick' },
+  { email: 'alan@devpulse.com', label: 'Alan' },
+  { email: 'joana@devpulse.com', label: 'Joana' },
+  { email: 'paty@devpulse.com', label: 'Paty' },
   { email: 'pablo@devpulse.com', label: 'Pablo' },
   { email: 'adri@devpulse.com', label: 'Adri' },
 ];

@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
-  Activity, BookOpen, CalendarDays, ChartColumn, FolderKanban, GitBranch, LayoutGrid,
-  LogOut, Mic, Settings, SquareKanban, Users, type LucideIcon,
+  Activity, BookOpen, CalendarDays, ChartColumn, CircleUserRound, Contact, FolderKanban, GitBranch,
+  LayoutGrid, LogOut, Mic, Settings, SquareKanban, Users, type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { supabase } from '@/lib/supabase';
@@ -27,6 +27,8 @@ const NAV: NavItem[] = [
   { href: '/dashboard/juntas', label: 'Juntas', icon: Mic },
   { href: '/dashboard/recursos', label: 'Recursos', icon: BookOpen },
   { href: '/dashboard/reportes', label: 'Reportes', icon: ChartColumn },
+  { href: '/dashboard/equipo', label: 'Equipo', icon: Contact },
+  { href: '/dashboard/perfil', label: 'Mi perfil', icon: CircleUserRound },
   { href: '/dashboard/jefatura', label: 'Proyectos', icon: FolderKanban, access: 'manager' },
   { href: '/dashboard/jefatura/versiones', label: 'Versiones', icon: GitBranch, access: 'manager' },
   { href: '/dashboard/jefatura/usuarios', label: 'Usuarios', icon: Users, access: 'jefe' },

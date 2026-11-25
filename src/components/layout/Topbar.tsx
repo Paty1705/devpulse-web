@@ -23,6 +23,8 @@ const TITLES: [prefix: string, title: string][] = [
   ['/dashboard/juntas', 'Juntas'],
   ['/dashboard/recursos', 'Recursos'],
   ['/dashboard/reportes', 'Reportes'],
+  ['/dashboard/equipo', 'Equipo'],
+  ['/dashboard/perfil', 'Mi perfil'],
   ['/dashboard/kanban', 'Tablero'],
   ['/dashboard/agenda', 'Agenda'],
   ['/dashboard', 'Panel de control'],

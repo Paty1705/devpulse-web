@@ -3,6 +3,7 @@
 import { X, Plus, Trash2, Calendar as CalendarIcon, Database, GitBranch, Save, Repeat } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { apiPost } from '@/lib/api-client';
 import { createGoogleCalendarEvent } from '@/lib/calendar';
 import { branchNameForTask } from '@/lib/github';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -192,11 +193,7 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
       if (insertedTask && selectedProject?.repo_url) {
         const realBranchName = branchNameForTask(insertedTask.id, title);
         try {
-          const res = await fetch('/api/github/create-branch', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ repoUrl: selectedProject.repo_url, branchName: realBranchName }),
-          });
+          const res = await apiPost('/api/github/create-branch', { repoUrl: selectedProject.repo_url, branchName: realBranchName });
           const branchData = await res.json();
           if (!res.ok) {
             console.warn('No se pudo crear la rama en GitHub:', branchData.error);

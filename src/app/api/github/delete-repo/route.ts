@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
+import { projectsForRepo, requireUser } from '@/lib/api-auth';
 import { parseGithubRepo } from '@/lib/github';
 
 const GITHUB_API = 'https://api.github.com';
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireUser(req, { jefe: true });
+    if (auth.denied) return auth.denied;
+
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
       return NextResponse.json({ error: 'GITHUB_TOKEN no está configurado en el servidor.' }, { status: 500 });
@@ -20,6 +24,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'La URL del repositorio no es un repositorio de GitHub válido.' }, { status: 400 });
     }
     const { owner, repo } = repoInfo;
+
+    if (!(await projectsForRepo(auth.db, owner, repo)).length) {
+      return NextResponse.json({ error: 'Ese repositorio no pertenece a ningún proyecto.' }, { status: 403 });
+    }
 
     const res = await fetch(`${GITHUB_API}/repos/${owner}/${repo}`, {
       method: 'DELETE',

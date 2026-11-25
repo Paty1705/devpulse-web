@@ -4,6 +4,7 @@ import { X, Copy, Check, FileCode, Users, Save, ShieldCheck, ShieldX, Rocket, Al
 import { useState, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/lib/supabase';
+import { apiPost } from '@/lib/api-client';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { branchNameForTask } from '@/lib/github';
 import { TaskProgressSection } from '@/components/kanban/TaskProgressSection';
@@ -203,11 +204,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
         return;
       }
       try {
-        const res = await fetch('/api/github/pr-status', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prUrl }),
-        });
+        const res = await apiPost('/api/github/pr-status', { prUrl });
         const data = await res.json();
         if (cancelled) return;
         if (!res.ok) {
@@ -277,11 +274,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
     setBranchCreating(true);
     setBranchResult(null);
     try {
-      const res = await fetch('/api/github/create-branch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ repoUrl: projectRepoUrl, branchName }),
-      });
+      const res = await apiPost('/api/github/create-branch', { repoUrl: projectRepoUrl, branchName });
       const data = await res.json();
       if (!res.ok) {
         setBranchResult({ ok: false, message: data.error || 'Error desconocido.' });

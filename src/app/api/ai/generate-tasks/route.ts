@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { requireUser } from '@/lib/api-auth';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Instanciar el cliente usando la clave de entorno
@@ -6,6 +7,9 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireUser(req, { jefe: true });
+    if (auth.denied) return auth.denied;
+
     if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json(
         { error: 'La clave de API GEMINI_API_KEY no está configurada en el servidor.' },

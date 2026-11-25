@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
+import { requireUser } from '@/lib/api-auth';
 
 const GITHUB_API = 'https://api.github.com';
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireUser(req, { jefe: true });
+    if (auth.denied) return auth.denied;
+
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
       return NextResponse.json({ error: 'GITHUB_TOKEN no está configurado en el servidor.' }, { status: 500 });

@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
+import { projectsForRepo, requireUser } from '@/lib/api-auth';
 import { parsePullRequestUrl } from '@/lib/github';
 
 const GITHUB_API = 'https://api.github.com';
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireUser(req);
+    if (auth.denied) return auth.denied;
+
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
       return NextResponse.json({ error: 'GITHUB_TOKEN no está configurado en el servidor.' }, { status: 500 });
@@ -18,6 +22,10 @@ export async function POST(req: Request) {
     const prInfo = parsePullRequestUrl(prUrl);
     if (!prInfo) {
       return NextResponse.json({ error: 'La URL no es un Pull Request de GitHub válido.' }, { status: 400 });
+    }
+
+    if (!(await projectsForRepo(auth.db, prInfo.owner, prInfo.repo)).length) {
+      return NextResponse.json({ error: 'Ese Pull Request no es de un repositorio de tus proyectos.' }, { status: 403 });
     }
 
     const headers = {

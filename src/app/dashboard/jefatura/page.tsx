@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { NewProjectModal } from '@/components/jefatura/NewProjectModal';
 import { ProjectDetailsModal } from '@/components/jefatura/ProjectDetailsModal';
 import { supabase } from '@/lib/supabase';
+import { apiPost } from '@/lib/api-client';
 
 type Project = {
   id: string;
@@ -58,11 +59,7 @@ export default function JefaturaPage() {
 
     if (alsoDeleteRepo && deleteTarget.repo_url) {
       try {
-        const res = await fetch('/api/github/delete-repo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ repoUrl: deleteTarget.repo_url }),
-        });
+        const res = await apiPost('/api/github/delete-repo', { repoUrl: deleteTarget.repo_url });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           setDeleteError(data.error || 'No se pudo borrar el repositorio en GitHub.');

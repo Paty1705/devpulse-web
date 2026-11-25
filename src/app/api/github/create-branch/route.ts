@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
+import { projectsForRepo, requireUser } from '@/lib/api-auth';
 import { parseGithubRepo } from '@/lib/github';
 
 const GITHUB_API = 'https://api.github.com';
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireUser(req);
+    if (auth.denied) return auth.denied;
+
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
       return NextResponse.json({ error: 'GITHUB_TOKEN no está configurado en el servidor.' }, { status: 500 });
@@ -15,11 +19,35 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Falta repoUrl o branchName.' }, { status: 400 });
     }
 
+    // Solo ramas de tareas, con el formato de branchNameForTask().
+    if (typeof branchName !== 'string' || !/^feature\/TASK-[a-z0-9-]+$/i.test(branchName)) {
+      return NextResponse.json({ error: 'El nombre de la rama no es válido.' }, { status: 400 });
+    }
+
     const repoInfo = parseGithubRepo(repoUrl);
     if (!repoInfo) {
       return NextResponse.json({ error: 'La URL del repositorio no es un repositorio de GitHub válido.' }, { status: 400 });
     }
     const { owner, repo } = repoInfo;
+
+    // Puede crear ramas el jefe, quien lidera el proyecto, sus miembros o
+    // quien tenga una tarea asignada en él.
+    const projects = await projectsForRepo(auth.db, owner, repo);
+    if (!projects.length) {
+      return NextResponse.json({ error: 'Ese repositorio no pertenece a ningún proyecto.' }, { status: 403 });
+    }
+    let allowed = auth.isJefe || projects.some((p) => p.leader_id === auth.userId);
+    if (!allowed) {
+      const ids = projects.map((p) => p.id);
+      const [tasks, members] = await Promise.all([
+        auth.db.from('tasks').select('id').in('project_id', ids).eq('assigned_to', auth.userId).limit(1),
+        auth.db.from('project_members').select('project_id').in('project_id', ids).eq('user_id', auth.userId).limit(1),
+      ]);
+      allowed = !!tasks.data?.length || !!members.data?.length;
+    }
+    if (!allowed) {
+      return NextResponse.json({ error: 'No participas en el proyecto de ese repositorio.' }, { status: 403 });
+    }
 
     const headers = {
       Authorization: `Bearer ${token}`,

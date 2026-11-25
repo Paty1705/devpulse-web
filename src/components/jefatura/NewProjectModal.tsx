@@ -3,6 +3,7 @@
 import { X, Bot, Save, Check, Trash2, Pencil, Plus, Calendar as CalendarIcon } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { apiPost } from '@/lib/api-client';
 import { branchNameForTask, slugifyRepoName } from '@/lib/github';
 import { useAuth } from '@/components/providers/AuthProvider';
 
@@ -173,11 +174,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
     setIsGenerating(true);
     setGeneratedTasks([]);
     try {
-      const res = await fetch('/api/ai/generate-tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ spec })
-      });
+      const res = await apiPost('/api/ai/generate-tasks', { spec });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Error desconocido al generar tareas.');
@@ -210,11 +207,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
       // repo_url quede apuntando a algo real desde el primer momento.
       if (!isEdit && !manualRepo) {
         const repoNameToCreate = repoName.trim() || slugifyRepoName(name);
-        const res = await fetch('/api/github/create-repo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: repoNameToCreate, description, isPrivate: true }),
-        });
+        const res = await apiPost('/api/github/create-repo', { name: repoNameToCreate, description, isPrivate: true });
         const data = await res.json();
         if (!res.ok) {
           throw new Error(data.error || 'No se pudo crear el repositorio en GitHub.');
@@ -300,11 +293,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
           // Crea la rama de cada tarea en GitHub (no bloquea si alguna falla).
           await Promise.all(insertedTasks.map(async (t) => {
             try {
-              const res = await fetch('/api/github/create-branch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ repoUrl: finalRepoUrl, branchName: branchNameForTask(t.id, t.title) }),
-              });
+              const res = await apiPost('/api/github/create-branch', { repoUrl: finalRepoUrl, branchName: branchNameForTask(t.id, t.title) });
               if (!res.ok) {
                 const data = await res.json();
                 console.warn(`No se pudo crear la rama para "${t.title}":`, data.error);

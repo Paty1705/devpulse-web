@@ -2,7 +2,6 @@
 // busca las tareas en el texto. En una sola llamada la IA llegaba a devolver
 // la transcripción completa y ninguna tarea.
 import { SchemaType, type GenerationConfig, type GoogleGenerativeAI, type Part, type ResponseSchema } from '@google/generative-ai';
-import { asData, DATA_RULE } from './ai-safety';
 
 const MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
 // Tiempo máximo (ms) de cada intento, en el mismo orden que MODELS. Una
@@ -50,7 +49,8 @@ const proposalsSchema: ResponseSchema = {
           test_date: { type: SchemaType.STRING, nullable: true, description: 'YYYY-MM-DD' },
           quote: { type: SchemaType.STRING, nullable: true },
         },
-        required: ['title', 'priority'],
+        // "quote" es obligatoria: es la frase del audio que se muestra en cada propuesta.
+        required: ['title', 'priority', 'quote'],
       },
     },
   },
@@ -96,8 +96,6 @@ Extrae TODAS las tareas, compromisos y pendientes que se asignaron o acordaron. 
 - "quote": la frase textual de la transcripción de donde sale la tarea.
 No inventes tareas que no se mencionaron. Si no hubo ninguna, devuelve una lista vacía.
 
-${DATA_RULE}
-
 Asistentes (correo · rol):
 ${ctx.attendees.map((a) => `- ${a.email} · ${a.role}`).join('\n') || '- (sin asistentes registrados)'}
 
@@ -105,10 +103,12 @@ Proyectos (nombre · responsable). Cada proyecto es individual: sus tareas son d
 ${ctx.projects.map((p) => `- ${p.name} · ${p.leaderEmail ?? 'sin responsable'}`).join('\n') || '- (sin proyectos)'}
 
 Minuta escrita durante la junta (puede ayudarte a entender el contexto):
-${asData(ctx.minutes.map((m) => `- [${m.kind}] ${m.content}`).join('\n') || '- (vacía)')}
+${ctx.minutes.map((m) => `- [${m.kind}] ${m.content}`).join('\n') || '- (vacía)'}
 
 Transcripción:
-${asData(transcript)}`;
+"""
+${transcript}
+"""`;
 
   const raw = await generate(genAI, [{ text: prompt }], { responseMimeType: 'application/json', responseSchema: proposalsSchema, temperature: 0.2 }, EXTRACT_TIMEOUTS);
   try {

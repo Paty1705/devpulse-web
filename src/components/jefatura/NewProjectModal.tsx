@@ -41,7 +41,7 @@ type NewProjectModalProps = {
 
 export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: NewProjectModalProps) {
   const isEdit = !!project;
-  const { profile: myProfile } = useAuth();
+  const { profile: myProfile, user } = useAuth();
   // Un líder de proyecto (no-jefe) puede editar su proyecto, pero no
   // reasignar quién es el líder — eso sigue siendo exclusivo de jefe.
   const canChangeLeader = !isEdit || myProfile?.role === 'jefe';
@@ -293,10 +293,21 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
           // Crea la rama de cada tarea en GitHub (no bloquea si alguna falla).
           await Promise.all(insertedTasks.map(async (t) => {
             try {
-              const res = await apiPost('/api/github/create-branch', { repoUrl: finalRepoUrl, branchName: branchNameForTask(t.id, t.title) });
+              const branchName = branchNameForTask(t.id, t.title);
+              const res = await apiPost('/api/github/create-branch', { repoUrl: finalRepoUrl, branchName });
+              const data = await res.json();
               if (!res.ok) {
-                const data = await res.json();
                 console.warn(`No se pudo crear la rama para "${t.title}":`, data.error);
+              } else {
+                // Registro para el control de versiones (quién, qué proyecto, cuándo).
+                const { error: logError } = await supabase.from('branch_logs').insert([{
+                  project_id: projectData.id,
+                  task_id: t.id,
+                  branch_name: branchName,
+                  created_by: user?.id,
+                  already_existed: !!data.alreadyExisted,
+                }]);
+                if (logError) console.warn('No se pudo registrar la rama en el control de versiones:', logError.message);
               }
             } catch (branchErr) {
               console.warn(`No se pudo crear la rama para "${t.title}":`, branchErr);

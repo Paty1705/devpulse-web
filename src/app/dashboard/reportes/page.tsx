@@ -317,7 +317,7 @@ export default function ReportesPage() {
       {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
 
       {/* Indicadores */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 print:grid-cols-4 gap-4 print:gap-2">
         <Kpi icon={CheckCircle2} label="Completadas" value={totals.completed} detail={totals.completed === 1 ? 'tarea en el periodo' : 'tareas en el periodo'} loading={dataLoading} />
         <Kpi
           icon={TrendingUp}
@@ -421,7 +421,7 @@ export default function ReportesPage() {
               </tbody>
             </table>
           </div>
-          <p className="px-2 pb-1 text-xs text-[var(--text-secondary)]">Toca una persona para ver el detalle de lo que hizo.</p>
+          <p className="px-2 pb-1 text-xs text-[var(--text-secondary)] print:hidden">Toca una persona para ver el detalle de lo que hizo.</p>
         </section>
       )}
 

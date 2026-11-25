@@ -11,6 +11,7 @@ import { MinutePanel } from '@/components/juntas/MinutePanel';
 import { ProposalsPanel, type ProjectOption } from '@/components/juntas/ProposalsPanel';
 import { RecorderBar } from '@/components/juntas/RecorderBar';
 import { ReviewPanel } from '@/components/juntas/ReviewPanel';
+import { useAudioDuration } from '@/components/juntas/useAudioDuration';
 import { extensionFor, useRecorder } from '@/components/juntas/useRecorder';
 import { durationLabel, meetingDateTime, REMINDER_OPTIONS, reminderLabel, STATUS_LABEL, statusStyle, toDateInput, type Meeting, type MeetingSeries, type MinuteItem, type PersonRef, type Proposal } from '@/lib/meetings';
 import { describeRecurrence } from '@/lib/recurrence';
@@ -36,6 +37,7 @@ export default function MeetingRoomPage() {
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const savedMs = useAudioDuration(audioUrl);
   const [error, setError] = useState<string | null>(null);
   const [series, setSeries] = useState<MeetingSeries | null>(null);
   const [confirmStop, setConfirmStop] = useState(false);
@@ -376,6 +378,7 @@ export default function MeetingRoomPage() {
           isJefe={isJefe}
           canRecord={meeting.status === 'en_curso'}
           hasRecording={!!meeting.recording_path}
+          savedMs={savedMs}
           uploading={uploading}
           onStop={stopAndProcess}
           onUploadFile={(f) => uploadAudio(f, f.name.split('.').pop()?.toLowerCase() || 'webm')}
@@ -439,7 +442,7 @@ export default function MeetingRoomPage() {
       {(meeting.recording_path || meeting.transcript) && (
         <section className="glass-panel glass-iridescent rounded-[28px] p-5 flex flex-col gap-4">
           <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2"><FileText size={18} /> Grabación y transcripción</h2>
-          {audioUrl && <audio controls preload="none" src={audioUrl} className="w-full" />}
+          {audioUrl && <audio controls preload="metadata" src={audioUrl} className="w-full" />}
           {meeting.transcript ? (
             <details className="chip-glass rounded-[16px] p-4">
               <summary className="cursor-pointer text-sm font-semibold text-[var(--text-primary)]">Ver transcripción</summary>

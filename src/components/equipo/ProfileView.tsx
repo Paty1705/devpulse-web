@@ -187,12 +187,12 @@ function ProfileForm({ member, info, onCancel, onSaved }: { member: Member; info
 
       <label className="flex flex-col gap-1.5">
         <span className="text-sm font-semibold text-[var(--text-primary)]">Nombre</span>
-        <input value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={80} autoComplete="name" className={inputClass} />
+        <input name="full-name" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={80} autoComplete="name" className={inputClass} />
       </label>
 
       <label className="flex flex-col gap-1.5">
         <span className="text-sm font-semibold text-[var(--text-primary)]">Preséntate <span className="font-normal text-[var(--text-secondary)]">(opcional)</span></span>
-        <textarea value={about} onChange={(e) => setAbout(e.target.value)} rows={5} maxLength={600} placeholder="Quién eres, en qué estás trabajando, en qué te pueden pedir ayuda…" className={`${inputClass} py-2.5 resize-y`} />
+        <textarea name="about" value={about} onChange={(e) => setAbout(e.target.value)} rows={5} maxLength={600} placeholder="Quién eres, en qué estás trabajando, en qué te pueden pedir ayuda…" className={`${inputClass} py-2.5 resize-y`} />
         <span className="self-end font-mono text-[11px] text-[var(--text-secondary)]">{about.length}/600</span>
       </label>
 
@@ -211,7 +211,7 @@ function ProfileForm({ member, info, onCancel, onSaved }: { member: Member; info
           </ul>
         )}
         <div className="flex gap-2">
-          <input
+          <input name="specialty"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -250,11 +250,11 @@ function ProfileForm({ member, info, onCancel, onSaved }: { member: Member; info
       <fieldset>
         <legend className="text-sm font-semibold text-[var(--text-primary)] mb-1.5">Cumpleaños <span className="font-normal text-[var(--text-secondary)]">(opcional, sin año)</span></legend>
         <div className="grid grid-cols-[100px_1fr] gap-2 max-w-sm">
-          <select value={day} onChange={(e) => setDay(e.target.value)} aria-label="Día" className={inputClass}>
+          <select name="day" value={day} onChange={(e) => setDay(e.target.value)} aria-label="Día" className={inputClass}>
             <option value="">Día</option>
             {Array.from({ length: maxDay }, (_, i) => i + 1).map((d) => <option key={d} value={d}>{d}</option>)}
           </select>
-          <select
+          <select name="month"
             value={month}
             onChange={(e) => {
               setMonth(e.target.value);
@@ -273,11 +273,11 @@ function ProfileForm({ member, info, onCancel, onSaved }: { member: Member; info
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <label className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold text-[var(--text-primary)]">Gustos y pasatiempos <span className="font-normal text-[var(--text-secondary)]">(opcional)</span></span>
-          <input value={hobbies} onChange={(e) => setHobbies(e.target.value)} maxLength={200} placeholder="Música, videojuegos, café…" className={inputClass} />
+          <input name="hobbies" value={hobbies} onChange={(e) => setHobbies(e.target.value)} maxLength={200} placeholder="Música, videojuegos, café…" className={inputClass} />
         </label>
         <label className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold text-[var(--text-primary)]">Teléfono <span className="font-normal text-[var(--text-secondary)]">(opcional)</span></span>
-          <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} autoComplete="tel" className={inputClass} />
+          <input name="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} autoComplete="tel" className={inputClass} />
         </label>
       </div>
 

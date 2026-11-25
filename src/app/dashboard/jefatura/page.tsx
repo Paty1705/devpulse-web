@@ -225,7 +225,7 @@ export default function JefaturaPage() {
               </p>
               {deleteTarget.repo_url && (
                 <label className="flex items-start gap-2 text-sm text-[var(--text-primary)] cursor-pointer bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[12px] p-3">
-                  <input
+                  <input name="also-delete-repo"
                     type="checkbox" checked={alsoDeleteRepo}
                     onChange={(e) => setAlsoDeleteRepo(e.target.checked)}
                     className="mt-0.5 rounded-[8px] text-[var(--btn-primary-bg)] focus:ring-[var(--btn-primary-bg)] bg-[var(--bg-column)] border-[var(--border-card)]"

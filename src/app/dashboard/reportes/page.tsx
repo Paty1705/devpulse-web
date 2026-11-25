@@ -296,13 +296,13 @@ export default function ReportesPage() {
         </div>
         {preset === 'rango' && (
           <div className="flex items-center gap-2">
-            <input type="date" value={from} max={to} onChange={(e) => e.target.value && setRange([e.target.value, to])} aria-label="Desde" className="min-h-11 rounded-[12px] px-3 text-sm surface-card border border-[var(--border-card)] text-[var(--text-primary)]" />
+            <input name="from" type="date" value={from} max={to} onChange={(e) => e.target.value && setRange([e.target.value, to])} aria-label="Desde" className="min-h-11 rounded-[12px] px-3 text-sm surface-card border border-[var(--border-card)] text-[var(--text-primary)]" />
             <span className="text-sm text-[var(--text-secondary)]">a</span>
-            <input type="date" value={to} min={from} onChange={(e) => e.target.value && setRange([from, e.target.value])} aria-label="Hasta" className="min-h-11 rounded-[12px] px-3 text-sm surface-card border border-[var(--border-card)] text-[var(--text-primary)]" />
+            <input name="to" type="date" value={to} min={from} onChange={(e) => e.target.value && setRange([from, e.target.value])} aria-label="Hasta" className="min-h-11 rounded-[12px] px-3 text-sm surface-card border border-[var(--border-card)] text-[var(--text-primary)]" />
           </div>
         )}
         {isJefe && (
-          <select
+          <select name="person-id"
             value={personId}
             onChange={(e) => setPersonId(e.target.value)}
             aria-label="Persona"

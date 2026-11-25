@@ -317,7 +317,7 @@ export default function MeetingRoomPage() {
                   <label className="chip-glass pl-2 pr-1 py-0.5 rounded-[8px] inline-flex items-center gap-1.5 text-[var(--text-primary)]">
                     <Bell size={12} />
                     <span className="sr-only">Recordatorio</span>
-                    <select
+                    <select name="reminder_minutes"
                       value={meeting.reminder_minutes ?? ''}
                       onChange={(e) => updateReminder(e.target.value === '' ? null : Number(e.target.value))}
                       className="bg-transparent text-xs font-semibold outline-none cursor-pointer"

@@ -144,7 +144,7 @@ export function MinutePanel({ meetingId, items, notes, canWrite, isJefe, current
             <span className="text-[11px] text-[var(--text-secondary)]">{isJefe ? 'las ven todos los asistentes' : 'del jefe'}</span>
           </span>
           {isJefe && canWrite ? (
-            <textarea
+            <textarea name="notes"
               rows={3}
               value={notesDraft}
               onChange={(e) => onNotes(e.target.value)}
@@ -232,7 +232,7 @@ function MyNotes({ meetingId, userId, canWrite }: { meetingId: string; userId?: 
         <span className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Mis notas</span>
         <span className="text-[11px]" style={{ color: status === 'error' ? 'var(--prio-alta-text)' : 'var(--text-secondary)' }}>{hint}</span>
       </span>
-      <textarea
+      <textarea name="text"
         rows={5}
         value={text}
         disabled={status === 'cargando' || !canWrite}

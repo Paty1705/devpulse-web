@@ -132,7 +132,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   ['accent2Color', 'Acento secundario'],
                 ] as const).map(([key, label]) => (
                   <label key={key} className="flex items-center gap-3 p-3 rounded-[10px] border border-[var(--border-card)] bg-[var(--bg-page)] cursor-pointer">
-                    <input
+                    <input name={key}
                       type="color"
                       value={preferences[key]}
                       onChange={(e) => updatePreferences({ [key]: e.target.value })}
@@ -156,7 +156,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     <span>Desenfoque</span>
                     <span className="font-mono text-[var(--text-secondary)]">{preferences.glassBlur}px</span>
                   </span>
-                  <input
+                  <input name="glass-blur"
                     type="range" min={0} max={40} step={1}
                     value={preferences.glassBlur}
                     onChange={(e) => updatePreferences({ glassBlur: Number(e.target.value) })}
@@ -169,7 +169,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     <span>Brillo iridiscente</span>
                     <span className="font-mono text-[var(--text-secondary)]">{Math.round(preferences.iridescence * 100)}%</span>
                   </span>
-                  <input
+                  <input name="iridescence"
                     type="range" min={0} max={1} step={0.05}
                     value={preferences.iridescence}
                     onChange={(e) => updatePreferences({ iridescence: Number(e.target.value) })}

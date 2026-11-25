@@ -86,7 +86,7 @@ export function RecorderBar({ recorder, remoteRecording = false, isJefe, canReco
               >
                 {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />} Subir audio
               </button>
-              <input
+              <input name="archivo" aria-label="Archivo de audio de la junta"
                 ref={fileInput}
                 type="file"
                 accept="audio/*"

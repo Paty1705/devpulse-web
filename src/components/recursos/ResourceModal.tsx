@@ -169,7 +169,7 @@ function ResourceForm({ resource, people, projects, isJefe, onClose, onSaved }: 
           {source === 'link' ? (
             <label className="block space-y-1.5">
               <span className="text-sm font-semibold text-[var(--text-primary)]">Link</span>
-              <input
+              <input name="url"
                 value={url}
                 onChange={(e) => onUrlChange(e.target.value)}
                 placeholder="https://www.youtube.com/watch?v=…"
@@ -202,7 +202,7 @@ function ResourceForm({ resource, people, projects, isJefe, onClose, onSaved }: 
                 <span className="text-sm font-semibold text-[var(--text-primary)] break-all">{currentFile ?? 'Elige o arrastra un archivo'}</span>
                 <span className="text-xs text-[var(--text-secondary)]">PDF, documentos, presentaciones o video · máximo 50 MB</span>
               </button>
-              <input ref={fileInput} type="file" className="hidden" onChange={(e) => pickFile(e.target.files?.[0] ?? null)} />
+              <input name="archivo" aria-label="Archivo del recurso" ref={fileInput} type="file" className="hidden" onChange={(e) => pickFile(e.target.files?.[0] ?? null)} />
             </div>
           )}
 
@@ -228,23 +228,23 @@ function ResourceForm({ resource, people, projects, isJefe, onClose, onSaved }: 
 
           <label className="block space-y-1.5">
             <span className="text-sm font-semibold text-[var(--text-primary)]">Título</span>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={140} className={inputClass} />
+            <input name="title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={140} className={inputClass} />
           </label>
 
           <label className="block space-y-1.5">
             <span className="text-sm font-semibold text-[var(--text-primary)]">¿Por qué lo recomiendas? <span className="font-normal text-[var(--text-secondary)]">(opcional)</span></span>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={600} className={`${inputClass} py-2.5 resize-none`} />
+            <textarea name="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={600} className={`${inputClass} py-2.5 resize-none`} />
           </label>
 
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px] gap-4">
             <label className="block space-y-1.5">
               <span className="text-sm font-semibold text-[var(--text-primary)]">Etiquetas</span>
-              <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="react, supabase, git" className={inputClass} />
+              <input name="tags" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="react, supabase, git" className={inputClass} />
             </label>
             {kind === 'video' && (
               <label className="block space-y-1.5">
                 <span className="text-sm font-semibold text-[var(--text-primary)]">Minutos</span>
-                <input type="number" min={1} max={999} value={duration} onChange={(e) => setDuration(e.target.value)} className={inputClass} />
+                <input name="duration" type="number" min={1} max={999} value={duration} onChange={(e) => setDuration(e.target.value)} className={inputClass} />
               </label>
             )}
           </div>
@@ -252,14 +252,14 @@ function ResourceForm({ resource, people, projects, isJefe, onClose, onSaved }: 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="block space-y-1.5">
               <span className="text-sm font-semibold text-[var(--text-primary)]">Para</span>
-              <select value={recommendedFor} onChange={(e) => setRecommendedFor(e.target.value)} className={inputClass}>
+              <select name="recommended-for" value={recommendedFor} onChange={(e) => setRecommendedFor(e.target.value)} className={inputClass}>
                 <option value="">Todo el equipo</option>
                 {people.filter((p) => p.id !== user?.id).map((p) => <option key={p.id} value={p.id}>{p.email}</option>)}
               </select>
             </label>
             <label className="block space-y-1.5">
               <span className="text-sm font-semibold text-[var(--text-primary)]">Proyecto</span>
-              <select value={projectId} onChange={(e) => setProjectId(e.target.value)} className={inputClass}>
+              <select name="project-id" value={projectId} onChange={(e) => setProjectId(e.target.value)} className={inputClass}>
                 <option value="">Ninguno</option>
                 {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
@@ -268,7 +268,7 @@ function ResourceForm({ resource, people, projects, isJefe, onClose, onSaved }: 
 
           {isJefe && (
             <label className="flex items-center gap-3 p-3 rounded-[14px] chip-glass border border-[var(--border-card)] cursor-pointer">
-              <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
+              <input name="pinned" type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
               <Pin size={15} className="text-[var(--text-secondary)]" />
               <span className="text-sm text-[var(--text-primary)]">Fijar arriba del tablero</span>
             </label>

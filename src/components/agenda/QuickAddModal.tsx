@@ -41,9 +41,9 @@ export function QuickAddModal({ isOpen, date, isJefe, onClose, onAddPersonal, on
 
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">Nota personal</label>
+            <label htmlFor="nota-personal" className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">Nota personal</label>
             <div className="flex gap-2">
-              <input
+              <input name="title" id="nota-personal"
                 type="text"
                 autoFocus
                 value={title}

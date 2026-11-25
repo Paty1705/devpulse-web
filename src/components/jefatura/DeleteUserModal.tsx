@@ -85,7 +85,7 @@ export function DeleteUserModal({ target, candidates, onClose, onDeleted }: Prop
           {needsHeir && (
             <label className="block space-y-1.5">
               <span className="font-semibold">Tiene {pending.join(', ')}. ¿A quién se le pasan?</span>
-              <select value={heir} onChange={(e) => setHeir(e.target.value)} className="w-full min-h-11 rounded-[12px] px-3 surface-card border border-[var(--border-card)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
+              <select name="heir" value={heir} onChange={(e) => setHeir(e.target.value)} className="w-full min-h-11 rounded-[12px] px-3 surface-card border border-[var(--border-card)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
                 <option value="">Elegir persona…</option>
                 {candidates.map((c) => <option key={c.id} value={c.id}>{c.email}</option>)}
               </select>

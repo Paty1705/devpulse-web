@@ -10,22 +10,23 @@ import { AvatarStack } from '@/components/juntas/Avatar';
 import { MinutePanel } from '@/components/juntas/MinutePanel';
 import { ProposalsPanel, type ProjectOption } from '@/components/juntas/ProposalsPanel';
 import { RecorderBar } from '@/components/juntas/RecorderBar';
+import { useRecording } from '@/components/juntas/RecordingProvider';
 import { ReviewPanel } from '@/components/juntas/ReviewPanel';
 import { useAudioDuration } from '@/components/juntas/useAudioDuration';
-import { extensionFor, useRecorder } from '@/components/juntas/useRecorder';
 import { durationLabel, meetingDateTime, REMINDER_OPTIONS, reminderLabel, STATUS_LABEL, statusStyle, toDateInput, type Meeting, type MeetingSeries, type MinuteItem, type PersonRef, type Proposal } from '@/lib/meetings';
 import { describeRecurrence } from '@/lib/recurrence';
 import { cancelMeetingEvent, endRecurringEvent } from '@/lib/calendar';
-
-// Límite de subida de Supabase Storage en el plan gratuito.
-const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
 export default function MeetingRoomPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { user, profile, loading } = useAuth();
   const isJefe = profile?.role === 'jefe';
-  const recorder = useRecorder();
+  const { recorder, target, recordingId, jobs, remote, start, stopAndSave, uploadAudio, process: processRecording, dismiss, watch } = useRecording();
+  const job = jobs[id];
+  const uploading = job?.stage === 'subiendo';
+  const processing = job?.stage === 'procesando';
+  const recordingHere = recordingId === id;
 
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [attendees, setAttendees] = useState<PersonRef[]>([]);
@@ -34,14 +35,11 @@ export default function MeetingRoomPage() {
   const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [emailById, setEmailById] = useState<Record<string, string>>({});
   const [notFound, setNotFound] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [processing, setProcessing] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const savedMs = useAudioDuration(audioUrl);
   const [error, setError] = useState<string | null>(null);
   const [series, setSeries] = useState<MeetingSeries | null>(null);
   const [confirmStop, setConfirmStop] = useState(false);
-  const [remoteRecording, setRemoteRecording] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   // Reloj ligero para saber si la junta ya excedió su duración.
@@ -107,22 +105,18 @@ export default function MeetingRoomPage() {
     };
   }, [user, id, fetchMeeting, fetchItems, fetchProposals]);
 
-  // Aviso en vivo de "se está grabando": presencia de Realtime, sin tocar la base.
-  // Si el jefe cierra la pestaña o se desconecta, el aviso desaparece solo.
-  const isRecordingNow = recorder.state !== 'idle';
+  // Aviso en vivo de "se está grabando".
+  useEffect(() => watch(id), [id, watch]);
+
+  // La subida y el proceso con IA corren fuera de esta pantalla: se refresca en cada paso.
+  const jobStage = job?.stage;
   useEffect(() => {
-    if (!user) return;
-    const ch = supabase.channel(`recording_${id}`, { config: { presence: { key: user.id } } });
-    ch.on('presence', { event: 'sync' }, () => {
-      const all = Object.values(ch.presenceState()).flat() as unknown as { recording?: boolean }[];
-      setRemoteRecording(all.some((p) => p.recording));
-    }).subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') await ch.track({ recording: isRecordingNow });
-    });
-    return () => {
-      supabase.removeChannel(ch);
-    };
-  }, [user, id, isRecordingNow]);
+    if (!user || !jobStage) return;
+    (async () => {
+      await Promise.all([fetchMeeting(), fetchProposals()]);
+      if (jobStage === 'listo') dismiss(id);
+    })();
+  }, [user, id, jobStage, fetchMeeting, fetchProposals, dismiss]);
 
   // URL firmada para escuchar la grabación (el bucket es privado).
   const recordingPath = meeting?.recording_path ?? null;
@@ -138,82 +132,6 @@ export default function MeetingRoomPage() {
     };
   }, [recordingPath]);
 
-  // Token vigente: si el navegador estuvo en segundo plano o en suspensión
-  // el token pudo vencer, así que se renueva antes de llamar a la API.
-  const freshToken = useCallback(async (forceRefresh: boolean) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const expiresSoon = !session?.expires_at || session.expires_at * 1000 - Date.now() < 2 * 60 * 1000;
-    if (session && !forceRefresh && !expiresSoon) return session.access_token;
-    const { data, error: refreshErr } = await supabase.auth.refreshSession();
-    return refreshErr ? null : data.session?.access_token ?? null;
-  }, []);
-
-  const process = useCallback(async () => {
-    setProcessing(true);
-    setError(null);
-    const call = (token: string) =>
-      fetch('/api/ai/procesar-junta', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ meetingId: id }),
-      });
-    let failure: string | null = null;
-    try {
-      let token = await freshToken(false);
-      let res = token ? await call(token) : null;
-      if (!res || res.status === 401) {
-        token = await freshToken(true);
-        res = token ? await call(token) : null;
-      }
-      if (!res) {
-        failure = 'Tu sesión expiró. La grabación está guardada: vuelve a iniciar sesión y presiona Reintentar.';
-      } else if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        failure = res.status === 401
-          ? 'Tu sesión expiró. La grabación está guardada: vuelve a iniciar sesión y presiona Reintentar.'
-          : body.error ?? 'No se pudo procesar la grabación.';
-      }
-    } catch {
-      failure = 'No se pudo contactar al servidor para procesar la grabación.';
-    }
-    if (failure) {
-      setError(failure);
-      // Si el servidor no alcanzó a marcar el error, evita que quede "procesando" para siempre.
-      await supabase.from('meetings').update({ ai_status: 'error', ai_error: failure }).eq('id', id).eq('ai_status', 'procesando');
-    }
-    setProcessing(false);
-    await Promise.all([fetchMeeting(), fetchProposals()]);
-  }, [id, fetchMeeting, fetchProposals, freshToken]);
-
-  const uploadAudio = useCallback(async (blob: Blob, ext: string) => {
-    if (blob.size > MAX_UPLOAD_BYTES) {
-      setError('La grabación pesa más de 50 MB, el máximo que permite Supabase en el plan gratuito.');
-      return;
-    }
-    setUploading(true);
-    setError(null);
-    const path = `${id}/${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage.from('meeting-recordings').upload(path, blob, { contentType: blob.type || undefined });
-    if (upErr) {
-      setUploading(false);
-      setError(`No se pudo subir la grabación: ${upErr.message}`);
-      return;
-    }
-    const { error: updErr } = await supabase.from('meetings').update({ recording_path: path, ai_status: 'procesando', ai_error: null }).eq('id', id);
-    setUploading(false);
-    if (updErr) {
-      setError('La grabación se subió, pero no se pudo ligar a la junta.');
-      return;
-    }
-    await fetchMeeting();
-    await process();
-  }, [id, fetchMeeting, process]);
-
-  const stopAndProcess = useCallback(async () => {
-    const blob = await recorder.stop();
-    if (blob) await uploadAudio(blob, extensionFor(blob.type));
-  }, [recorder, uploadAudio]);
-
   const extendDuration = async (extra: number) => {
     if (!meeting) return;
     setError(null);
@@ -225,7 +143,7 @@ export default function MeetingRoomPage() {
 
   const setStatus = async (status: Meeting['status']) => {
     setError(null);
-    if (status === 'terminada' && recorder.state !== 'idle') await stopAndProcess();
+    if (status === 'terminada' && recordingHere) await stopAndSave();
     const values: Partial<Meeting> = { status };
     if (status === 'en_curso') values.started_at = new Date().toISOString();
     if (status === 'terminada') values.ended_at = new Date().toISOString();
@@ -284,6 +202,15 @@ export default function MeetingRoomPage() {
   }
   if (!meeting) return <div className="p-8 text-[var(--text-secondary)]">Cargando junta…</div>;
 
+  const meetingRef = { id: meeting.id, title: meeting.title };
+  const process = () => processRecording(meetingRef);
+  // El grabador es uno para toda la app: aquí solo se muestra si es de esta junta.
+  const isMine = target?.id === id;
+  const barRecorder = {
+    ...recorder,
+    ...(isMine ? null : { state: 'idle' as const, elapsed: 0, levels: recorder.levels.map(() => 0), error: null, warning: null }),
+    start: () => start(meetingRef),
+  };
   const canWrite = meeting.status !== 'cancelada';
   const plannedMin = meeting.duration_minutes ?? 60;
   const startedMs = new Date(meeting.started_at ?? meeting.scheduled_at).getTime();
@@ -373,15 +300,16 @@ export default function MeetingRoomPage() {
 
       {meeting.status !== 'cancelada' && (
         <RecorderBar
-          recorder={recorder}
-          remoteRecording={remoteRecording}
+          recorder={barRecorder}
+          remoteRecording={!recordingHere && !!remote[id]}
+          busyWith={recordingId && !recordingHere ? target?.title : undefined}
           isJefe={isJefe}
           canRecord={meeting.status === 'en_curso'}
           hasRecording={!!meeting.recording_path}
           savedMs={savedMs}
           uploading={uploading}
-          onStop={stopAndProcess}
-          onUploadFile={(f) => uploadAudio(f, f.name.split('.').pop()?.toLowerCase() || 'webm')}
+          onStop={stopAndSave}
+          onUploadFile={(f) => uploadAudio(meetingRef, f, f.name.split('.').pop()?.toLowerCase() || 'webm')}
         />
       )}
 
@@ -389,7 +317,7 @@ export default function MeetingRoomPage() {
         <div role="alert" className="rounded-[16px] px-4 py-3 text-sm flex flex-wrap items-center justify-between gap-3" style={{ background: 'var(--prio-media-bg)', color: 'var(--prio-media-text)' }}>
           <span>
             Esta junta ya rebasó su duración de {durationLabel(plannedMin)} por {durationLabel(overtimeMin)}.
-            {recorder.state !== 'idle' && ' La grabación sigue activa.'}
+            {recordingHere && ' La grabación sigue activa.'}
           </span>
           {isJefe && (
             <span className="flex gap-2">
@@ -400,8 +328,8 @@ export default function MeetingRoomPage() {
         </div>
       )}
 
-      {error && (
-        <p role="alert" className="rounded-[16px] px-4 py-3 text-sm" style={{ background: 'var(--prio-alta-bg)', color: 'var(--prio-alta-text)' }}>{error}</p>
+      {(error || job?.error) && (
+        <p role="alert" className="rounded-[16px] px-4 py-3 text-sm" style={{ background: 'var(--prio-alta-bg)', color: 'var(--prio-alta-text)' }}>{error || job?.error}</p>
       )}
 
       <div className="fit-body meeting-columns flex flex-wrap gap-5 items-start">

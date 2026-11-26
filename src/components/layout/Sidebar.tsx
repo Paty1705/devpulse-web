@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { supabase } from '@/lib/supabase';
+import { useRecordingBusy } from '@/components/juntas/RecordingProvider';
 
 type NavItem = {
   href: string;
@@ -52,6 +53,7 @@ function isActive(pathname: string, href: string) {
 export function Sidebar({ onOpenSettings, inDrawer = false, onNavigate }: { onOpenSettings: () => void; inDrawer?: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
   const { user, profile, signOut } = useAuth();
+  const recordingBusy = useRecordingBusy();
   const [isLeader, setIsLeader] = useState(false);
   const [stats, setStats] = useState<{ done: number; total: number } | null>(null);
 
@@ -165,7 +167,9 @@ export function Sidebar({ onOpenSettings, inDrawer = false, onNavigate }: { onOp
         {user && (
           <button
             onClick={signOut}
-            className="flex items-center gap-2.5 min-h-[2.6rem] px-3 rounded-[13px] text-sm font-medium text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-500 transition-colors text-left"
+            disabled={recordingBusy}
+            title={recordingBusy ? 'Detén la grabación y espera a que se suba antes de salir' : undefined}
+            className="disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2.5 min-h-[2.6rem] px-3 rounded-[13px] text-sm font-medium text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-500 transition-colors text-left"
           >
             <LogOut size={18} />
             Cerrar sesión

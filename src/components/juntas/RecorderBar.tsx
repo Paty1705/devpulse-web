@@ -12,6 +12,8 @@ type Props = {
   remoteRecording?: boolean;
   isJefe: boolean;
   canRecord: boolean;
+  /** Nombre de otra junta que se está grabando: solo se graba una a la vez. */
+  busyWith?: string;
   hasRecording: boolean;
   /** Duración de la grabación guardada; null mientras no se conoce. */
   savedMs: number | null;
@@ -20,7 +22,7 @@ type Props = {
   onUploadFile: (file: File) => void;
 };
 
-export function RecorderBar({ recorder, remoteRecording = false, isJefe, canRecord, hasRecording, savedMs, uploading, onStop, onUploadFile }: Props) {
+export function RecorderBar({ recorder, remoteRecording = false, isJefe, canRecord, busyWith, hasRecording, savedMs, uploading, onStop, onUploadFile }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
   const { state, elapsed, levels, error, warning, start, pause, resume } = recorder;
   const live = state === 'recording';
@@ -73,7 +75,7 @@ export function RecorderBar({ recorder, remoteRecording = false, isJefe, canReco
             <>
               <button
                 onClick={start}
-                disabled={!canRecord || uploading}
+                disabled={!canRecord || uploading || !!busyWith}
                 title={canRecord ? undefined : 'Inicia la junta para poder grabar'}
                 className="nav-active min-h-11 px-4 rounded-[14px] text-sm font-semibold inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -119,6 +121,12 @@ export function RecorderBar({ recorder, remoteRecording = false, isJefe, canReco
         <p className="text-xs text-[var(--text-secondary)] max-w-[260px]">El jefe graba la junta; la IA propone las tareas al terminar.</p>
       )}
 
+      {isJefe && busyWith && (
+        <p role="status" className="basis-full text-xs font-semibold" style={{ color: 'var(--prio-media-text)' }}>
+          Estás grabando «{busyWith}». Detén esa grabación para grabar esta junta.
+        </p>
+      )}
+
       {warning && (
         <p role="alert" className="basis-full text-xs font-semibold" style={{ color: 'var(--prio-alta-text)' }}>{warning}</p>
       )}
@@ -130,7 +138,7 @@ export function RecorderBar({ recorder, remoteRecording = false, isJefe, canReco
 
       {(error || (isJefe && state !== 'idle')) && (
         <p className="basis-full text-xs" style={{ color: error ? 'var(--prio-alta-text)' : 'var(--text-secondary)' }}>
-          {error ?? 'Avisa a los asistentes que la junta se está grabando. No cierres esta pestaña hasta detener la grabación.'}
+          {error ?? 'Avisa a los asistentes que la junta se está grabando. Puedes usar otras secciones, pero no cierres ni recargues esta pestaña.'}
         </p>
       )}
     </section>

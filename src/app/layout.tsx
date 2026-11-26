@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { PreferencesProvider } from "@/components/providers/PreferencesProvider";
+import { RecordingProvider } from "@/components/juntas/RecordingProvider";
 import { themeInitScript } from "@/lib/theme";
 
 const geistSans = Geist({
@@ -39,7 +40,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} antialiased min-h-screen transition-colors duration-300`}>
         <AuthProvider>
           <PreferencesProvider>
-            {children}
+            <RecordingProvider>{children}</RecordingProvider>
           </PreferencesProvider>
         </AuthProvider>
       </body>

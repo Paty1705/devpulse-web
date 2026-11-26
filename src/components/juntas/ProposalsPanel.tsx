@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { AlertTriangle, Check, Loader2, Plus, RotateCcw, Sparkles, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatDateOnly, PRIORITIES, prioStyle, shortName, type AiStatus, type PersonRef, type Proposal } from '@/lib/meetings';
 import { Avatar } from '@/components/juntas/Avatar';
+import { ProposalForm } from '@/components/juntas/ProposalForm';
 
 export type ProjectOption = { id: string; name: string; leader_id: string | null; leader: { email: string } | null };
 
@@ -34,6 +35,9 @@ export function ProposalsPanel({
 }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [proposing, setProposing] = useState(false);
+  // Los campos guardan al salir de ellos; aceptar espera a que termine ese guardado.
+  const saving = useRef<Promise<unknown>>(Promise.resolve());
 
   const ordered = [...proposals].sort((a, b) => {
     const rank = { pendiente: 0, aceptada: 1, descartada: 2 } as const;
@@ -47,7 +51,9 @@ export function ProposalsPanel({
 
   const patch = async (id: string, values: Partial<Proposal>) => {
     setError(null);
-    const { error: err } = await supabase.from('meeting_task_proposals').update(values).eq('id', id);
+    const request = Promise.resolve(supabase.from('meeting_task_proposals').update(values).eq('id', id));
+    saving.current = Promise.all([saving.current, request]);
+    const { error: err } = await request;
     if (err) setError('No se pudo guardar el cambio.');
     else onChanged();
   };
@@ -55,6 +61,7 @@ export function ProposalsPanel({
   const accept = async (id: string) => {
     setBusy(id);
     setError(null);
+    await saving.current;
     const { error: err } = await supabase.rpc('accept_meeting_proposal', { p_proposal_id: id });
     setBusy(null);
     if (err) setError(`No se pudo crear la tarea: ${err.message}`);
@@ -63,6 +70,7 @@ export function ProposalsPanel({
 
   const acceptAll = async () => {
     setBusy('all');
+    await saving.current;
     for (const p of ready) {
       const { error: err } = await supabase.rpc('accept_meeting_proposal', { p_proposal_id: p.id });
       if (err) {
@@ -76,12 +84,10 @@ export function ProposalsPanel({
 
   const addManual = async () => {
     setError(null);
-    // El jefe agrega una propuesta abierta; un asistente, una para sí mismo.
-    const values: Record<string, string | null | undefined> = {
+    // Solo el jefe: agrega una propuesta abierta y la completa en la tarjeta.
+    const { error: err } = await supabase.from('meeting_task_proposals').insert({
       meeting_id: meetingId, title: 'Nueva tarea', source: 'manual', priority: 'Media', created_by: currentUserId,
-    };
-    if (!isJefe) values.assigned_to = currentUserId;
-    const { error: err } = await supabase.from('meeting_task_proposals').insert(values);
+    });
     if (err) setError('No se pudo agregar la tarea.');
     else onChanged();
   };
@@ -156,21 +162,44 @@ export function ProposalsPanel({
             >
               <div className="flex items-start gap-2">
                 {editable ? (
-                  <input name="titulo-propuesta"
-                    key={`${p.id}-${p.title}`}
-                    defaultValue={p.title}
-                    aria-label="Título de la tarea"
-                    onBlur={(e) => {
-                      const v = e.target.value.trim();
-                      if (v && v !== p.title) patch(p.id, { title: v });
-                    }}
-                    className="flex-1 min-w-0 bg-transparent text-sm font-semibold text-[var(--text-primary)] outline-none border-b border-transparent focus:border-[var(--accent)] py-0.5"
-                  />
+                  <label className="flex-1 min-w-0 flex flex-col gap-1">
+                    <span className="text-[11px] text-[var(--text-secondary)]">Qué hay que hacer</span>
+                    <input name="titulo-propuesta"
+                      key={`${p.id}-${p.title}`}
+                      defaultValue={p.title}
+                      maxLength={200}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim();
+                        if (v && v !== p.title) patch(p.id, { title: v });
+                      }}
+                      className={`${fieldClass} w-full font-semibold`}
+                    />
+                  </label>
                 ) : (
                   <span className={`flex-1 min-w-0 text-sm font-semibold text-[var(--text-primary)] ${p.status === 'descartada' ? 'line-through' : ''}`}>{p.title}</span>
                 )}
                 <span className="shrink-0 font-mono text-[10px] px-1.5 py-0.5 rounded-[6px] surface-card text-[var(--text-secondary)]">{p.source === 'ia' ? 'IA' : 'manual'}</span>
               </div>
+
+              {editable ? (
+                <label className="flex flex-col gap-1">
+                  <span className="text-[11px] text-[var(--text-secondary)]">Explicación (opcional)</span>
+                  <textarea name="description"
+                    key={`${p.id}-${p.description ?? ''}`}
+                    defaultValue={p.description ?? ''}
+                    rows={3}
+                    maxLength={2000}
+                    placeholder="En qué consiste, para qué sirve, qué se va a entregar…"
+                    onBlur={(e) => {
+                      const v = e.target.value.trim();
+                      if (v !== (p.description ?? '')) patch(p.id, { description: v || null });
+                    }}
+                    className={`${fieldClass} py-2 resize-y`}
+                  />
+                </label>
+              ) : (
+                p.description && <p className="text-[13px] text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap break-words">{p.description}</p>
+              )}
 
               {p.source_quote && <p className="text-xs italic text-[var(--text-secondary)] leading-relaxed">“{p.source_quote}”</p>}
 
@@ -218,19 +247,19 @@ export function ProposalsPanel({
                     </select>
                   </label>
                   <label className="flex flex-col gap-1">
-                    <span className="text-[11px] text-[var(--text-secondary)]">Fecha límite</span>
-                    <input name="due_date" type="date" value={p.due_date ?? ''} onChange={(e) => patch(p.id, { due_date: e.target.value || null })} className={fieldClass} />
+                    <span className="text-[11px] text-[var(--text-secondary)]">Fecha de entrega</span>
+                    <input name="due_date" type="date" key={`${p.id}-due_date-${p.due_date ?? ''}`} defaultValue={p.due_date ?? ''} onBlur={(e) => { if (e.target.value !== (p.due_date ?? '')) patch(p.id, { due_date: e.target.value || null }); }} className={fieldClass} />
                   </label>
                   <label className="col-span-2 flex flex-col gap-1">
                     <span className="text-[11px] text-[var(--text-secondary)]">Fecha de prueba (opcional)</span>
-                    <input name="test_date" type="date" value={p.test_date ?? ''} onChange={(e) => patch(p.id, { test_date: e.target.value || null })} className={fieldClass} />
+                    <input name="test_date" type="date" key={`${p.id}-test_date-${p.test_date ?? ''}`} defaultValue={p.test_date ?? ''} onBlur={(e) => { if (e.target.value !== (p.test_date ?? '')) patch(p.id, { test_date: e.target.value || null }); }} className={fieldClass} />
                   </label>
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-1.5 font-mono text-[11px]">
                   <span className="px-2 py-1 rounded-[8px]" style={prioStyle(p.priority)}>{p.priority}</span>
                   <span className="px-2 py-1 rounded-[8px] surface-card text-[var(--text-primary)]">{project?.name ?? 'personal'}</span>
-                  {p.due_date && <span className="px-2 py-1 rounded-[8px] surface-card text-[var(--text-primary)]">límite {formatDateOnly(p.due_date)}</span>}
+                  {p.due_date && <span className="px-2 py-1 rounded-[8px] surface-card text-[var(--text-primary)]">entrega {formatDateOnly(p.due_date)}</span>}
                   {p.test_date && <span className="px-2 py-1 rounded-[8px] surface-card text-[var(--text-primary)]">prueba {formatDateOnly(p.test_date)}</span>}
                 </div>
               )}
@@ -288,9 +317,23 @@ export function ProposalsPanel({
         })}
       </ul>
 
-      {(isJefe || isAttendee) && (
+      {proposing && !isJefe && currentUserId && (
+        <ProposalForm
+          meetingId={meetingId}
+          currentUserId={currentUserId}
+          projects={myProjects}
+          fieldClass={fieldClass}
+          onSent={() => {
+            setProposing(false);
+            onChanged();
+          }}
+          onCancel={() => setProposing(false)}
+        />
+      )}
+
+      {(isJefe || (isAttendee && !proposing)) && (
         <div className="flex flex-wrap gap-2">
-          <button onClick={addManual} className="flex-1 min-w-[130px] min-h-11 rounded-[14px] text-[13px] font-semibold chip-glass border border-[var(--border-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] inline-flex items-center justify-center gap-1.5">
+          <button onClick={isJefe ? addManual : () => setProposing(true)} className="flex-1 min-w-[130px] min-h-11 rounded-[14px] text-[13px] font-semibold chip-glass border border-[var(--border-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] inline-flex items-center justify-center gap-1.5">
             <Plus size={15} /> {isJefe ? 'Tarea manual' : 'Proponer tarea para mí'}
           </button>
           {isJefe && ready.length > 1 && (

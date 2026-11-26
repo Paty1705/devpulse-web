@@ -446,7 +446,7 @@ export default function MeetingRoomPage() {
           {meeting.transcript ? (
             <details className="chip-glass rounded-[16px] p-4">
               <summary className="cursor-pointer text-sm font-semibold text-[var(--text-primary)]">Ver transcripción</summary>
-              <p className="mt-3 text-sm leading-relaxed text-[var(--text-primary)] whitespace-pre-wrap">{meeting.transcript}</p>
+              <p className="scroll-list mt-3 pr-2 text-sm leading-relaxed text-[var(--text-primary)] whitespace-pre-wrap">{meeting.transcript}</p>
             </details>
           ) : (
             <p className="text-sm text-[var(--text-secondary)]">La transcripción aparecerá cuando la IA termine de procesar.</p>

@@ -89,7 +89,7 @@ export function MinutePanel({ meetingId, items, notes, canWrite, isJefe, current
           <div key={kind} className="flex flex-col gap-2">
             <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">{MINUTE_LABEL[kind]}</h3>
             {list.length > 0 && (
-              <ol className="chip-glass rounded-[16px] p-3 flex flex-col gap-2">
+              <ol className="scroll-list-sm chip-glass rounded-[16px] p-3 flex flex-col gap-2">
                 {list.map((item, i) => (
                   <li key={item.id} className="group flex items-start gap-2.5 text-sm leading-relaxed text-[var(--text-primary)]">
                     {kind === 'tema' ? (

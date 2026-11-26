@@ -137,7 +137,7 @@ export function BoardView({
         <div className="glass-panel rounded-[24px] py-16 text-center text-[var(--text-secondary)]">Cargando tareas…</div>
       ) : (
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="overflow-x-auto pb-3 -mx-1 px-1 snap-x snap-mandatory sm:snap-none">
+          <div className="kanban-scroller overflow-x-auto pb-3 -mx-1 px-1 snap-x snap-mandatory sm:snap-none">
             {/* Teléfono: una columna casi completa por vista, deslizando. */}
             <div className="grid grid-flow-col auto-cols-[85%] sm:grid-flow-row sm:auto-cols-auto sm:grid-cols-5 gap-3 sm:min-w-[64rem]">
               {COLUMN_DEFS.map((def) => {
@@ -162,7 +162,7 @@ export function BoardView({
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={`relative flex-1 flex flex-col gap-2.5 rounded-[18px] p-0.5 transition-colors ${snapshot.isDraggingOver ? 'chip-glass' : ''}`}
+                          className={`kanban-list relative flex-1 flex flex-col gap-2.5 rounded-[18px] p-0.5 transition-colors ${snapshot.isDraggingOver ? 'chip-glass' : ''}`}
                         >
                           {list.map((task, index) => {
                             const editable = canModify(task);
@@ -185,7 +185,7 @@ export function BoardView({
                                       // Mientras se arrastra va sobre otras tarjetas: fondo casi opaco.
                                       ...(dragSnapshot.isDragging ? { backgroundColor: 'var(--bg-solid, var(--bg-card))' } : null),
                                     }}
-                                    className={`chip-glass rounded-[18px] p-[var(--kanban-card-padding)] flex flex-col gap-2.5 cursor-pointer border border-[var(--border-card)] hover:bg-[var(--bg-card-hover)] transition-[background-color,box-shadow,opacity] ${
+                                    className={`chip-glass shrink-0 rounded-[18px] p-[var(--kanban-card-padding)] flex flex-col gap-2.5 cursor-pointer border border-[var(--border-card)] hover:bg-[var(--bg-card-hover)] transition-[background-color,box-shadow,opacity] ${
                                       dragSnapshot.isDragging ? 'shadow-[var(--shadow-hover)] ring-2 ring-[var(--accent)]' : ''
                                     } ${!editable && !dragSnapshot.isDragging ? 'opacity-80' : ''} ${isDone ? 'opacity-75' : ''}`}
                                   >

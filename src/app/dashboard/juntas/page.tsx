@@ -3,10 +3,11 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Bell, CalendarClock, ChevronRight, FileAudio, Mic, Plus, Repeat, Sparkles, Video } from 'lucide-react';
+import { Bell, CalendarClock, ChevronRight, FileAudio, Mic, Plus, Repeat, Sparkles, Trash2, Video } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { AvatarStack } from '@/components/juntas/Avatar';
+import { DeleteMeetingModal } from '@/components/juntas/DeleteMeetingModal';
 import { NewMeetingModal } from '@/components/juntas/NewMeetingModal';
 import { meetingDateTime, STATUS_LABEL, statusStyle, type Meeting } from '@/lib/meetings';
 
@@ -24,6 +25,7 @@ export default function JuntasPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isNewOpen, setIsNewOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<MeetingRow | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.push('/');
@@ -103,9 +105,21 @@ export default function JuntasPage() {
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold text-[var(--text-primary)]">Anteriores</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {past.map((m) => <MeetingCard key={m.id} meeting={m} currentEmail={user.email} />)}
+            {past.map((m) => <MeetingCard key={m.id} meeting={m} currentEmail={user.email} onDelete={isJefe ? () => setToDelete(m) : undefined} />)}
           </div>
         </section>
+      )}
+
+      {toDelete && (
+        <DeleteMeetingModal
+          key={toDelete.id}
+          meeting={toDelete}
+          onClose={() => setToDelete(null)}
+          onDeleted={() => {
+            setToDelete(null);
+            fetchMeetings();
+          }}
+        />
       )}
 
       <NewMeetingModal
@@ -120,72 +134,85 @@ export default function JuntasPage() {
   );
 }
 
-function MeetingCard({ meeting: m, currentEmail }: { meeting: MeetingRow; currentEmail?: string | null }) {
+function MeetingCard({ meeting: m, currentEmail, onDelete }: { meeting: MeetingRow; currentEmail?: string | null; onDelete?: () => void }) {
   const emails = m.attendees.map((a) => a.profile?.email).filter(Boolean) as string[];
   const pending = m.proposals.filter((p) => p.status === 'pendiente').length;
   const accepted = m.proposals.filter((p) => p.status === 'aceptada').length;
   const live = m.status === 'en_curso';
   return (
-    <Link
-      href={`/dashboard/juntas/${m.id}`}
-      className={`glass-panel glass-iridescent ${live ? 'thick-iridescent' : ''} rounded-[24px] p-5 flex flex-col gap-4 hover:bg-[var(--bg-card-hover)] transition-colors`}
-    >
-      <span className="flex items-start justify-between gap-3">
-        <span className="min-w-0">
-          <span className="block text-base font-semibold text-[var(--text-primary)] truncate">{m.title}</span>
-          <span className="block text-[13px] text-[var(--text-secondary)] first-letter:uppercase">{meetingDateTime.format(new Date(m.scheduled_at))}</span>
+    // El botón de eliminar va fuera del enlace: no se pueden anidar controles.
+    <div className="relative flex flex-col">
+      <Link
+        href={`/dashboard/juntas/${m.id}`}
+        className={`flex-1 glass-panel glass-iridescent ${live ? 'thick-iridescent' : ''} rounded-[24px] p-5 flex flex-col gap-4 hover:bg-[var(--bg-card-hover)] transition-colors`}
+      >
+        <span className="flex items-start justify-between gap-3">
+          <span className="min-w-0">
+            <span className="block text-base font-semibold text-[var(--text-primary)] truncate">{m.title}</span>
+            <span className="block text-[13px] text-[var(--text-secondary)] first-letter:uppercase">{meetingDateTime.format(new Date(m.scheduled_at))}</span>
+          </span>
+          <span className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-[10px]" style={statusStyle(m.status)}>
+            {live && <span className="w-2 h-2 rounded-full bg-current animate-pulse" />}
+            {STATUS_LABEL[m.status]}
+          </span>
         </span>
-        <span className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-[10px]" style={statusStyle(m.status)}>
-          {live && <span className="w-2 h-2 rounded-full bg-current animate-pulse" />}
-          {STATUS_LABEL[m.status]}
-        </span>
-      </span>
 
-      <span className="flex flex-wrap gap-2">
-        {m.series_id && (
-          <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
-            <Repeat size={11} /> se repite
-          </span>
-        )}
-        {m.video_url && (m.status === 'programada' || live) && (
-          <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
-            <Video size={11} /> Meet
-          </span>
-        )}
-        {m.status === 'programada' && m.reminder_minutes != null && (
-          <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1" title="Recordatorio">
-            <Bell size={11} /> {m.reminder_minutes < 60 ? `${m.reminder_minutes} min` : m.reminder_minutes === 1440 ? '1 día' : `${m.reminder_minutes / 60} h`}
-          </span>
-        )}
-        <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)]">{m.minutes.length} en minuta</span>
-        {m.recording_path && (
-          <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
-            <FileAudio size={11} /> grabada
-          </span>
-        )}
-        {m.ai_status === 'procesando' && (
-          <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
-            <Sparkles size={11} /> procesando
-          </span>
-        )}
-        {pending > 0 && (
-          <span className="font-mono text-[11px] px-2 py-1 rounded-[8px]" style={{ background: 'var(--prio-media-bg)', color: 'var(--prio-media-text)' }}>
-            {pending} por revisar
-          </span>
-        )}
-        {accepted > 0 && (
-          <span className="font-mono text-[11px] px-2 py-1 rounded-[8px]" style={{ background: 'var(--prio-baja-bg)', color: 'var(--prio-baja-text)' }}>
-            {accepted} {accepted === 1 ? 'tarea asignada' : 'tareas asignadas'}
-          </span>
-        )}
-      </span>
-
-      <span className="mt-auto flex items-center justify-between gap-3">
-        <AvatarStack emails={emails} currentEmail={currentEmail} />
-        <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-[var(--text-primary)]">
-          {live ? <><Mic size={14} /> Entrar</> : 'Abrir'} <ChevronRight size={16} />
+        <span className="flex flex-wrap gap-2">
+          {m.series_id && (
+            <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
+              <Repeat size={11} /> se repite
+            </span>
+          )}
+          {m.video_url && (m.status === 'programada' || live) && (
+            <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
+              <Video size={11} /> Meet
+            </span>
+          )}
+          {m.status === 'programada' && m.reminder_minutes != null && (
+            <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1" title="Recordatorio">
+              <Bell size={11} /> {m.reminder_minutes < 60 ? `${m.reminder_minutes} min` : m.reminder_minutes === 1440 ? '1 día' : `${m.reminder_minutes / 60} h`}
+            </span>
+          )}
+          <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)]">{m.minutes.length} en minuta</span>
+          {m.recording_path && (
+            <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
+              <FileAudio size={11} /> grabada
+            </span>
+          )}
+          {m.ai_status === 'procesando' && (
+            <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
+              <Sparkles size={11} /> procesando
+            </span>
+          )}
+          {pending > 0 && (
+            <span className="font-mono text-[11px] px-2 py-1 rounded-[8px]" style={{ background: 'var(--prio-media-bg)', color: 'var(--prio-media-text)' }}>
+              {pending} por revisar
+            </span>
+          )}
+          {accepted > 0 && (
+            <span className="font-mono text-[11px] px-2 py-1 rounded-[8px]" style={{ background: 'var(--prio-baja-bg)', color: 'var(--prio-baja-text)' }}>
+              {accepted} {accepted === 1 ? 'tarea asignada' : 'tareas asignadas'}
+            </span>
+          )}
         </span>
-      </span>
-    </Link>
+
+        <span className={`mt-auto flex items-center justify-between gap-3 ${onDelete ? 'min-h-9 pr-12' : ''}`}>
+          <AvatarStack emails={emails} currentEmail={currentEmail} />
+          <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-[var(--text-primary)]">
+            {live ? <><Mic size={14} /> Entrar</> : 'Abrir'} <ChevronRight size={16} />
+          </span>
+        </span>
+      </Link>
+      {onDelete && (
+        <button
+          onClick={onDelete}
+          aria-label={`Eliminar junta: ${m.title}`}
+          title="Eliminar junta"
+          className="absolute right-4 bottom-5 w-9 h-9 rounded-[12px] chip-glass border border-[var(--border-card)] inline-flex items-center justify-center text-[var(--text-secondary)] hover:text-[#EF4444] hover:bg-red-500/10"
+        >
+          <Trash2 size={16} />
+        </button>
+      )}
+    </div>
   );
 }

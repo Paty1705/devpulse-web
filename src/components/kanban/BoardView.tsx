@@ -100,7 +100,7 @@ export function BoardView({
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="kanban-page fit-page flex flex-col gap-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl sm:text-[1.75rem] font-bold tracking-tight text-[var(--text-primary)]">Tablero</h1>
@@ -137,13 +137,13 @@ export function BoardView({
         <div className="glass-panel rounded-[24px] py-16 text-center text-[var(--text-secondary)]">Cargando tareas…</div>
       ) : (
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="kanban-scroller overflow-x-auto pb-3 -mx-1 px-1 snap-x snap-mandatory sm:snap-none">
+          <div className="fit-body kanban-scroller overflow-x-auto pb-3 -mx-1 px-1 snap-x snap-mandatory sm:snap-none">
             {/* Teléfono: una columna casi completa por vista, deslizando. */}
-            <div className="grid grid-flow-col auto-cols-[85%] sm:grid-flow-row sm:auto-cols-auto sm:grid-cols-5 gap-3 sm:min-w-[64rem]">
+            <div className="kanban-grid grid grid-flow-col auto-cols-[85%] sm:grid-flow-row sm:auto-cols-auto sm:grid-cols-5 gap-3 sm:min-w-[64rem]">
               {COLUMN_DEFS.map((def) => {
                 const list = visible[def.id] ?? [];
                 return (
-                  <section key={def.id} className="relative rounded-[20px] p-3 flex flex-col gap-2.5 min-h-[60vh] snap-start">
+                  <section key={def.id} className="kanban-column relative rounded-[20px] p-3 flex flex-col gap-2.5 min-h-[60vh] snap-start">
                     {/* El vidrio va en una capa hermana y no envuelve a las tarjetas:
                         backdrop-filter en un ancestro rompe la posición de la
                         tarjeta mientras se arrastra (crea un nuevo bloque

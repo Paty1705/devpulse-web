@@ -290,7 +290,7 @@ export default function MeetingRoomPage() {
   const overtimeMin = meeting.status === 'en_curso' ? Math.max(0, Math.floor((now - startedMs) / 60000) - plannedMin) : 0;
 
   return (
-    <div className="max-w-[1400px] flex flex-col gap-5">
+    <div className="fit-page max-w-[1400px] flex flex-col gap-4">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4 min-w-0">
           <Link href="/dashboard/juntas" aria-label="Volver a Juntas" className="glass-panel w-12 h-12 shrink-0 rounded-[16px] flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors">
@@ -404,7 +404,7 @@ export default function MeetingRoomPage() {
         <p role="alert" className="rounded-[16px] px-4 py-3 text-sm" style={{ background: 'var(--prio-alta-bg)', color: 'var(--prio-alta-text)' }}>{error}</p>
       )}
 
-      <div className="flex flex-wrap gap-5 items-start">
+      <div className="fit-body meeting-columns flex flex-wrap gap-5 items-start">
         <div className="flex-[1_1_300px] min-w-0">
           <ReviewPanel attendees={attendees} reviewFrom={meeting.review_from} currentUserId={user.id} />
         </div>
@@ -417,7 +417,27 @@ export default function MeetingRoomPage() {
             isJefe={isJefe}
             currentUserId={user.id}
             onChanged={fetchItems}
-          />
+          >
+              {(meeting.recording_path || meeting.transcript) && (
+                <div className="flex flex-col gap-3 border-t border-[var(--border-card)] pt-4">
+                  <h3 className="text-base font-semibold text-[var(--text-primary)] flex items-center gap-2"><FileText size={18} /> Grabación y transcripción</h3>
+                  {audioUrl && <audio controls preload="metadata" src={audioUrl} className="w-full" />}
+                  {meeting.transcript ? (
+                    <details className="chip-glass rounded-[16px] p-4">
+                      <summary className="cursor-pointer text-sm font-semibold text-[var(--text-primary)]">Ver transcripción</summary>
+                      <p className="mt-3 text-sm leading-relaxed text-[var(--text-primary)] whitespace-pre-wrap">{meeting.transcript}</p>
+                    </details>
+                  ) : (
+                    <p className="text-sm text-[var(--text-secondary)]">La transcripción aparecerá cuando la IA termine de procesar.</p>
+                  )}
+                  {isJefe && meeting.recording_path && meeting.ai_status !== 'procesando' && !processing && (
+                    <button onClick={process} className="self-start chip-glass min-h-10 px-4 rounded-[12px] text-[13px] font-semibold border border-[var(--border-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]">
+                      Volver a procesar con IA
+                    </button>
+                  )}
+                </div>
+              )}
+          </MinutePanel>
         </div>
         <div className="flex-[1.2_1_340px] min-w-0">
           <ProposalsPanel
@@ -439,25 +459,6 @@ export default function MeetingRoomPage() {
         </div>
       </div>
 
-      {(meeting.recording_path || meeting.transcript) && (
-        <section className="glass-panel glass-iridescent rounded-[28px] p-5 flex flex-col gap-4">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2"><FileText size={18} /> Grabación y transcripción</h2>
-          {audioUrl && <audio controls preload="metadata" src={audioUrl} className="w-full" />}
-          {meeting.transcript ? (
-            <details className="chip-glass rounded-[16px] p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-[var(--text-primary)]">Ver transcripción</summary>
-              <p className="scroll-list mt-3 pr-2 text-sm leading-relaxed text-[var(--text-primary)] whitespace-pre-wrap">{meeting.transcript}</p>
-            </details>
-          ) : (
-            <p className="text-sm text-[var(--text-secondary)]">La transcripción aparecerá cuando la IA termine de procesar.</p>
-          )}
-          {isJefe && meeting.recording_path && meeting.ai_status !== 'procesando' && !processing && (
-            <button onClick={process} className="self-start chip-glass min-h-10 px-4 rounded-[12px] text-[13px] font-semibold border border-[var(--border-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]">
-              Volver a procesar con IA
-            </button>
-          )}
-        </section>
-      )}
     </div>
   );
 }

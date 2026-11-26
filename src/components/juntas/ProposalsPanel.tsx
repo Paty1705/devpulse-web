@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRef, useState } from 'react';
-import { AlertTriangle, Check, Loader2, Plus, RotateCcw, Sparkles, X } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, Loader2, Plus, RotateCcw, Sparkles, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatDateOnly, PRIORITIES, prioStyle, shortName, type AiStatus, type PersonRef, type Proposal } from '@/lib/meetings';
 import { Avatar } from '@/components/juntas/Avatar';
@@ -36,6 +36,10 @@ export function ProposalsPanel({
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [proposing, setProposing] = useState(false);
+  // Las tarjetas se muestran resumidas; estas son las que están abiertas.
+  const [openIds, setOpenIds] = useState<string[]>([]);
+  const [newId, setNewId] = useState<string | null>(null);
+  const toggle = (id: string) => setOpenIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
   // Los campos guardan al salir de ellos; aceptar espera a que termine ese guardado.
   const saving = useRef<Promise<unknown>>(Promise.resolve());
 
@@ -85,11 +89,16 @@ export function ProposalsPanel({
   const addManual = async () => {
     setError(null);
     // Solo el jefe: agrega una propuesta abierta y la completa en la tarjeta.
-    const { error: err } = await supabase.from('meeting_task_proposals').insert({
+    const { data, error: err } = await supabase.from('meeting_task_proposals').insert({
       meeting_id: meetingId, title: 'Nueva tarea', source: 'manual', priority: 'Media', created_by: currentUserId,
-    });
-    if (err) setError('No se pudo agregar la tarea.');
-    else onChanged();
+    }).select('id').single();
+    if (err) {
+      setError('No se pudo agregar la tarea.');
+      return;
+    }
+    setNewId(data.id);
+    setOpenIds((ids) => [...ids, data.id]);
+    onChanged();
   };
 
   const remove = async (id: string) => {
@@ -145,7 +154,22 @@ export function ProposalsPanel({
         </p>
       )}
 
-      <ul className="scroll-list flex flex-col gap-3 -mr-2 pr-2 empty:hidden">
+      <ul className="panel-body scroll-list flex flex-col gap-3 -mr-2 pr-2 empty:hidden">
+        {proposing && !isJefe && currentUserId && (
+          <li className="shrink-0">
+            <ProposalForm
+              meetingId={meetingId}
+              currentUserId={currentUserId}
+              projects={myProjects}
+              fieldClass={fieldClass}
+              onSent={() => {
+                setProposing(false);
+                onChanged();
+              }}
+              onCancel={() => setProposing(false)}
+            />
+          </li>
+        )}
         {ordered.map((p) => {
           const isAuthor = !!currentUserId && p.created_by === currentUserId;
           const editable = p.status === 'pendiente' && (isJefe || isAuthor);
@@ -155,181 +179,182 @@ export function ProposalsPanel({
           const project = projects.find((x) => x.id === p.project_id);
           const assigneeEmail = p.assigned_to ? emailById[p.assigned_to] : undefined;
           const suggestedProjects = !p.project_id && p.assigned_to ? projects.filter((x) => x.leader_id === p.assigned_to) : [];
+          const open = openIds.includes(p.id);
+          const waiting = !isJefe && isAuthor && p.status === 'pendiente';
           return (
             <li
               key={p.id}
-              className={`chip-glass shrink-0 rounded-[18px] p-3.5 flex flex-col gap-2.5 border ${p.status === 'aceptada' ? 'border-[var(--ok-text)]' : 'border-[var(--border-card)]'} ${p.status === 'descartada' ? 'opacity-55' : ''}`}
+              className={`chip-glass shrink-0 rounded-[16px] p-3 flex flex-col gap-2 border ${p.status === 'aceptada' ? 'border-[var(--ok-text)]' : 'border-[var(--border-card)]'} ${p.status === 'descartada' ? 'opacity-55' : ''}`}
             >
               <div className="flex items-start gap-2">
-                {editable ? (
-                  <label className="flex-1 min-w-0 flex flex-col gap-1">
-                    <span className="text-[11px] text-[var(--text-secondary)]">Qué hay que hacer</span>
-                    <input name="titulo-propuesta"
-                      key={`${p.id}-${p.title}`}
-                      defaultValue={p.title}
-                      maxLength={200}
-                      onBlur={(e) => {
-                        const v = e.target.value.trim();
-                        if (v && v !== p.title) patch(p.id, { title: v });
-                      }}
-                      className={`${fieldClass} w-full font-semibold`}
-                    />
-                  </label>
-                ) : (
-                  <span className={`flex-1 min-w-0 text-sm font-semibold text-[var(--text-primary)] ${p.status === 'descartada' ? 'line-through' : ''}`}>{p.title}</span>
-                )}
-                <span className="shrink-0 font-mono text-[10px] px-1.5 py-0.5 rounded-[6px] surface-card text-[var(--text-secondary)]">{p.source === 'ia' ? 'IA' : 'manual'}</span>
-              </div>
-
-              {editable ? (
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] text-[var(--text-secondary)]">Explicación (opcional)</span>
-                  <textarea name="description"
-                    key={`${p.id}-${p.description ?? ''}`}
-                    defaultValue={p.description ?? ''}
-                    rows={3}
-                    maxLength={2000}
-                    placeholder="En qué consiste, para qué sirve, qué se va a entregar…"
-                    onBlur={(e) => {
-                      const v = e.target.value.trim();
-                      if (v !== (p.description ?? '')) patch(p.id, { description: v || null });
-                    }}
-                    className={`${fieldClass} py-2 resize-y`}
-                  />
-                </label>
-              ) : (
-                p.description && <p className="text-[13px] text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap break-words">{p.description}</p>
-              )}
-
-              {p.source_quote && <p className="text-xs italic text-[var(--text-secondary)] leading-relaxed">“{p.source_quote}”</p>}
-
-              {editable ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="col-span-2 flex flex-col gap-1">
-                    <span className="text-[11px] text-[var(--text-secondary)]">Proyecto · responsable</span>
-                    <select name="project_id"
-                      value={p.project_id ?? ''}
-                      onChange={(e) => {
-                        const proj = projects.find((x) => x.id === e.target.value);
-                        patch(p.id, { project_id: proj?.id ?? null, assigned_to: proj?.leader_id ?? (isJefe ? p.assigned_to : currentUserId ?? null) });
-                      }}
-                      className={fieldClass}
-                    >
-                      <option value="">Personal · sin proyecto</option>
-                      {isJefe && suggestedProjects.length > 0 && (
-                        <optgroup label={`De ${shortName(assigneeEmail)}`}>
-                          {suggestedProjects.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-                        </optgroup>
-                      )}
-                      {projectOptions.length > 0 && (
-                        <optgroup label={isJefe ? 'Todos' : 'Mis proyectos'}>
-                          {projectOptions.map((x) => <option key={x.id} value={x.id}>{x.name}{isJefe ? ` · ${shortName(x.leader?.email)}` : ''}</option>)}
-                        </optgroup>
-                      )}
-                    </select>
-                  </label>
-                  {isJefe && !p.project_id && (
-                    <label className="col-span-2 flex flex-col gap-1">
-                      <span className="text-[11px] text-[var(--text-secondary)]">Responsable (tarea personal)</span>
-                      <select name="assigned_to" value={p.assigned_to ?? ''} onChange={(e) => patch(p.id, { assigned_to: e.target.value || null })} className={fieldClass}>
-                        <option value="">Elegir responsable…</option>
-                        {attendees.map((a) => <option key={a.id} value={a.id}>{a.email}</option>)}
-                        {p.assigned_to && !attendees.some((a) => a.id === p.assigned_to) && (
-                          <option value={p.assigned_to}>{emailById[p.assigned_to] ?? 'Otra persona'}</option>
-                        )}
-                      </select>
-                    </label>
-                  )}
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[11px] text-[var(--text-secondary)]">Prioridad</span>
-                    <select name="priority" value={p.priority} onChange={(e) => patch(p.id, { priority: e.target.value as Proposal['priority'] })} className={fieldClass} style={prioStyle(p.priority)}>
-                      {PRIORITIES.map((x) => <option key={x} value={x}>{x}</option>)}
-                    </select>
-                  </label>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[11px] text-[var(--text-secondary)]">Fecha de entrega</span>
-                    <input name="due_date" type="date" key={`${p.id}-due_date-${p.due_date ?? ''}`} defaultValue={p.due_date ?? ''} onBlur={(e) => { if (e.target.value !== (p.due_date ?? '')) patch(p.id, { due_date: e.target.value || null }); }} className={fieldClass} />
-                  </label>
-                  <label className="col-span-2 flex flex-col gap-1">
-                    <span className="text-[11px] text-[var(--text-secondary)]">Fecha de prueba (opcional)</span>
-                    <input name="test_date" type="date" key={`${p.id}-test_date-${p.test_date ?? ''}`} defaultValue={p.test_date ?? ''} onBlur={(e) => { if (e.target.value !== (p.test_date ?? '')) patch(p.id, { test_date: e.target.value || null }); }} className={fieldClass} />
-                  </label>
-                </div>
-              ) : (
-                <div className="flex flex-wrap gap-1.5 font-mono text-[11px]">
-                  <span className="px-2 py-1 rounded-[8px]" style={prioStyle(p.priority)}>{p.priority}</span>
-                  <span className="px-2 py-1 rounded-[8px] surface-card text-[var(--text-primary)]">{project?.name ?? 'personal'}</span>
-                  {p.due_date && <span className="px-2 py-1 rounded-[8px] surface-card text-[var(--text-primary)]">entrega {formatDateOnly(p.due_date)}</span>}
-                  {p.test_date && <span className="px-2 py-1 rounded-[8px] surface-card text-[var(--text-primary)]">prueba {formatDateOnly(p.test_date)}</span>}
-                </div>
-              )}
-
-              <div className="flex items-center gap-2">
-                <Avatar email={assigneeEmail} highlight={p.assigned_to === currentUserId} size={26} />
-                <span className="flex-1 min-w-0 text-xs text-[var(--text-secondary)] truncate">
-                  {assigneeEmail ? shortName(assigneeEmail) : 'Sin responsable'}
-                  {proposer && ` · propuesta por ${shortName(proposer)}`}
-                  {ownProposal && ' · la propuso para sí'}
-                  {isJefe && p.status === 'pendiente' && !p.assigned_to && <span style={{ color: 'var(--prio-media-text)' }}> · elige proyecto o responsable para aceptar</span>}
-                  {!isJefe && isAuthor && p.status === 'pendiente' && ' · espera a que el jefe la acepte'}
-                </span>
-              </div>
-
-              {editable && !isJefe && (
-                <button
-                  onClick={() => remove(p.id)}
-                  className="self-start min-h-9 px-3 rounded-[10px] text-[13px] font-semibold surface-card border border-[var(--border-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] inline-flex items-center gap-1.5"
-                >
-                  <X size={14} /> Quitar mi propuesta
+                <button type="button" onClick={() => toggle(p.id)} aria-expanded={open} className="flex-1 min-w-0 min-h-8 flex items-center gap-1.5 text-left">
+                  <ChevronDown size={15} className={`shrink-0 text-[var(--text-secondary)] transition-transform ${open ? '' : '-rotate-90'}`} />
+                  <span className={`min-w-0 text-sm font-semibold text-[var(--text-primary)] break-words ${open ? '' : 'line-clamp-2'} ${p.status === 'descartada' ? 'line-through' : ''}`}>{p.title}</span>
                 </button>
-              )}
-              {editable && isJefe && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => accept(p.id)}
-                    disabled={!p.assigned_to || busy !== null}
-                    className="nav-active flex-1 min-h-10 rounded-[12px] text-[13px] font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {busy === p.id ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Aceptar
+                {p.status === 'pendiente' && isJefe && (
+                  <span className="shrink-0 flex gap-1.5">
+                    <button
+                      onClick={() => accept(p.id)}
+                      disabled={!p.assigned_to || busy !== null}
+                      aria-label={`Aceptar: ${p.title}`}
+                      title={p.assigned_to ? 'Aceptar' : 'Elige proyecto o responsable para aceptar'}
+                      className="nav-active w-8 h-8 rounded-[10px] inline-flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {busy === p.id ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
+                    </button>
+                    <button
+                      onClick={() => patch(p.id, { status: 'descartada' })}
+                      disabled={busy !== null}
+                      aria-label={`Descartar: ${p.title}`}
+                      title="Descartar"
+                      className="w-8 h-8 rounded-[10px] surface-card border border-[var(--border-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] inline-flex items-center justify-center"
+                    >
+                      <X size={15} />
+                    </button>
+                  </span>
+                )}
+                {p.status === 'descartada' && isJefe && (
+                  <button onClick={() => patch(p.id, { status: 'pendiente' })} className="shrink-0 min-h-8 text-[13px] font-semibold text-[var(--text-primary)] underline underline-offset-2 inline-flex items-center gap-1">
+                    <RotateCcw size={13} /> Deshacer
                   </button>
-                  <button
-                    onClick={() => patch(p.id, { status: 'descartada' })}
-                    disabled={busy !== null}
-                    className="flex-1 min-h-10 rounded-[12px] text-[13px] font-semibold surface-card border border-[var(--border-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] inline-flex items-center justify-center gap-1.5"
-                  >
-                    <X size={14} /> Descartar
-                  </button>
-                </div>
-              )}
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px] text-[var(--text-primary)]">
+                <span className="px-1.5 py-0.5 rounded-[6px]" style={prioStyle(p.priority)}>{p.priority}</span>
+                <span className="px-1.5 py-0.5 rounded-[6px] surface-card">{p.due_date ? `entrega ${formatDateOnly(p.due_date)}` : 'sin fecha'}</span>
+                <span className="px-1.5 py-0.5 rounded-[6px] surface-card max-w-[11rem] truncate">{assigneeEmail ? shortName(assigneeEmail) : 'sin responsable'}</span>
+                <span className="px-1.5 py-0.5 rounded-[6px] surface-card text-[var(--text-secondary)]">{p.source === 'ia' ? 'IA' : 'manual'}</span>
+              </div>
+
+              {waiting && !open && <span className="text-xs text-[var(--text-secondary)]">Espera a que el jefe la acepte</span>}
               {p.status === 'aceptada' && (
                 <span className="flex items-center justify-between gap-2 text-[13px]">
                   <span className="font-semibold" style={{ color: 'var(--ok-text)' }}>✓ Tarea creada y asignada</span>
                   <Link href="/dashboard/kanban" className="font-semibold text-[var(--text-primary)] underline underline-offset-2">Ver en tablero</Link>
                 </span>
               )}
-              {p.status === 'descartada' && isJefe && (
-                <button onClick={() => patch(p.id, { status: 'pendiente' })} className="self-start text-[13px] font-semibold text-[var(--text-primary)] underline underline-offset-2 inline-flex items-center gap-1">
-                  <RotateCcw size={13} /> Deshacer
-                </button>
+
+              {open && (
+                <div className="flex flex-col gap-2.5 border-t border-[var(--border-card)] pt-2.5">
+                  {p.source_quote && <p className="text-xs italic text-[var(--text-secondary)] leading-relaxed">“{p.source_quote}”</p>}
+
+                  {editable ? (
+                    <>
+                      <label className="flex flex-col gap-1">
+                        <span className="text-[11px] text-[var(--text-secondary)]">Qué hay que hacer</span>
+                        <input name="titulo-propuesta"
+                          autoFocus={p.id === newId}
+                          key={`${p.id}-${p.title}`}
+                          defaultValue={p.title}
+                          maxLength={200}
+                          onBlur={(e) => {
+                            const v = e.target.value.trim();
+                            if (v && v !== p.title) patch(p.id, { title: v });
+                          }}
+                          className={`${fieldClass} w-full font-semibold`}
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        <span className="text-[11px] text-[var(--text-secondary)]">Explicación (opcional)</span>
+                        <textarea name="description"
+                          key={`${p.id}-${p.description ?? ''}`}
+                          defaultValue={p.description ?? ''}
+                          rows={3}
+                          maxLength={2000}
+                          placeholder="En qué consiste, para qué sirve, qué se va a entregar…"
+                          onBlur={(e) => {
+                            const v = e.target.value.trim();
+                            if (v !== (p.description ?? '')) patch(p.id, { description: v || null });
+                          }}
+                          className={`${fieldClass} py-2 resize-y`}
+                        />
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="col-span-2 flex flex-col gap-1">
+                          <span className="text-[11px] text-[var(--text-secondary)]">Proyecto · responsable</span>
+                          <select name="project_id"
+                            value={p.project_id ?? ''}
+                            onChange={(e) => {
+                              const proj = projects.find((x) => x.id === e.target.value);
+                              patch(p.id, { project_id: proj?.id ?? null, assigned_to: proj?.leader_id ?? (isJefe ? p.assigned_to : currentUserId ?? null) });
+                            }}
+                            className={fieldClass}
+                          >
+                            <option value="">Personal · sin proyecto</option>
+                            {isJefe && suggestedProjects.length > 0 && (
+                              <optgroup label={`De ${shortName(assigneeEmail)}`}>
+                                {suggestedProjects.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                              </optgroup>
+                            )}
+                            {projectOptions.length > 0 && (
+                              <optgroup label={isJefe ? 'Todos' : 'Mis proyectos'}>
+                                {projectOptions.map((x) => <option key={x.id} value={x.id}>{x.name}{isJefe ? ` · ${shortName(x.leader?.email)}` : ''}</option>)}
+                              </optgroup>
+                            )}
+                          </select>
+                        </label>
+                        {isJefe && !p.project_id && (
+                          <label className="col-span-2 flex flex-col gap-1">
+                            <span className="text-[11px] text-[var(--text-secondary)]">Responsable (tarea personal)</span>
+                            <select name="assigned_to" value={p.assigned_to ?? ''} onChange={(e) => patch(p.id, { assigned_to: e.target.value || null })} className={fieldClass}>
+                              <option value="">Elegir responsable…</option>
+                              {attendees.map((a) => <option key={a.id} value={a.id}>{a.email}</option>)}
+                              {p.assigned_to && !attendees.some((a) => a.id === p.assigned_to) && (
+                                <option value={p.assigned_to}>{emailById[p.assigned_to] ?? 'Otra persona'}</option>
+                              )}
+                            </select>
+                          </label>
+                        )}
+                        <label className="flex flex-col gap-1">
+                          <span className="text-[11px] text-[var(--text-secondary)]">Prioridad</span>
+                          <select name="priority" value={p.priority} onChange={(e) => patch(p.id, { priority: e.target.value as Proposal['priority'] })} className={fieldClass} style={prioStyle(p.priority)}>
+                            {PRIORITIES.map((x) => <option key={x} value={x}>{x}</option>)}
+                          </select>
+                        </label>
+                        <label className="flex flex-col gap-1">
+                          <span className="text-[11px] text-[var(--text-secondary)]">Fecha de entrega</span>
+                          <input name="due_date" type="date" key={`${p.id}-due_date-${p.due_date ?? ''}`} defaultValue={p.due_date ?? ''} onBlur={(e) => { if (e.target.value !== (p.due_date ?? '')) patch(p.id, { due_date: e.target.value || null }); }} className={fieldClass} />
+                        </label>
+                        <label className="col-span-2 flex flex-col gap-1">
+                          <span className="text-[11px] text-[var(--text-secondary)]">Fecha de prueba (opcional)</span>
+                          <input name="test_date" type="date" key={`${p.id}-test_date-${p.test_date ?? ''}`} defaultValue={p.test_date ?? ''} onBlur={(e) => { if (e.target.value !== (p.test_date ?? '')) patch(p.id, { test_date: e.target.value || null }); }} className={fieldClass} />
+                        </label>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {p.description && <p className="text-[13px] text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap break-words">{p.description}</p>}
+                      {p.test_date && <span className="text-xs text-[var(--text-secondary)]">Fecha de prueba: {formatDateOnly(p.test_date)}</span>}
+                    </>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <Avatar email={assigneeEmail} highlight={p.assigned_to === currentUserId} size={26} />
+                    <span className="flex-1 min-w-0 text-xs text-[var(--text-secondary)]">
+                      {assigneeEmail ? shortName(assigneeEmail) : 'Sin responsable'}
+                      {` · ${project?.name ?? 'personal'}`}
+                      {proposer && ` · propuesta por ${shortName(proposer)}`}
+                      {ownProposal && ' · la propuso para sí'}
+                      {isJefe && p.status === 'pendiente' && !p.assigned_to && <span style={{ color: 'var(--prio-media-text)' }}> · elige proyecto o responsable para aceptar</span>}
+                      {waiting && ' · espera a que el jefe la acepte'}
+                    </span>
+                  </div>
+
+                  {editable && !isJefe && (
+                    <button
+                      onClick={() => remove(p.id)}
+                      className="self-start min-h-9 px-3 rounded-[10px] text-[13px] font-semibold surface-card border border-[var(--border-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] inline-flex items-center gap-1.5"
+                    >
+                      <X size={14} /> Quitar mi propuesta
+                    </button>
+                  )}
+                </div>
               )}
             </li>
           );
         })}
       </ul>
-
-      {proposing && !isJefe && currentUserId && (
-        <ProposalForm
-          meetingId={meetingId}
-          currentUserId={currentUserId}
-          projects={myProjects}
-          fieldClass={fieldClass}
-          onSent={() => {
-            setProposing(false);
-            onChanged();
-          }}
-          onCancel={() => setProposing(false)}
-        />
-      )}
 
       {(isJefe || (isAttendee && !proposing)) && (
         <div className="flex flex-wrap gap-2">

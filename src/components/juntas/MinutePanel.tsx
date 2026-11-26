@@ -19,9 +19,11 @@ type Props = {
   isJefe: boolean;
   currentUserId?: string;
   onChanged: () => void;
+  /** Contenido al final del panel (grabación y transcripción). */
+  children?: React.ReactNode;
 };
 
-export function MinutePanel({ meetingId, items, notes, canWrite, isJefe, currentUserId, onChanged }: Props) {
+export function MinutePanel({ meetingId, items, notes, canWrite, isJefe, currentUserId, onChanged, children }: Props) {
   const [drafts, setDrafts] = useState<Record<MinuteKind, string>>({ tema: '', acuerdo: '', pendiente: '' });
   const [notesDraft, setNotesDraft] = useState(notes);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
@@ -83,6 +85,7 @@ export function MinutePanel({ meetingId, items, notes, canWrite, isJefe, current
         )}
       </div>
 
+      <div className="panel-body flex flex-col gap-5 -mr-2 pr-2">
       {KINDS.map(({ kind, icon: Icon, placeholder }) => {
         const list = items.filter((i) => i.kind === kind).sort((a, b) => a.position - b.position);
         return (
@@ -160,6 +163,8 @@ export function MinutePanel({ meetingId, items, notes, canWrite, isJefe, current
       <MyNotes meetingId={meetingId} userId={currentUserId} canWrite={canWrite} />
 
       {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
+      {children}
+      </div>
     </section>
   );
 }

@@ -270,10 +270,10 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
                   className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                 >
                   {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  <option value="">Personal · sin proyecto</option>
+                  <option value="">Sin proyecto</option>
                 </select>
                 {!selectedProject && (
-                  <p className="text-[11px] text-[var(--text-secondary)] mt-1">
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">
                     {assignees.every(id => id === user?.id)
                       ? 'Tarea personal: solo tú la ves, la mueves hasta terminarla y no pasa por auditoría.'
                       : 'Sin proyecto: cada persona mueve la suya y no pasa por auditoría. Tú puedes verlas.'}

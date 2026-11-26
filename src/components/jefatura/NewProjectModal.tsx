@@ -364,7 +364,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                     {isEdit || manualRepo ? 'URL del Repositorio Git' : 'Nombre del Repositorio (se crea en GitHub)'}
                   </label>
                   {!isEdit && (
-                    <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-secondary)] cursor-pointer select-none">
+                    <label className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] cursor-pointer select-none">
                       <input name="manual-repo"
                         type="checkbox" checked={manualRepo}
                         onChange={(e) => setManualRepo(e.target.checked)}
@@ -387,7 +387,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                       className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                       placeholder={slugifyRepoName(name || 'proyecto')}
                     />
-                    <p className="text-[11px] text-[var(--text-secondary)] mt-1">
+                    <p className="text-xs text-[var(--text-secondary)] mt-1">
                       Se creará un repositorio privado nuevo en tu cuenta de GitHub al guardar.
                     </p>
                   </>
@@ -417,7 +417,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                 <label htmlFor="proyecto-responsable" className="block text-sm font-bold text-[var(--text-secondary)] mb-1">
                   Responsable del proyecto
                 </label>
-                <p className="text-[11px] text-[var(--text-secondary)] mb-2">Los proyectos son individuales: todas sus tareas se le asignan a esta persona.</p>
+                <p className="text-xs text-[var(--text-secondary)] mb-2">Los proyectos son individuales: todas sus tareas se le asignan a esta persona.</p>
                 <select name="leader-id" id="proyecto-responsable"
                   value={leaderId} onChange={(e) => setLeaderId(e.target.value)}
                   disabled={!canChangeLeader}
@@ -427,7 +427,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                   {profiles.map(p => <option key={p.id} value={p.id}>{p.email} ({p.role})</option>)}
                 </select>
                 {!canChangeLeader && (
-                  <p className="text-[11px] text-[var(--text-secondary)] mt-1">Solo un jefe puede reasignar el liderazgo del proyecto.</p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">Solo un jefe puede reasignar el liderazgo del proyecto.</p>
                 )}
               </div>
 
@@ -472,7 +472,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                 <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">
                   Backlog Generado ({generatedTasks.length}) — Aceptadas: {acceptedCount}
                 </h4>
-                <p className="text-[11px] text-[var(--text-secondary)] mb-3">
+                <p className="text-xs text-[var(--text-secondary)] mb-3">
                   Solo las tareas marcadas con &quot;Aceptar&quot; se crearán junto con el proyecto. Las pendientes o borradas se descartan.
                 </p>
                 <div className="max-h-96 overflow-y-auto space-y-2 pr-2">
@@ -490,13 +490,13 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                           />
                           <textarea name="description" aria-label={`Descripción de la tarea ${idx + 1}`}
                             value={t.description} onChange={(e) => updateGeneratedTaskField(idx, 'description', e.target.value)}
-                            className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[8px] p-1.5 text-[11px] text-[var(--text-primary)] h-16 focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                            className="w-full bg-[var(--bg-page)] border border-[var(--border-card)] rounded-[8px] p-1.5 text-xs text-[var(--text-primary)] h-16 focus:outline-none focus:border-[var(--btn-primary-bg)]"
                           />
                           <div className="flex flex-wrap gap-1.5">
                             {ITEM_TYPES.map(type => (
                               <button
                                 key={type} type="button" onClick={() => updateGeneratedTaskField(idx, 'itemType', type)}
-                                className={`px-2 py-0.5 rounded-[8px] text-[10px] border transition-colors ${t.itemType === type ? 'bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] border-[var(--btn-primary-bg)] font-bold' : 'bg-[var(--bg-page)] border-[var(--border-column)] text-[var(--text-primary)]'}`}
+                                className={`px-2 py-0.5 rounded-[8px] text-[11px] border transition-colors ${t.itemType === type ? 'bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] border-[var(--btn-primary-bg)] font-bold' : 'bg-[var(--bg-page)] border-[var(--border-column)] text-[var(--text-primary)]'}`}
                               >
                                 {type}
                               </button>
@@ -504,14 +504,14 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                           </div>
                           <select name="priority" aria-label={`Prioridad de la tarea ${idx + 1}`}
                             value={t.priority} onChange={(e) => updateGeneratedTaskField(idx, 'priority', e.target.value)}
-                            className="w-full bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[8px] p-1.5 text-[11px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                            className="w-full bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[8px] p-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                           >
                             {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
                           </select>
                           <div>
                             <ul className="space-y-1 mb-1.5">
                               {(t.acceptanceCriteria || []).map((ac, ci) => (
-                                <li key={ci} className="flex items-center justify-between gap-2 text-[10px] bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[8px] px-2 py-1 text-[var(--text-primary)]">
+                                <li key={ci} className="flex items-center justify-between gap-2 text-[11px] bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[8px] px-2 py-1 text-[var(--text-primary)]">
                                   <span className="flex-1">{ac}</span>
                                   <button type="button" onClick={() => handleRemoveGeneratedCriterion(idx, ci)} className="text-red-500 hover:text-red-400 flex-shrink-0">
                                     <Trash2 size={11} />
@@ -525,7 +525,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                                 onChange={(e) => updateGeneratedTaskField(idx, 'newCriterion', e.target.value)}
                                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddGeneratedCriterion(idx); } }}
                                 placeholder="Nuevo criterio de aceptación"
-                                className="flex-1 bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[8px] p-1.5 text-[10px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                                className="flex-1 bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[8px] p-1.5 text-[11px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)]"
                               />
                               <button type="button" onClick={() => handleAddGeneratedCriterion(idx)} className="bg-[var(--bg-page)] border border-[var(--border-column)] px-2 rounded-[8px] text-[var(--text-secondary)] hover:text-[var(--btn-primary-bg)]">
                                 <Plus size={13} />
@@ -538,20 +538,20 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                           <div className="flex justify-between items-start mb-1">
                             <span className="font-bold text-[13px] text-[var(--text-primary)]">{t.title}</span>
                             <div className="flex gap-1 flex-shrink-0">
-                              <span className="text-[10px] bg-[var(--badge-bg)] text-[var(--badge-text)] px-1.5 py-0.5 rounded">{t.itemType}</span>
-                              <span className="text-[10px] bg-[var(--bg-page)] text-[var(--text-secondary)] border border-[var(--border-column)] px-1.5 py-0.5 rounded">{t.priority}</span>
+                              <span className="text-[11px] bg-[var(--badge-bg)] text-[var(--badge-text)] px-1.5 py-0.5 rounded">{t.itemType}</span>
+                              <span className="text-[11px] bg-[var(--bg-page)] text-[var(--text-secondary)] border border-[var(--border-column)] px-1.5 py-0.5 rounded">{t.priority}</span>
                             </div>
                           </div>
-                          <p className="text-[11px] text-[var(--text-secondary)] line-clamp-2 mb-2">{t.description}</p>
+                          <p className="text-xs text-[var(--text-secondary)] line-clamp-2 mb-2">{t.description}</p>
                           {t.acceptanceCriteria && t.acceptanceCriteria.length > 0 && (
-                            <ul className="text-[10px] text-[var(--text-secondary)] list-disc pl-4 space-y-0.5 mb-2">
+                            <ul className="text-[11px] text-[var(--text-secondary)] list-disc pl-4 space-y-0.5 mb-2">
                               {t.acceptanceCriteria.map((ac: string, i: number) => (
                                 <li key={i}>{ac}</li>
                               ))}
                             </ul>
                           )}
                           {t.dueDate && (
-                            <div className="flex items-center gap-1 text-[10px] text-[var(--text-secondary)] mb-2">
+                            <div className="flex items-center gap-1 text-[11px] text-[var(--text-secondary)] mb-2">
                               <CalendarIcon size={11} />
                               {new Date(`${t.dueDate}T${t.dueTime || '23:59'}:00`).toLocaleString()}
                             </div>
@@ -562,7 +562,7 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                       <select name="assigned-to" aria-label={`Persona asignada a la tarea ${idx + 1}`}
                         value={t.assignedTo || ''}
                         onChange={(e) => handleAssignGeneratedTask(idx, e.target.value)}
-                        className="w-full bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[8px] p-1.5 text-[11px] text-[var(--text-primary)] mb-2 focus:outline-none focus:border-[var(--btn-primary-bg)]"
+                        className="w-full bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[8px] p-1.5 text-xs text-[var(--text-primary)] mb-2 focus:outline-none focus:border-[var(--btn-primary-bg)]"
                       >
                         <option value="">Sin asignar</option>
                         {assignableProfiles.map(p => <option key={p.id} value={p.id}>{p.email} ({p.role})</option>)}
@@ -572,19 +572,19 @@ export function NewProjectModal({ isOpen, onClose, onProjectCreated, project }: 
                         <button
                           type="button" onClick={() => handleOpenAcceptModal(idx)}
                           title={t.accepted ? 'Aceptada: clic para cambiar la fecha' : 'Aceptar y elegir fecha de entrega'}
-                          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-[8px] text-[11px] font-bold transition-colors ${t.accepted ? 'bg-emerald-600 text-white' : 'bg-[var(--bg-page)] border border-[var(--border-column)] text-[var(--text-primary)] hover:border-emerald-500 hover:text-emerald-500'}`}
+                          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-[8px] text-xs font-bold transition-colors ${t.accepted ? 'bg-emerald-600 text-white' : 'bg-[var(--bg-page)] border border-[var(--border-column)] text-[var(--text-primary)] hover:border-emerald-500 hover:text-emerald-500'}`}
                         >
                           <Check size={12} /> {t.accepted ? 'Aceptada' : 'Aceptar'}
                         </button>
                         <button
                           type="button" onClick={() => handleToggleEditGeneratedTask(idx)}
-                          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-[8px] text-[11px] font-bold border transition-colors ${t.isEditing ? 'bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] border-[var(--btn-primary-bg)]' : 'bg-[var(--bg-page)] border-[var(--border-column)] text-[var(--text-primary)] hover:border-[var(--btn-primary-bg)] hover:text-[var(--btn-primary-bg)]'}`}
+                          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-[8px] text-xs font-bold border transition-colors ${t.isEditing ? 'bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] border-[var(--btn-primary-bg)]' : 'bg-[var(--bg-page)] border-[var(--border-column)] text-[var(--text-primary)] hover:border-[var(--btn-primary-bg)] hover:text-[var(--btn-primary-bg)]'}`}
                         >
                           <Pencil size={12} /> {t.isEditing ? 'Listo' : 'Editar'}
                         </button>
                         <button
                           type="button" onClick={() => handleDeleteGeneratedTask(idx)}
-                          className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-[8px] text-[11px] font-bold bg-[var(--bg-page)] border border-[var(--border-column)] text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors"
+                          className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-[8px] text-xs font-bold bg-[var(--bg-page)] border border-[var(--border-column)] text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors"
                         >
                           <Trash2 size={12} /> Borrar
                         </button>

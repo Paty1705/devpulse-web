@@ -195,7 +195,7 @@ export default function AgendaPage() {
   const monthLabel = viewDate.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="max-w-[1400px] space-y-4">
+    <div className="fit-page max-w-[1400px] flex flex-col gap-4">
       <header className="flex flex-col gap-2">
         <div className="flex justify-between items-end flex-wrap gap-4">
           <div>
@@ -233,10 +233,10 @@ export default function AgendaPage() {
       {tasksLoading ? (
         <div className="text-[var(--text-secondary)] py-12 text-center">Cargando agenda...</div>
       ) : (
-        <div className="glass-panel glass-iridescent rounded-[22px] p-2 sm:p-4">
-        <div className="grid grid-cols-7 gap-1 sm:gap-2">
+        <div className="fit-body glass-panel glass-iridescent rounded-[22px] p-2 sm:p-3">
+        <div className="agenda-grid grid grid-cols-7 gap-1 sm:gap-2">
           {WEEKDAY_LABELS.map(l => (
-            <div key={l} className="text-center text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] py-1">
+            <div key={l} className="text-center text-xs sm:text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] py-1">
               <span className="sm:hidden">{l[0]}</span>
               <span className="hidden sm:inline">{l}</span>
             </div>
@@ -257,15 +257,15 @@ export default function AgendaPage() {
                   if (window.matchMedia('(max-width: 639px)').matches) setSelectedDay(d);
                   else setQuickAddDate(d);
                 }}
-                className={`min-h-[3.3rem] sm:min-h-[6rem] min-w-0 rounded-[11px] sm:rounded-[14px] border p-1 sm:p-1.5 flex flex-col items-center sm:items-stretch gap-1 transition-colors cursor-pointer hover:border-[var(--accent)] ${
+                className={`agenda-day min-h-[3.3rem] sm:min-h-[6rem] min-w-0 rounded-[11px] sm:rounded-[14px] border p-1 sm:p-1.5 flex flex-col items-center sm:items-stretch gap-1 transition-colors cursor-pointer hover:border-[var(--accent)] ${
                   key === dateKey(selectedDay) && !isToday ? 'max-sm:!border-[var(--accent)]' : ''
                 } ${
                   isCurrentMonth
                     ? 'surface-card border-[var(--border-card)]'
-                    : 'chip-glass border-transparent opacity-45'
+                    : 'border-dashed border-[var(--border-card)]'
                 } ${isToday ? 'ring-2 ring-[var(--accent)] shadow-[0_8px_18px_color-mix(in_srgb,var(--accent)_25%,transparent)]' : ''}`}
               >
-                <span className={`font-mono text-xs font-bold sm:self-start ${isToday ? 'nav-active px-2 py-0.5 rounded-[8px]' : 'text-[var(--text-secondary)]'}`}>
+                <span className={`font-mono text-xs sm:self-start ${isToday ? 'nav-active font-bold px-2 py-0.5 rounded-[8px]' : isCurrentMonth ? 'font-bold text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                   {d.getDate()}
                 </span>
                 {/* Teléfono: puntos de color en lugar de nombres. */}
@@ -279,8 +279,8 @@ export default function AgendaPage() {
                     ))}
                   </span>
                 )}
-                <div className="hidden sm:block flex-1 overflow-y-auto space-y-1">
-                  {dayTasks.slice(0, 3).map(t => {
+                <div className="agenda-day-list hidden sm:block flex-1 overflow-y-auto space-y-1">
+                  {dayTasks.map(t => {
                     const isOverdue = t.status !== 'completed' && isPastDue(t.due_date!);
                     return (
                       <button
@@ -288,27 +288,24 @@ export default function AgendaPage() {
                         onClick={(e) => { e.stopPropagation(); setSelectedTaskId(t.id); }}
                         title={`${t.title}${dueTimeSuffix(t.due_date!)}`}
                         style={{ borderLeftColor: isOverdue ? '#EF4444' : accentColorFor(t.item_type) }}
-                        className="w-full flex items-center gap-1 text-left text-[10px] leading-tight px-1.5 py-1 rounded-[8px] border-l-2 truncate chip-glass hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] transition-colors"
+                        className="w-full flex items-center gap-1 text-left text-xs leading-tight px-1.5 py-1 rounded-[8px] border-l-2 truncate chip-glass hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] transition-colors"
                       >
                         {isOverdue && <AlertTriangle size={9} className="text-red-500 flex-shrink-0" />}
                         <span className="truncate">{t.title}</span>
                       </button>
                     );
                   })}
-                  {dayPersonal.slice(0, Math.max(0, 3 - dayTasks.length)).map(ev => (
+                  {dayPersonal.map(ev => (
                     <button
                       key={ev.id}
                       onClick={(e) => handleDeletePersonal(ev, e)}
                       title={`${ev.title} (clic para eliminar)`}
-                      className="w-full flex items-center gap-1 text-left text-[10px] leading-tight px-1.5 py-1 rounded-[8px] border-l-2 border-dashed border-[var(--text-secondary)] truncate chip-glass hover:bg-red-500/10 hover:border-red-400 text-[var(--text-secondary)] transition-colors"
+                      className="w-full flex items-center gap-1 text-left text-xs leading-tight px-1.5 py-1 rounded-[8px] border-l-2 border-dashed border-[var(--text-secondary)] truncate chip-glass hover:bg-red-500/10 hover:border-red-400 text-[var(--text-secondary)] transition-colors"
                     >
                       <StickyNote size={9} className="flex-shrink-0" />
                       <span className="truncate">{ev.title}</span>
                     </button>
                   ))}
-                  {totalCount > 3 && (
-                    <span className="block text-[10px] text-[var(--text-secondary)] px-1">+{totalCount - 3} más</span>
-                  )}
                 </div>
               </div>
             );
@@ -345,7 +342,7 @@ export default function AgendaPage() {
                       >
                         {isOverdue && <AlertTriangle size={13} className="text-red-500 shrink-0" />}
                         <span className="flex-1 min-w-0 truncate">{t.title}</span>
-                        {dueTimeLabel(t.due_date!) && <span className="shrink-0 font-mono text-[11px] text-[var(--text-secondary)]">{dueTimeLabel(t.due_date!)}</span>}
+                        {dueTimeLabel(t.due_date!) && <span className="shrink-0 font-mono text-xs text-[var(--text-secondary)]">{dueTimeLabel(t.due_date!)}</span>}
                       </button>
                     </li>
                   );
@@ -358,7 +355,7 @@ export default function AgendaPage() {
                     >
                       <StickyNote size={13} className="shrink-0" />
                       <span className="flex-1 min-w-0 truncate">{ev.title}</span>
-                      <span className="text-[11px]">quitar</span>
+                      <span className="text-xs">quitar</span>
                     </button>
                   </li>
                 ))}

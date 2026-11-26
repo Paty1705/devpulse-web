@@ -325,7 +325,7 @@ export function NewMeetingModal({ isOpen, onClose, onCreated }: Props) {
                     <Avatar email={p.email} highlight={p.id === user?.id} size={32} />
                     <span className="flex-1 min-w-0">
                       <span className="block text-sm font-semibold text-[var(--text-primary)] truncate">{p.email}</span>
-                      <span className="block font-mono text-[11px] text-[var(--text-secondary)]">{p.role}</span>
+                      <span className="block font-mono text-xs text-[var(--text-secondary)]">{p.role}</span>
                     </span>
                     <span className={`w-6 h-6 rounded-[8px] flex items-center justify-center ${on ? 'nav-active' : 'border border-[var(--border-card)]'}`}>
                       {on && <Check size={14} />}

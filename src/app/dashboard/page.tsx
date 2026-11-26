@@ -41,7 +41,7 @@ export default function DashboardPage() {
     // propias más las de su(s) proyecto(s); el resto, solo las propias.
     let taskQuery = supabase
       .from('tasks')
-      .select('id, title, status, item_type, priority, progress, due_date, assigned_to, assignee:profiles!tasks_assigned_to_fkey(email), project_id, project:projects(name)')
+      .select('id, title, status, item_type, priority, progress, due_date, assigned_to, from_meeting, assignee:profiles!tasks_assigned_to_fkey(email), project_id, project:projects(name)')
       .order('due_date', { ascending: true, nullsFirst: false });
     if (!isJefe) {
       taskQuery = ledIds.length

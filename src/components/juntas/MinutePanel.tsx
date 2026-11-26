@@ -79,7 +79,7 @@ export function MinutePanel({ meetingId, items, notes, canWrite, isJefe, current
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Minuta</h2>
         {savedAt && (
-          <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-secondary)]">
+          <span className="chip-glass font-mono text-xs px-2 py-1 rounded-[8px] text-[var(--text-secondary)]">
             notas guardadas {savedAt.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
           </span>
         )}
@@ -96,7 +96,7 @@ export function MinutePanel({ meetingId, items, notes, canWrite, isJefe, current
                 {list.map((item, i) => (
                   <li key={item.id} className="group flex items-start gap-2.5 text-sm leading-relaxed text-[var(--text-primary)]">
                     {kind === 'tema' ? (
-                      <span className="font-mono text-xs font-bold text-[var(--accent)] pt-0.5 w-5 shrink-0">{String(i + 1).padStart(2, '0')}</span>
+                      <span className="font-mono text-xs font-bold text-[var(--accent-text)] pt-0.5 w-5 shrink-0">{String(i + 1).padStart(2, '0')}</span>
                     ) : (
                       <Icon size={16} className="shrink-0 mt-0.5" style={{ color: kind === 'acuerdo' ? 'var(--ok-text)' : 'var(--prio-media-text)' }} />
                     )}
@@ -105,9 +105,9 @@ export function MinutePanel({ meetingId, items, notes, canWrite, isJefe, current
                       <button
                         onClick={() => remove(item.id)}
                         aria-label="Quitar de la minuta"
-                        className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 rounded-[6px] text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-500 transition-opacity"
+                        className="reveal-on-hover -my-1 w-7 h-7 shrink-0 inline-flex items-center justify-center rounded-[8px] text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-500 transition-opacity"
                       >
-                        <Trash2 size={13} />
+                        <Trash2 size={14} />
                       </button>
                     )}
                   </li>
@@ -144,7 +144,7 @@ export function MinutePanel({ meetingId, items, notes, canWrite, isJefe, current
         <label className="flex flex-col gap-2">
           <span className="flex items-baseline justify-between gap-2">
             <span className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Notas generales</span>
-            <span className="text-[11px] text-[var(--text-secondary)]">{isJefe ? 'las ven todos los asistentes' : 'del jefe'}</span>
+            <span className="text-xs text-[var(--text-secondary)]">{isJefe ? 'las ven todos los asistentes' : 'del jefe'}</span>
           </span>
           {isJefe && canWrite ? (
             <textarea name="notes"
@@ -235,7 +235,7 @@ function MyNotes({ meetingId, userId, canWrite }: { meetingId: string; userId?: 
     <label className="flex flex-col gap-2">
       <span className="flex items-baseline justify-between gap-2">
         <span className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Mis notas</span>
-        <span className="text-[11px]" style={{ color: status === 'error' ? 'var(--prio-alta-text)' : 'var(--text-secondary)' }}>{hint}</span>
+        <span className="text-xs" style={{ color: status === 'error' ? 'var(--prio-alta-text)' : 'var(--text-secondary)' }}>{hint}</span>
       </span>
       <textarea name="text"
         rows={5}

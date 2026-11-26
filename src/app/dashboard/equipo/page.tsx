@@ -76,9 +76,9 @@ export default function EquipoPage() {
                   {!!info?.specialties.length && (
                     <span className="flex flex-wrap gap-1.5">
                       {info.specialties.slice(0, 4).map((s) => (
-                        <span key={s} className="font-mono text-[11px] px-2 py-1 rounded-[8px] chip-glass text-[var(--text-primary)] break-all">{s}</span>
+                        <span key={s} className="font-mono text-xs px-2 py-1 rounded-[8px] chip-glass text-[var(--text-primary)] break-all">{s}</span>
                       ))}
-                      {info.specialties.length > 4 && <span className="font-mono text-[11px] px-2 py-1 text-[var(--text-secondary)]">+{info.specialties.length - 4}</span>}
+                      {info.specialties.length > 4 && <span className="font-mono text-xs px-2 py-1 text-[var(--text-secondary)]">+{info.specialties.length - 4}</span>}
                     </span>
                   )}
                   {birthday && (

@@ -12,13 +12,12 @@ export function Avatar({ email, highlight = false, size = 36, className = '' }: 
   return (
     <span
       title={email ?? 'Sin asignar'}
-      className={`tile-3d shrink-0 flex items-center justify-center font-bold text-white ${className}`}
+      className={`tile-3d shrink-0 flex items-center justify-center font-bold ${highlight ? 'accent-fill' : 'gray-fill'} ${className}`}
       style={{
         width: size,
         height: size,
         borderRadius: Math.round(size / 3),
-        fontSize: Math.max(10, Math.round(size / 3)),
-        background: highlight ? 'linear-gradient(150deg, var(--accent), var(--accent-2))' : 'linear-gradient(150deg, #64748B, #334155)',
+        fontSize: Math.max(11, Math.round(size / 3)),
       }}
     >
       {initials(email)}

@@ -22,7 +22,7 @@ export function PeoplePicker({ legend, people, selected, onChange, lockedId, dis
 
   return (
     <fieldset disabled={disabled} className="flex flex-col gap-1 min-w-0 disabled:opacity-70">
-      <legend className="text-[11px] text-[var(--text-secondary)] mb-1">
+      <legend className="text-xs text-[var(--text-secondary)] mb-1">
         {legend}
         {count > 1 && ` · ${count} personas, una tarea para cada una`}
       </legend>

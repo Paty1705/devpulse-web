@@ -131,7 +131,7 @@ export function Topbar({ onOpenSettings, onOpenMenu }: { onOpenSettings: () => v
         </button>
         {/* Solo la sección y la fecha: cada página pone su propio <h1>. */}
         <div className="flex flex-col min-w-0">
-          <span className="font-mono text-[11px] text-[var(--text-secondary)] truncate">devpulse / {title.toLowerCase()}</span>
+          <span className="font-mono text-xs text-[var(--text-secondary)] truncate">devpulse / {title.toLowerCase()}</span>
           <span className="font-display text-base font-semibold text-[var(--text-primary)] first-letter:uppercase min-h-6 truncate">{today}</span>
         </div>
       </div>
@@ -147,7 +147,7 @@ export function Topbar({ onOpenSettings, onOpenMenu }: { onOpenSettings: () => v
             >
               <Bell size={18} />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#E11D48] text-white text-[11px] font-bold flex items-center justify-center shadow-[0_0_10px_rgba(225,29,72,0.6)]">
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#E11D48] text-white text-xs font-bold flex items-center justify-center shadow-[0_0_10px_rgba(225,29,72,0.6)]">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -179,7 +179,7 @@ export function Topbar({ onOpenSettings, onOpenMenu }: { onOpenSettings: () => v
                         </span>
                         <span className="block text-xs text-[var(--text-secondary)] mb-2 line-clamp-2">{n.message}</span>
                         {n.link && (
-                          <span className="text-[10px] text-[var(--btn-primary-bg)] flex items-center gap-1 font-bold">
+                          <span className="text-[11px] text-[var(--btn-primary-bg)] flex items-center gap-1 font-bold">
                             Ver detalles <ExternalLink size={10} />
                           </span>
                         )}
@@ -205,8 +205,7 @@ export function Topbar({ onOpenSettings, onOpenMenu }: { onOpenSettings: () => v
           onClick={onOpenSettings}
           aria-label="Preferencias"
           title={user?.email ?? undefined}
-          className="tile-3d w-10 h-10 rounded-[13px] flex items-center justify-center font-display font-bold text-sm text-white"
-          style={{ background: 'linear-gradient(150deg, var(--accent), var(--accent-2))' }}
+          className="tile-3d accent-fill w-10 h-10 rounded-[13px] flex items-center justify-center font-display font-bold text-sm"
         >
           {initials(user?.email)}
         </button>

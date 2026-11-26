@@ -4,6 +4,7 @@ import { useMemo, useState, type CSSProperties } from 'react';
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
 import { AlertTriangle, Clock, FileCode, FlaskConical, Lock, Plus, Repeat } from 'lucide-react';
 import { dueTimeSuffix, isPastDue } from '@/lib/due';
+import { noProjectLabel } from '@/lib/meetings';
 
 export type BoardTask = {
   id: string;
@@ -19,6 +20,7 @@ export type BoardTask = {
   recurrence_id?: string | null;
   due_date?: string | null;
   project_id: string | null;
+  from_meeting?: boolean;
   assignee?: { email: string } | null;
 };
 
@@ -188,50 +190,50 @@ export function BoardView({
                                     }}
                                     className={`chip-glass shrink-0 rounded-[18px] p-[var(--kanban-card-padding)] flex flex-col gap-2.5 cursor-pointer border border-[var(--border-card)] hover:bg-[var(--bg-card-hover)] transition-[background-color,box-shadow,opacity] ${
                                       dragSnapshot.isDragging ? 'shadow-[var(--shadow-hover)] ring-2 ring-[var(--accent)]' : ''
-                                    } ${!editable && !dragSnapshot.isDragging ? 'opacity-80' : ''} ${isDone ? 'opacity-75' : ''}`}
+                                    } ${!editable && !dragSnapshot.isDragging ? 'opacity-90' : ''}`}
                                   >
                                     <span className="flex items-start justify-between gap-2">
                                       <span className="font-semibold leading-snug text-[length:var(--kanban-card-text)] text-[var(--text-primary)]">{task.title}</span>
-                                      <span className="shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-[8px]" style={prioStyle(task.priority)}>
+                                      <span className="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-[8px]" style={prioStyle(task.priority)}>
                                         {task.priority ?? 'Media'}
                                       </span>
                                     </span>
 
-                                    <span className="font-mono text-[11px] text-[var(--text-secondary)] truncate">
-                                      {task.project_id ? projectNames[task.project_id] ?? 'Proyecto' : 'Personal'} · {task.item_type ?? 'Feature'}
+                                    <span className="font-mono text-xs text-[var(--text-secondary)] truncate">
+                                      {task.project_id ? projectNames[task.project_id] ?? 'Proyecto' : noProjectLabel(task.from_meeting)} · {task.item_type ?? 'Feature'}
                                     </span>
 
                                     <span className="flex flex-wrap gap-1.5">
                                       {task.due_date ? (
                                         <span
-                                          className="font-mono text-[11px] px-2 py-1 rounded-[8px] inline-flex items-center gap-1 surface-card"
+                                          className="font-mono text-xs px-2 py-1 rounded-[8px] inline-flex items-center gap-1 surface-card"
                                           style={isOverdue ? prioStyle('Alta') : isDueToday ? prioStyle('Media') : undefined}
                                         >
                                           {isOverdue ? <AlertTriangle size={11} /> : <Clock size={11} />}
                                           {isOverdue ? 'venció ' : ''}{isDueToday && !isOverdue ? 'hoy' : shortDate.format(new Date(task.due_date))}{dueTimeSuffix(task.due_date)}
                                         </span>
                                       ) : (
-                                        <span className="font-mono text-[11px] px-2 py-1 rounded-[8px] inline-flex items-center gap-1 surface-card text-[var(--text-secondary)]">
+                                        <span className="font-mono text-xs px-2 py-1 rounded-[8px] inline-flex items-center gap-1 surface-card text-[var(--text-secondary)]">
                                           <Clock size={11} /> sin fecha
                                         </span>
                                       )}
                                       {test && (
-                                        <span className="font-mono text-[11px] px-2 py-1 rounded-[8px] inline-flex items-center gap-1 surface-card shadow-[inset_0_0_0_1px_var(--accent-2)]">
+                                        <span className="font-mono text-xs px-2 py-1 rounded-[8px] inline-flex items-center gap-1 surface-card shadow-[inset_0_0_0_1px_var(--accent-2)]">
                                           <FlaskConical size={11} /> prueba {formatDateOnly(test)}
                                         </span>
                                       )}
                                       {task.recurrence_id && (
-                                        <span className="font-mono text-[11px] px-2 py-1 rounded-[8px] inline-flex items-center gap-1 surface-card" title="Tarea recurrente">
+                                        <span className="font-mono text-xs px-2 py-1 rounded-[8px] inline-flex items-center gap-1 surface-card" title="Tarea recurrente">
                                           <Repeat size={11} />
                                         </span>
                                       )}
                                       {task.requires_sql && (
-                                        <span className="font-mono text-[11px] px-2 py-1 rounded-[8px] inline-flex items-center gap-1 bg-[var(--badge-sql-bg)] text-[var(--badge-sql-text)]" title="Requiere SQL">
+                                        <span className="font-mono text-xs px-2 py-1 rounded-[8px] inline-flex items-center gap-1 bg-[var(--badge-sql-bg)] text-[var(--badge-sql-text)]" title="Requiere SQL">
                                           <FileCode size={11} /> SQL
                                         </span>
                                       )}
                                       {task.is_locked && (
-                                        <span className="font-mono text-[11px] px-2 py-1 rounded-[8px] inline-flex items-center gap-1 bg-[var(--badge-locked-bg)] text-[var(--badge-locked-text)]" title="Bloqueada por la persona asignada">
+                                        <span className="font-mono text-xs px-2 py-1 rounded-[8px] inline-flex items-center gap-1 bg-[var(--badge-locked-bg)] text-[var(--badge-locked-text)]" title="Bloqueada por la persona asignada">
                                           <Lock size={11} />
                                         </span>
                                       )}
@@ -239,8 +241,7 @@ export function BoardView({
 
                                     <span className="flex items-center gap-2">
                                       <span
-                                        className="tile-3d w-7 h-7 shrink-0 rounded-[9px] flex items-center justify-center text-[10px] font-bold text-white"
-                                        style={{ background: task.assigned_to === currentUserId ? 'linear-gradient(150deg, var(--accent), var(--accent-2))' : 'linear-gradient(150deg, #64748B, #334155)' }}
+                                        className={`tile-3d w-7 h-7 shrink-0 rounded-[9px] flex items-center justify-center text-xs font-bold ${task.assigned_to === currentUserId ? 'accent-fill' : 'gray-fill'}`}
                                         title={task.assignee?.email ?? 'Sin asignar'}
                                       >
                                         {task.assigned_to ? initials(task.assignee?.email) : '—'}
@@ -251,7 +252,7 @@ export function BoardView({
                                           style={{ width: `${pct}%`, background: isDone ? 'var(--ok-text)' : 'linear-gradient(90deg, var(--accent-2), var(--accent))' }}
                                         />
                                       </span>
-                                      <span className="font-mono text-[11px] font-bold text-[var(--text-primary)]">{pct}%</span>
+                                      <span className="font-mono text-xs font-bold text-[var(--text-primary)]">{pct}%</span>
                                     </span>
                                   </div>
                                 )}

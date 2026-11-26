@@ -94,6 +94,33 @@ export function contrastText(hex: string): string {
   return (L + 0.05) / 0.05 > 1.05 / (L + 0.05) ? '#0B1020' : '#FFFFFF';
 }
 
+const toRgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+
+function luminance(rgb: number[]) {
+  const [r, g, b] = rgb.map((c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/**
+ * Versión del color sobre la que `text` se lee (contraste 4.6 o más): lo
+ * oscurece si el texto es blanco y lo aclara si el texto es oscuro.
+ */
+export function readableFill(color: string, text: string): string {
+  const from = toRgb(color);
+  const textL = luminance(toRgb(text));
+  const to = textL > 0.5 ? 0 : 255;
+  for (let t = 0; ; t += 0.04) {
+    const rgb = from.map((c) => Math.round(c + (to - c) * Math.min(t, 1)));
+    const l = luminance(rgb);
+    if ((Math.max(l, textL) + 0.05) / (Math.min(l, textL) + 0.05) >= 4.6 || t >= 1) {
+      return `#${rgb.map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+    }
+  }
+}
+
 /** Aplica las preferencias a <html>. Debe mantenerse equivalente a themeInitScript. */
 export function applyPreferencesToDOM(p: Preferences) {
   const root = document.documentElement;
@@ -109,7 +136,10 @@ export function applyPreferencesToDOM(p: Preferences) {
   const { a, b } = resolveAccents(p);
   root.style.setProperty('--accent', a);
   root.style.setProperty('--accent-2', b);
-  root.style.setProperty('--accent-contrast', contrastText(a));
+  const text = contrastText(a);
+  root.style.setProperty('--accent-contrast', text);
+  root.style.setProperty('--accent-fill', readableFill(a, text));
+  root.style.setProperty('--accent-2-fill', readableFill(b, text));
   root.style.setProperty('--glass-blur', `${p.glassBlur}px`);
   root.style.setProperty('--iridescence', String(p.iridescence));
 }
@@ -138,7 +168,13 @@ var b=acc==='custom'?(hex.test(p.accent2Color)?p.accent2Color:D.accent2Color):P[
 var n=parseInt(a.slice(1),16);function l(c){c/=255;return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);}
 var L=0.2126*l((n>>16)&255)+0.7152*l((n>>8)&255)+0.0722*l(n&255);
 r.style.setProperty('--accent',a);r.style.setProperty('--accent-2',b);
-r.style.setProperty('--accent-contrast',(L+0.05)/0.05>1.05/(L+0.05)?'#0B1020':'#FFFFFF');
+var tx=(L+0.05)/0.05>1.05/(L+0.05)?'#0B1020':'#FFFFFF';
+r.style.setProperty('--accent-contrast',tx);
+function rgb(h){return [1,3,5].map(function(i){return parseInt(h.slice(i,i+2),16);});}
+function lum(v){return 0.2126*l(v[0])+0.7152*l(v[1])+0.0722*l(v[2]);}
+function fill(c){var f=rgb(c),T=lum(rgb(tx)),to=T>0.5?0:255;for(var t=0;;t+=0.04){var v=f.map(function(x){return Math.round(x+(to-x)*Math.min(t,1));});var q=lum(v);
+if((Math.max(q,T)+0.05)/(Math.min(q,T)+0.05)>=4.6||t>=1){return '#'+v.map(function(x){return ('0'+x.toString(16)).slice(-2);}).join('');}}}
+r.style.setProperty('--accent-fill',fill(a));r.style.setProperty('--accent-2-fill',fill(b));
 var bl=Number(p.glassBlur);r.style.setProperty('--glass-blur',(isFinite(bl)?Math.min(40,Math.max(0,bl)):D.glassBlur)+'px');
 var ir=Number(p.iridescence);r.style.setProperty('--iridescence',String(isFinite(ir)?Math.min(1,Math.max(0,ir)):D.iridescence));
 }catch(_){}})();`;

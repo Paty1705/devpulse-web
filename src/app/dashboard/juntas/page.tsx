@@ -159,38 +159,38 @@ function MeetingCard({ meeting: m, currentEmail, onDelete }: { meeting: MeetingR
 
         <span className="flex flex-wrap gap-2">
           {m.series_id && (
-            <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
+            <span className="chip-glass font-mono text-xs px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
               <Repeat size={11} /> se repite
             </span>
           )}
           {m.video_url && (m.status === 'programada' || live) && (
-            <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
+            <span className="chip-glass font-mono text-xs px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
               <Video size={11} /> Meet
             </span>
           )}
           {m.status === 'programada' && m.reminder_minutes != null && (
-            <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1" title="Recordatorio">
+            <span className="chip-glass font-mono text-xs px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1" title="Recordatorio">
               <Bell size={11} /> {m.reminder_minutes < 60 ? `${m.reminder_minutes} min` : m.reminder_minutes === 1440 ? '1 día' : `${m.reminder_minutes / 60} h`}
             </span>
           )}
-          <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)]">{m.minutes.length} en minuta</span>
+          <span className="chip-glass font-mono text-xs px-2 py-1 rounded-[8px] text-[var(--text-primary)]">{m.minutes.length} en minuta</span>
           {m.recording_path && (
-            <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
+            <span className="chip-glass font-mono text-xs px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
               <FileAudio size={11} /> grabada
             </span>
           )}
           {m.ai_status === 'procesando' && (
-            <span className="chip-glass font-mono text-[11px] px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
+            <span className="chip-glass font-mono text-xs px-2 py-1 rounded-[8px] text-[var(--text-primary)] inline-flex items-center gap-1">
               <Sparkles size={11} /> procesando
             </span>
           )}
           {pending > 0 && (
-            <span className="font-mono text-[11px] px-2 py-1 rounded-[8px]" style={{ background: 'var(--prio-media-bg)', color: 'var(--prio-media-text)' }}>
+            <span className="font-mono text-xs px-2 py-1 rounded-[8px]" style={{ background: 'var(--prio-media-bg)', color: 'var(--prio-media-text)' }}>
               {pending} por revisar
             </span>
           )}
           {accepted > 0 && (
-            <span className="font-mono text-[11px] px-2 py-1 rounded-[8px]" style={{ background: 'var(--prio-baja-bg)', color: 'var(--prio-baja-text)' }}>
+            <span className="font-mono text-xs px-2 py-1 rounded-[8px]" style={{ background: 'var(--prio-baja-bg)', color: 'var(--prio-baja-text)' }}>
               {accepted} {accepted === 1 ? 'tarea asignada' : 'tareas asignadas'}
             </span>
           )}

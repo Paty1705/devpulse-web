@@ -60,15 +60,15 @@ export function ProposalForm({ meetingId, currentUserId, projects, attendees, fi
     <form onSubmit={submit} className="chip-glass rounded-[18px] p-3.5 border border-[var(--accent)] grid grid-cols-2 gap-2">
       <h3 className="col-span-2 text-sm font-semibold text-[var(--text-primary)]">Proponer una tarea</h3>
       <label className="col-span-2 flex flex-col gap-1">
-        <span className="text-[11px] text-[var(--text-secondary)]">¿Qué quieres hacer?</span>
+        <span className="text-xs text-[var(--text-secondary)]">¿Qué quieres hacer?</span>
         <input name="title" autoFocus required maxLength={200} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ej. Rediseñar la pantalla de inicio" className={fieldClass} />
       </label>
       <label className="col-span-2 flex flex-col gap-1">
-        <span className="text-[11px] text-[var(--text-secondary)]">Explicación (opcional)</span>
+        <span className="text-xs text-[var(--text-secondary)]">Explicación (opcional)</span>
         <textarea name="description" rows={3} maxLength={2000} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="En qué consiste, para qué sirve, qué vas a entregar…" className={`${fieldClass} py-2 resize-y`} />
       </label>
       <label className="col-span-2 flex flex-col gap-1">
-        <span className="text-[11px] text-[var(--text-secondary)]">Proyecto</span>
+        <span className="text-xs text-[var(--text-secondary)]">Proyecto</span>
         <select name="project_id" value={projectId} onChange={(e) => setProjectId(e.target.value)} className={fieldClass}>
           <option value="">Sin proyecto</option>
           {projects.length > 0 && (
@@ -82,21 +82,21 @@ export function ProposalForm({ meetingId, currentUserId, projects, attendees, fi
         <PeoplePicker legend="Responsables" people={attendees} selected={people} onChange={setPeople} lockedId={currentUserId} />
       </div>
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] text-[var(--text-secondary)]">Fecha de entrega</span>
+        <span className="text-xs text-[var(--text-secondary)]">Fecha de entrega</span>
         <input name="due_date" type="date" required min={toDateInput(new Date())} value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={fieldClass} />
       </label>
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] text-[var(--text-secondary)]">Hora de entrega (opcional)</span>
+        <span className="text-xs text-[var(--text-secondary)]">Hora de entrega (opcional)</span>
         <input name="due_time" type="time" value={dueTime} onChange={(e) => setDueTime(e.target.value)} className={fieldClass} />
       </label>
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] text-[var(--text-secondary)]">Prioridad</span>
+        <span className="text-xs text-[var(--text-secondary)]">Prioridad</span>
         <select name="priority" value={priority} onChange={(e) => setPriority(e.target.value as Priority)} className={fieldClass} style={prioStyle(priority)}>
           {PRIORITIES.map((x) => <option key={x} value={x}>{x}</option>)}
         </select>
       </label>
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] text-[var(--text-secondary)]">Fecha de prueba (opcional)</span>
+        <span className="text-xs text-[var(--text-secondary)]">Fecha de prueba (opcional)</span>
         <input name="test_date" type="date" min={toDateInput(new Date())} value={testDate} onChange={(e) => setTestDate(e.target.value)} className={fieldClass} />
       </label>
       {error && <p role="alert" className="col-span-2 text-sm text-red-500">{error}</p>}

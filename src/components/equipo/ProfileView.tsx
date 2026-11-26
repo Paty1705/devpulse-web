@@ -193,7 +193,7 @@ function ProfileForm({ member, info, onCancel, onSaved }: { member: Member; info
       <label className="flex flex-col gap-1.5">
         <span className="text-sm font-semibold text-[var(--text-primary)]">Preséntate <span className="font-normal text-[var(--text-secondary)]">(opcional)</span></span>
         <textarea name="about" value={about} onChange={(e) => setAbout(e.target.value)} rows={5} maxLength={600} placeholder="Quién eres, en qué estás trabajando, en qué te pueden pedir ayuda…" className={`${inputClass} py-2.5 resize-y`} />
-        <span className="self-end font-mono text-[11px] text-[var(--text-secondary)]">{about.length}/600</span>
+        <span className="self-end font-mono text-xs text-[var(--text-secondary)]">{about.length}/600</span>
       </label>
 
       <fieldset className="flex flex-col gap-2">

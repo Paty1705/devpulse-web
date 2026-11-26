@@ -92,7 +92,7 @@ export function Sidebar({ onOpenSettings, inDrawer = false, onNavigate }: { onOp
         </span>
         <span className="flex flex-col">
           <span className="font-display font-bold text-lg leading-tight tracking-tight text-[var(--text-primary)]">DevPulse</span>
-          <span className="font-mono text-[11px] text-[var(--text-secondary)]">área de sistemas</span>
+          <span className="font-mono text-xs text-[var(--text-secondary)]">área de sistemas</span>
         </span>
       </div>
 
@@ -109,7 +109,7 @@ export function Sidebar({ onOpenSettings, inDrawer = false, onNavigate }: { onOp
               >
                 <Icon size={18} />
                 <span className="flex-1">{item.label}</span>
-                <span className="font-mono text-[10px] px-2 py-0.5 rounded-[8px] bg-[var(--bg-page)]">pronto</span>
+                <span className="font-mono text-[11px] px-2 py-0.5 rounded-[8px] bg-[var(--bg-page)]">pronto</span>
               </span>
             );
           }
@@ -134,7 +134,7 @@ export function Sidebar({ onOpenSettings, inDrawer = false, onNavigate }: { onOp
       </nav>
 
       {/* Widget estilo terminal con el avance personal */}
-      <div className="[@media(max-height:860px)]:hidden rounded-[16px] p-3 font-mono text-[11px] leading-relaxed bg-[#0A0F1E]/85 text-[#A9B4CC] shadow-[inset_0_2px_6px_rgba(0,0,0,0.5)]">
+      <div className="[@media(max-height:860px)]:hidden rounded-[16px] p-3 font-mono text-xs leading-relaxed bg-[#0A0F1E]/85 text-[#A9B4CC] shadow-[inset_0_2px_6px_rgba(0,0,0,0.5)]">
         <div className="flex gap-1.5 mb-2.5" aria-hidden="true">
           <span className="w-2.5 h-2.5 rounded-full bg-[#F87171]" />
           <span className="w-2.5 h-2.5 rounded-full bg-[#FBBF24]" />

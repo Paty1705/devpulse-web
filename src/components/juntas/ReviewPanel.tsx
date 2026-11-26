@@ -100,7 +100,7 @@ export function ReviewPanel({ attendees, reviewFrom, currentUserId }: { attendee
                 <Avatar email={r.email} highlight={r.id === currentUserId} size={32} />
                 <span className="flex-1 min-w-0">
                   <span className="block text-sm font-semibold text-[var(--text-primary)] truncate">{r.email.split('@')[0]}</span>
-                  <span className="block font-mono text-[11px] text-[var(--text-secondary)]">
+                  <span className="block font-mono text-xs text-[var(--text-secondary)]">
                     {r.updates} {r.updates === 1 ? 'avance' : 'avances'} · {r.active} activas
                     {r.overdue > 0 && <span style={{ color: 'var(--prio-alta-text)', fontWeight: 700 }}> · {r.overdue} vencidas</span>}
                   </span>

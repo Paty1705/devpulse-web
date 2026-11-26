@@ -76,7 +76,7 @@ export function DeleteUserModal({ target, candidates, onClose, onDeleted }: Prop
         <div className="p-6 space-y-4 text-sm text-[var(--text-primary)]">
           <p className="font-semibold break-all">{target.email}</p>
           <p className="text-[var(--text-secondary)] leading-relaxed">
-            Se borran para siempre su cuenta, su perfil, sus notas, su agenda, sus asistencias, sus avances y sus notificaciones.
+            Se borran para siempre su cuenta, su perfil, sus tareas personales, sus notas, su agenda, sus asistencias, sus avances y sus notificaciones.
             Las juntas y los recursos del equipo se conservan. <strong>No se puede deshacer.</strong>
           </p>
 

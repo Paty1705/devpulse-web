@@ -3,6 +3,7 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
 import { AlertTriangle, Clock, FileCode, FlaskConical, Lock, Plus, Repeat } from 'lucide-react';
+import { dueTimeSuffix, isPastDue } from '@/lib/due';
 
 export type BoardTask = {
   id: string;
@@ -167,7 +168,7 @@ export function BoardView({
                           {list.map((task, index) => {
                             const editable = canModify(task);
                             const isDone = task.status === 'completed';
-                            const isOverdue = !!task.due_date && !isDone && new Date(task.due_date) < today;
+                            const isOverdue = !!task.due_date && !isDone && isPastDue(task.due_date);
                             const isDueToday = !!task.due_date && new Date(task.due_date).toDateString() === today.toDateString();
                             const test = testDates[task.id];
                             const pct = isDone ? 100 : task.progress ?? 0;
@@ -207,7 +208,7 @@ export function BoardView({
                                           style={isOverdue ? prioStyle('Alta') : isDueToday ? prioStyle('Media') : undefined}
                                         >
                                           {isOverdue ? <AlertTriangle size={11} /> : <Clock size={11} />}
-                                          {isOverdue ? 'venció ' : ''}{isDueToday && !isOverdue ? 'hoy' : shortDate.format(new Date(task.due_date))}
+                                          {isOverdue ? 'venció ' : ''}{isDueToday && !isOverdue ? 'hoy' : shortDate.format(new Date(task.due_date))}{dueTimeSuffix(task.due_date)}
                                         </span>
                                       ) : (
                                         <span className="font-mono text-[11px] px-2 py-1 rounded-[8px] inline-flex items-center gap-1 surface-card text-[var(--text-secondary)]">

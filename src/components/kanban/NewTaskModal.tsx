@@ -7,6 +7,7 @@ import { apiPost } from '@/lib/api-client';
 import { createGoogleCalendarEvent } from '@/lib/calendar';
 import { branchNameForTask } from '@/lib/github';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { PeoplePicker } from '@/components/PeoplePicker';
 import { describeRecurrence, formatShort, FREQUENCY_UNIT, toISODate, upcoming, type Frequency } from '@/lib/recurrence';
 
 type Project = { id: string; name: string; leader_id: string | null; mode: string; repo_url: string | null };
@@ -39,7 +40,7 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
   const [newCriterion, setNewCriterion] = useState('');
 
   // Asignación y agenda
-  const [assignedTo, setAssignedTo] = useState('');
+  const [assignees, setAssignees] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState('');
   const [dueTime, setDueTime] = useState('');
 
@@ -66,10 +67,11 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
       // Primer proyecto propio, o tarea personal si no lidera ninguno.
       const first = visibleProjects[0];
       setProjectId(first?.id ?? '');
-      setAssignedTo(first ? first.leader_id ?? '' : user?.id ?? '');
+      const owner = first ? first.leader_id : user?.id;
+      setAssignees(owner ? [owner] : []);
     }
 
-    const { data: profs } = await supabase.from('profiles').select('id, email, role');
+    const { data: profs } = await supabase.from('profiles').select('id, email, role').eq('status', 'approved').order('email');
     if (profs) setProfiles(profs);
   }, [isJefe, user?.id]);
 
@@ -82,18 +84,17 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
   }, [isOpen, fetchProjectsAndProfiles]);
 
   const selectedProject = projects.find(p => p.id === projectId) || null;
-  // Los proyectos son individuales: sus tareas solo pueden ser del responsable.
-  // Proyecto → solo su responsable. Sin proyecto → tarea personal, para uno mismo.
-  const assignableProfiles = !selectedProject
-    ? profiles.filter(p => p.id === user?.id)
-    : profiles.filter(p => p.id === selectedProject.leader_id);
+  // El jefe puede sumar personas siempre; quien lidera un proyecto, en sus
+  // proyectos. Sin proyecto, cualquier otra persona solo crea para sí.
+  const assignableProfiles = isJefe || selectedProject ? profiles : profiles.filter(p => p.id === user?.id);
 
-  // Al elegir proyecto, la tarea se asigna sola a su responsable (se hace en
-  // el handler, no en un efecto, para no derivar estado en cascada).
+  // Al elegir proyecto queda marcado quien lo lidera (se hace en el handler,
+  // no en un efecto, para no derivar estado en cascada).
   const handleProjectChange = (newProjectId: string) => {
     setProjectId(newProjectId);
     const proj = projects.find(p => p.id === newProjectId);
-    setAssignedTo(proj ? proj.leader_id ?? '' : user?.id ?? '');
+    const owner = proj ? proj.leader_id : user?.id;
+    setAssignees(owner ? [owner] : []);
   };
 
   // Precarga la fecha límite cada vez que el modal se abre (ej. al venir
@@ -130,6 +131,16 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
       alert('Ponle un título a la tarea.');
       return;
     }
+    if (!projectId && assignees.length === 0) {
+      alert('Elige al menos un responsable.');
+      return;
+    }
+    if (repeat !== 'no' && !projectId && assignees.some(id => id !== user?.id)) {
+      alert('Las tareas repetitivas sin proyecto solo pueden ser para ti. Elige un proyecto o quita la repetición.');
+      return;
+    }
+    // Cada responsable recibe su propia tarea; sin nadie marcado queda sin asignar.
+    const people: (string | null)[] = assignees.length ? assignees : [null];
     setIsSubmitting(true);
 
     try {
@@ -137,9 +148,9 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
         const n = Math.min(52, Math.max(1, Number(everyN) || 1));
         const days = Math.min(60, Math.max(0, Number(dueInDays) || 0));
         if (endDate && endDate < startsOn) throw new Error('La fecha final no puede ser antes del inicio.');
-        const { error } = await supabase.from('task_recurrences').insert({
+        const { error } = await supabase.from('task_recurrences').insert(people.map((person) => ({
           project_id: projectId || null,
-          assigned_to: assignedTo || null,
+          assigned_to: person,
           title: title.trim(),
           description,
           item_type: itemType,
@@ -151,7 +162,7 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
           starts_on: startsOn,
           next_run: startsOn,
           end_date: endDate || null,
-        });
+        })));
         if (error) throw error;
         onTaskCreated();
         onClose();
@@ -171,25 +182,29 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
 
       // Insertar en Supabase (con select() para recuperar el id real y poder
       // crear la rama de GitHub con el mismo esquema de nombre que TaskModal)
-      const { data: insertedTask, error } = await supabase.from('tasks').insert([{
+      const { data: insertedTasks, error } = await supabase.from('tasks').insert(people.map((person) => ({
         project_id: projectId || null,
         title,
         description,
         item_type: itemType,
         priority,
         acceptance_criteria: criteria,
-        assigned_to: assignedTo || null,
+        assigned_to: person,
+        // Sin proyecto y para otra persona es trabajo asignado, no personal.
+        from_meeting: !projectId && person !== user?.id,
         due_date: isoDate,
         google_event_id: googleEventId,
         requires_sql: requiresSql,
         sql_script: sqlScript,
         pr_url: '',
         status: 'backlog'
-      }]).select().single();
+      }))).select('id');
 
       if (error) throw error;
 
       // Crear la rama en GitHub automáticamente (no bloquea la tarea si falla).
+      // Con varias personas cada una crea la suya desde su tarea.
+      const insertedTask = insertedTasks?.length === 1 ? insertedTasks[0] : null;
       if (insertedTask && selectedProject?.repo_url) {
         const realBranchName = branchNameForTask(insertedTask.id, title);
         try {
@@ -258,7 +273,11 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
                   <option value="">Personal · sin proyecto</option>
                 </select>
                 {!selectedProject && (
-                  <p className="text-[11px] text-[var(--text-secondary)] mt-1">Tarea personal: es para ti, la mueves tú hasta terminarla y no pasa por auditoría.</p>
+                  <p className="text-[11px] text-[var(--text-secondary)] mt-1">
+                    {assignees.every(id => id === user?.id)
+                      ? 'Tarea personal: solo tú la ves, la mueves hasta terminarla y no pasa por auditoría.'
+                      : 'Sin proyecto: cada persona mueve la suya y no pasa por auditoría. Tú puedes verlas.'}
+                  </p>
                 )}
               </div>
               
@@ -333,18 +352,16 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label htmlFor="tarea-asignada" className="block text-sm font-bold text-[var(--text-secondary)] mb-1">Asignar a</label>
-                <select name="assigned-to" id="tarea-asignada"
-                  value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)}
-                  disabled={!selectedProject}
-                  className="w-full bg-[var(--bg-column)] border border-[var(--border-card)] rounded-[12px] p-2.5 text-[var(--text-primary)] focus:outline-none focus:border-[var(--btn-primary-bg)] disabled:opacity-70"
-                >
-                  {selectedProject && <option value="">Sin asignar</option>}
-                  {assignableProfiles.map(p => <option key={p.id} value={p.id}>{p.email} ({p.role})</option>)}
-                </select>
-                {selectedProject && assignableProfiles.length === 0 && (
-                  <p className="text-xs text-amber-500 mt-1">Este proyecto todavía no tiene responsable.</p>
+              <div className="md:col-span-3">
+                <PeoplePicker
+                  legend="Asignar a"
+                  people={assignableProfiles}
+                  selected={assignees}
+                  onChange={setAssignees}
+                  disabled={!isJefe && !selectedProject}
+                />
+                {assignees.length === 0 && (
+                  <p className="text-xs text-amber-500 mt-1">{selectedProject ? 'Sin responsable: la tarea quedará sin asignar.' : 'Elige al menos un responsable.'}</p>
                 )}
               </div>
               {repeat === 'no' ? (<>
@@ -395,7 +412,9 @@ export function NewTaskModal({ isOpen, onClose, onTaskCreated, initialDueDate }:
               <input name="branch-name-preview" id="tarea-rama" type="text" readOnly value={branchNamePreview} className="w-full bg-[var(--bg-page)] border border-[var(--border-column)] text-[var(--text-secondary)] rounded-[12px] p-2.5 font-mono text-sm cursor-not-allowed" />
               <p className="text-xs text-[var(--text-secondary)] mt-1">
                 {selectedProject?.repo_url
-                  ? 'Se creará automáticamente en GitHub al guardar la tarea.'
+                  ? assignees.length > 1
+                    ? 'Con varias personas, cada una crea su rama desde su tarea.'
+                    : 'Se creará automáticamente en GitHub al guardar la tarea.'
                   : 'Este proyecto no tiene repositorio de GitHub configurado, así que no se creará la rama automáticamente.'}
               </p>
             </div>

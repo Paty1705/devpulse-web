@@ -75,8 +75,12 @@ export type Proposal = {
   description: string | null;
   project_id: string | null;
   assigned_to: string | null;
+  /** Responsables además de assigned_to: cada quien recibe su propia tarea. */
+  co_assignees: string[];
   priority: Priority;
   due_date: string | null;
+  /** HH:MM[:SS]; sin hora es al final del día. */
+  due_time: string | null;
   test_date: string | null;
   source_quote: string | null;
   source: 'ia' | 'manual';
@@ -85,6 +89,17 @@ export type Proposal = {
   /** Quien la agregó (null en las de IA anteriores a esta columna). */
   created_by: string | null;
 };
+
+/** Todas las personas responsables de una propuesta, la principal primero. */
+export function assigneeIds(p: Pick<Proposal, 'assigned_to' | 'co_assignees'>) {
+  return [...new Set([p.assigned_to, ...(p.co_assignees ?? [])].filter((x): x is string => !!x))];
+}
+
+/** Reparte la selección entre la persona principal (la primera preferida que esté) y las demás. */
+export function splitAssignees(ids: string[], preferred: (string | null | undefined)[] = []) {
+  const primary = preferred.find((x) => !!x && ids.includes(x)) ?? ids[0] ?? null;
+  return { assigned_to: primary, co_assignees: ids.filter((x) => x !== primary) };
+}
 
 export const STATUS_LABEL: Record<MeetingStatus, string> = {
   programada: 'Programada',

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Mascot } from '@/components/mascot/Mascot';
 import type { Mascot as MascotKind } from '@/lib/theme';
+import { dueTimeSuffix, isPastDue } from '@/lib/due';
 
 export type DashboardTask = {
   id: string;
@@ -109,8 +110,8 @@ export function DashboardView({ tasks, projects, progressRows, meeting, resource
 
     const pending = tasks.filter((t) => t.status !== 'completed');
     const completed = tasks.filter((t) => t.status === 'completed');
-    const overdue = pending.filter((t) => t.due_date && new Date(t.due_date) < today);
-    const dueToday = pending.filter((t) => t.due_date && new Date(t.due_date) >= today && new Date(t.due_date) <= endOfToday);
+    const overdue = pending.filter((t) => t.due_date && isPastDue(t.due_date));
+    const dueToday = pending.filter((t) => t.due_date && !isPastDue(t.due_date) && new Date(t.due_date) <= endOfToday);
     const dueWeek = pending.filter((t) => t.due_date && new Date(t.due_date) > endOfToday && new Date(t.due_date) <= weekFromNow);
     const inReview = pending.filter((t) => t.status === 'in_review');
 
@@ -242,7 +243,7 @@ export function DashboardView({ tasks, projects, progressRows, meeting, resource
               {view.upcoming.map((t) => {
                 const tile = TYPE_TILE[t.item_type ?? 'Feature'] ?? TYPE_TILE.Feature;
                 const Icon = tile.icon;
-                const isOverdue = !!t.due_date && new Date(t.due_date) < startOfDay(new Date());
+                const isOverdue = !!t.due_date && t.status !== 'completed' && isPastDue(t.due_date);
                 return (
                   <li key={t.id}>
                     <button
@@ -257,7 +258,7 @@ export function DashboardView({ tasks, projects, progressRows, meeting, resource
                         <span className="font-mono text-xs text-[var(--text-secondary)] truncate">
                           {t.project?.name ?? 'Personal'} · {t.due_date ? (
                             <span style={isOverdue ? { color: 'var(--prio-alta-text)', fontWeight: 700 } : undefined}>
-                              {isOverdue ? 'venció ' : 'límite '}{shortDate.format(new Date(t.due_date))}
+                              {isOverdue ? 'venció ' : 'límite '}{shortDate.format(new Date(t.due_date))}{dueTimeSuffix(t.due_date)}
                             </span>
                           ) : 'sin fecha'}
                           {isJefe && t.assignee?.email ? ` · ${t.assignee.email.split('@')[0]}` : ''}

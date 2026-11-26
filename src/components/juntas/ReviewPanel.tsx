@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatDateOnly, type PersonRef } from '@/lib/meetings';
+import { isPastDue } from '@/lib/due';
 import { Avatar } from '@/components/juntas/Avatar';
 
 type TaskRow = { id: string; assigned_to: string | null; status: string; due_date: string | null; progress: number | null };
@@ -42,7 +43,6 @@ export function ReviewPanel({ attendees, reviewFrom, currentUserId }: { attendee
         // Sin conexión: se muestran en cero en lugar de quedarse cargando.
       }
       if (cancelled) return;
-      const today = new Date(new Date().toDateString());
       const t = tasks ?? [];
       const p = progress ?? [];
       setRows(
@@ -53,7 +53,7 @@ export function ReviewPanel({ attendees, reviewFrom, currentUserId }: { attendee
             ...a,
             active: active.length,
             done: mine.length - active.length,
-            overdue: active.filter((x) => x.due_date && new Date(x.due_date) < today).length,
+            overdue: active.filter((x) => x.due_date && isPastDue(x.due_date)).length,
             avg: active.length ? Math.round(active.reduce((s, x) => s + (x.progress ?? 0), 0) / active.length) : 0,
             updates: p.filter((x) => x.user_id === a.id).length,
           };

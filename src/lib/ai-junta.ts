@@ -14,10 +14,11 @@ export const PRIORITIES = ['Baja', 'Media', 'Alta', 'Crítica'] as const;
 export type AiProposal = {
   title: string;
   description?: string | null;
-  assignee_email?: string | null;
+  assignee_emails?: string[] | null;
   project_name?: string | null;
   priority?: string | null;
   due_date?: string | null;
+  due_time?: string | null;
   test_date?: string | null;
   quote?: string | null;
 };
@@ -42,10 +43,11 @@ const proposalsSchema: ResponseSchema = {
         properties: {
           title: { type: SchemaType.STRING },
           description: { type: SchemaType.STRING, nullable: true },
-          assignee_email: { type: SchemaType.STRING, nullable: true },
+          assignee_emails: { type: SchemaType.ARRAY, nullable: true, items: { type: SchemaType.STRING } },
           project_name: { type: SchemaType.STRING, nullable: true },
           priority: { type: SchemaType.STRING, format: 'enum', enum: [...PRIORITIES] },
           due_date: { type: SchemaType.STRING, nullable: true, description: 'YYYY-MM-DD' },
+          due_time: { type: SchemaType.STRING, nullable: true, description: 'HH:MM (24 horas)' },
           test_date: { type: SchemaType.STRING, nullable: true, description: 'YYYY-MM-DD' },
           quote: { type: SchemaType.STRING, nullable: true },
         },
@@ -88,10 +90,11 @@ Abajo está la transcripción de la junta "${ctx.title}" del ${ctx.dateLabel} ($
 Extrae TODAS las tareas, compromisos y pendientes que se asignaron o acordaron. Cuenta también los que se dicen de forma informal ("hay que…", "tenemos que…", "falta…", "tomar en cuenta…"), aunque no tengan responsable ni fecha. La transcripción es automática: puede tener errores y los nombres de quien habla pueden estar mal. Para cada tarea:
 - "title": corto y accionable (máx. 70 caracteres), empezando con verbo.
 - "description": detalle útil de lo que se pidió, o null.
-- "assignee_email": el correo de la persona responsable, SOLO de la lista de asistentes; null si no queda claro.
+- "assignee_emails": los correos de las personas responsables, SOLO de la lista de asistentes. Si la tarea es de varias personas, incluye a todas; si es para todo el equipo ("todos", "cada quien"), incluye a todos los asistentes menos quienes tengan rol jefe. Lista vacía si no queda claro.
 - "project_name": el nombre EXACTO de uno de los proyectos de la lista; null si no queda claro.
 - "priority": "Baja", "Media", "Alta" o "Crítica" según la urgencia que se expresó (por defecto "Media").
 - "due_date": fecha límite en formato YYYY-MM-DD si se mencionó (convierte expresiones como "el viernes" o "la próxima semana" tomando como referencia la fecha de la junta); null si no.
+- "due_time": hora límite en formato HH:MM de 24 horas, solo si se mencionó una hora; null si no.
 - "test_date": fecha de prueba YYYY-MM-DD si se mencionó; null si no.
 - "quote": la frase textual de la transcripción de donde sale la tarea.
 No inventes tareas que no se mencionaron. Si no hubo ninguna, devuelve una lista vacía.

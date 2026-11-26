@@ -9,6 +9,7 @@ import {
 import { Mascot } from '@/components/mascot/Mascot';
 import type { Mascot as MascotKind } from '@/lib/theme';
 import { dueTimeSuffix, isPastDue } from '@/lib/due';
+import { noProjectLabel } from '@/lib/meetings';
 
 export type DashboardTask = {
   id: string;
@@ -19,6 +20,7 @@ export type DashboardTask = {
   progress: number | null;
   due_date: string | null;
   assigned_to: string | null;
+  from_meeting?: boolean;
   assignee: { email: string } | null;
   project_id: string | null;
   project: { name: string } | null;
@@ -218,7 +220,7 @@ export function DashboardView({ tasks, projects, progressRows, meeting, resource
 
       {/* Fila 2: gráfica + mis tareas */}
       <div className="flex flex-wrap gap-4">
-        <Card className="flex-[3_1_460px] min-w-0">
+        <Card className="flex-[3_1_460px] min-w-0 flex flex-col">
           <CardTitle>
             <span className="flex flex-col">
               Avances registrados
@@ -255,8 +257,8 @@ export function DashboardView({ tasks, projects, progressRows, meeting, resource
                       </span>
                       <span className="flex-1 min-w-0 flex flex-col gap-0.5">
                         <span className="text-sm font-semibold text-[var(--text-primary)] truncate">{t.title}</span>
-                        <span className="font-mono text-xs text-[var(--text-secondary)] truncate">
-                          {t.project?.name ?? 'Personal'} · {t.due_date ? (
+                        <span className="font-mono text-xs text-[var(--text-secondary)] break-words">
+                          {t.project?.name ?? noProjectLabel(t.from_meeting)} · {t.due_date ? (
                             <span style={isOverdue ? { color: 'var(--prio-alta-text)', fontWeight: 700 } : undefined}>
                               {isOverdue ? 'venció ' : 'límite '}{shortDate.format(new Date(t.due_date))}{dueTimeSuffix(t.due_date)}
                             </span>
@@ -344,7 +346,7 @@ export function DashboardView({ tasks, projects, progressRows, meeting, resource
               >
                 <div className="glass-panel w-[92px] h-[92px] rounded-full flex flex-col items-center justify-center">
                   <span className="font-display text-2xl font-bold leading-none text-[var(--text-primary)]">{view.overall}%</span>
-                  <span className="text-[11px] text-[var(--text-secondary)]">general</span>
+                  <span className="text-xs text-[var(--text-secondary)]">general</span>
                 </div>
               </div>
               <ul className="flex-1 min-w-[150px] flex flex-col gap-3">
@@ -458,49 +460,56 @@ function ProgressChart({ days, values, loading }: { days: Date[]; values: number
   if (loading) return <Empty>Cargando…</Empty>;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-1 flex-col gap-3">
       <div className="flex items-baseline gap-2">
         <span className="font-display text-[34px] font-bold leading-none text-[var(--text-primary)]">{total}</span>
         <span className="text-sm text-[var(--text-secondary)]">{total === 1 ? 'avance' : 'avances'} esta semana</span>
       </div>
-      {total === 0 ? (
-        <Empty>Aún no hay avances registrados. Se registran desde cada tarea.</Empty>
-      ) : (
-        <>
-          <svg
-            width="100%"
-            height={H}
-            viewBox={`0 0 ${W} ${H}`}
-            preserveAspectRatio="none"
-            role="img"
-            aria-label={`Avances por día: ${days.map((d, i) => `${weekday.format(d)} ${values[i]}`).join(', ')}`}
-          >
-            <defs>
-              <linearGradient id="dashArea" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" style={{ stopColor: 'var(--accent)', stopOpacity: 0.4 }} />
-                <stop offset="1" style={{ stopColor: 'var(--accent)', stopOpacity: 0 }} />
-              </linearGradient>
-              <linearGradient id="dashLine" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" style={{ stopColor: 'var(--accent-2)' }} />
-                <stop offset="1" style={{ stopColor: 'var(--accent)' }} />
-              </linearGradient>
-            </defs>
-            {[0.25, 0.5, 0.75].map((f) => (
-              <line key={f} x1="0" x2={W} y1={H * f} y2={H * f} stroke="currentColor" strokeOpacity="0.08" vectorEffect="non-scaling-stroke" />
-            ))}
-            <path d={area} fill="url(#dashArea)" />
-            <path d={line} fill="none" stroke="url(#dashLine)" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-          </svg>
-          <div className="grid grid-cols-7 text-center font-mono text-xs text-[var(--text-secondary)]">
-            {days.map((d, i) => (
-              <span key={d.toISOString()} className={i === best && values[i] > 0 ? 'font-bold text-[var(--text-primary)]' : ''}>
-                {weekday.format(d).replace('.', '')}
-                <span className="block">{values[i]}</span>
-              </span>
-            ))}
-          </div>
-        </>
-      )}
+      {/* La gráfica ocupa el alto que tenga la tarjeta, con avances o sin ellos. */}
+      <div className="relative flex-1 min-h-[180px]">
+        <svg
+          className="absolute inset-0"
+          width="100%"
+          height="100%"
+          viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="none"
+          role="img"
+          aria-label={`Avances por día: ${days.map((d, i) => `${weekday.format(d)} ${values[i]}`).join(', ')}`}
+        >
+          <defs>
+            <linearGradient id="dashArea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" style={{ stopColor: 'var(--accent)', stopOpacity: 0.4 }} />
+              <stop offset="1" style={{ stopColor: 'var(--accent)', stopOpacity: 0 }} />
+            </linearGradient>
+            <linearGradient id="dashLine" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" style={{ stopColor: 'var(--accent-2)' }} />
+              <stop offset="1" style={{ stopColor: 'var(--accent)' }} />
+            </linearGradient>
+          </defs>
+          {[0.25, 0.5, 0.75].map((f) => (
+            <line key={f} x1="0" x2={W} y1={H * f} y2={H * f} stroke="currentColor" strokeOpacity="0.08" vectorEffect="non-scaling-stroke" />
+          ))}
+          {total > 0 && (
+            <>
+              <path d={area} fill="url(#dashArea)" />
+              <path d={line} fill="none" stroke="url(#dashLine)" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+            </>
+          )}
+        </svg>
+        {total === 0 && (
+          <p className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-[var(--text-secondary)]">
+            Aún no hay avances registrados. Se registran desde cada tarea.
+          </p>
+        )}
+      </div>
+      <div className="grid grid-cols-7 text-center font-mono text-xs text-[var(--text-secondary)]">
+        {days.map((d, i) => (
+          <span key={d.toISOString()} className={i === best && values[i] > 0 ? 'font-bold text-[var(--text-primary)]' : ''}>
+            {weekday.format(d).replace('.', '')}
+            <span className="block">{values[i]}</span>
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

@@ -37,7 +37,7 @@ export function KanbanBoard() {
   const fetchTasks = useCallback(async () => {
     const { data, error } = await supabase
       .from('tasks')
-      .select('id, title, status, is_locked, locked_by, requires_sql, assigned_to, item_type, priority, progress, recurrence_id, due_date, project_id, assignee:profiles!tasks_assigned_to_fkey(email)')
+      .select('id, title, status, is_locked, locked_by, requires_sql, assigned_to, item_type, priority, progress, recurrence_id, due_date, project_id, from_meeting, assignee:profiles!tasks_assigned_to_fkey(email)')
       .order('created_at', { ascending: true });
 
     if (error) {

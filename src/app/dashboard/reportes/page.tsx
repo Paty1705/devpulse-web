@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, CheckCircle2, ChevronLeft, Download, FlaskConical, Printer, TrendingUp, type LucideIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { noProjectLabel } from '@/lib/meetings';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { Avatar } from '@/components/juntas/Avatar';
 import { prioStyle, shortName } from '@/lib/meetings';
@@ -18,6 +19,7 @@ type Task = {
   assigned_to: string | null;
   project_id: string | null;
   due_date: string | null;
+  from_meeting?: boolean;
   completed_at: string | null;
   progress: number | null;
 };
@@ -101,7 +103,7 @@ export default function ReportesPage() {
       const [{ data: profs }, { data: projs }, { data: taskRows, error: taskErr }] = await Promise.all([
         supabase.from('profiles').select('id, email, role').eq('status', 'approved').order('email'),
         supabase.from('projects').select('id, name'),
-        supabase.from('tasks').select('id, title, status, priority, assigned_to, project_id, due_date, completed_at, progress'),
+        supabase.from('tasks').select('id, title, status, priority, assigned_to, project_id, due_date, completed_at, progress, from_meeting'),
       ]);
       if (taskErr) setError('No se pudieron cargar las tareas. Revisa que el script supabase/reportes.sql esté aplicado.');
       setPeople((profs ?? []) as Person[]);
@@ -228,7 +230,7 @@ export default function ReportesPage() {
           new Date(t.completed_at!).toLocaleString('es-MX'),
           s.person.email,
           t.title,
-          t.project_id ? projects[t.project_id] ?? '' : 'Personal',
+          t.project_id ? projects[t.project_id] ?? '' : noProjectLabel(t.from_meeting),
           !t.due_date ? 'sin fecha límite' : new Date(t.completed_at!) <= new Date(t.due_date) ? 'a tiempo' : 'tarde',
         ]),
       );
@@ -239,7 +241,7 @@ export default function ReportesPage() {
           new Date(p.created_at).toLocaleString('es-MX'),
           s.person.email,
           t?.title ?? '',
-          t?.project_id ? projects[t.project_id] ?? '' : 'Personal',
+          t?.project_id ? projects[t.project_id] ?? '' : noProjectLabel(t?.from_meeting),
           `${p.percent}%${p.note ? ` · ${p.note}` : ''}${p.evidence_url ? ` · ${p.evidence_url}` : ''}`,
         ]);
       });
@@ -347,12 +349,12 @@ export default function ReportesPage() {
             <div className="flex items-end gap-[2px] h-40 min-w-full" style={{ minWidth: series.buckets.length * 22 }} role="img" aria-label={`Tareas completadas por ${series.weekly ? 'semana' : 'día'}`}>
               {series.buckets.map((b) => (
                 <div key={b.key} className="group relative flex-1 min-w-[20px] h-full flex flex-col justify-end items-center gap-1">
-                  {b.count > 0 && <span className="font-mono text-[11px] text-[var(--text-secondary)]">{b.count}</span>}
+                  {b.count > 0 && <span className="font-mono text-xs text-[var(--text-secondary)]">{b.count}</span>}
                   <div
                     className="w-full max-w-[28px] rounded-t-[4px] transition-opacity group-hover:opacity-80"
                     style={{ height: `${(b.count / maxCount) * 100}%`, minHeight: b.count ? 4 : 1, background: b.count ? 'var(--accent)' : 'var(--border-card)' }}
                   />
-                  <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-[8px] px-2 py-1 text-[11px] bg-[var(--bg-card)] border border-[var(--border-card)] text-[var(--text-primary)] shadow-[var(--shadow-hover)] opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-[8px] px-2 py-1 text-xs bg-[var(--bg-card)] border border-[var(--border-card)] text-[var(--text-primary)] shadow-[var(--shadow-hover)] opacity-0 group-hover:opacity-100 transition-opacity z-10">
                     {b.label}: {b.count}
                   </span>
                 </div>
@@ -360,7 +362,7 @@ export default function ReportesPage() {
             </div>
             <div className="flex gap-[2px] mt-1" style={{ minWidth: series.buckets.length * 22 }}>
               {series.buckets.map((b, i) => (
-                <span key={b.key} className="flex-1 min-w-[20px] text-center font-mono text-[10px] text-[var(--text-secondary)] truncate">
+                <span key={b.key} className="flex-1 min-w-[20px] text-center font-mono text-[11px] text-[var(--text-secondary)] truncate">
                   {i % Math.ceil(series.buckets.length / 10) === 0 ? b.label.replace('sem. ', '') : ''}
                 </span>
               ))}
@@ -376,7 +378,7 @@ export default function ReportesPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-[11px] uppercase tracking-wider text-[var(--text-secondary)]">
+                <tr className="text-left text-xs uppercase tracking-wider text-[var(--text-secondary)]">
                   <th className="font-semibold px-3 py-2">Persona</th>
                   <th className="font-semibold px-3 py-2 text-right">Completadas</th>
                   <th className="font-semibold px-3 py-2 text-right">A tiempo</th>
@@ -395,7 +397,7 @@ export default function ReportesPage() {
                           <Avatar email={s.person.email} highlight={s.person.id === user.id} size={30} />
                           <span className="min-w-0">
                             <span className="block font-semibold text-[var(--text-primary)] truncate">{shortName(s.person.email)}</span>
-                            <span className="block font-mono text-[11px] text-[var(--text-secondary)]">{s.person.role}</span>
+                            <span className="block font-mono text-xs text-[var(--text-secondary)]">{s.person.role}</span>
                           </span>
                         </span>
                       </td>
@@ -447,12 +449,12 @@ export default function ReportesPage() {
                         <span className="min-w-0">
                           <span className="block text-sm font-semibold text-[var(--text-primary)]">{t.title}</span>
                           <span className="block text-xs text-[var(--text-secondary)]">
-                            {t.project_id ? projects[t.project_id] ?? 'Proyecto' : 'Personal'} · {dayTimeFmt.format(new Date(t.completed_at!))}
+                            {t.project_id ? projects[t.project_id] ?? 'Proyecto' : noProjectLabel(t.from_meeting)} · {dayTimeFmt.format(new Date(t.completed_at!))}
                           </span>
                         </span>
                         <span className="shrink-0 flex flex-col items-end gap-1">
-                          {t.priority && <span className="text-[11px] font-semibold px-2 py-0.5 rounded-[8px]" style={prioStyle(t.priority)}>{t.priority}</span>}
-                          <span className="text-[11px] font-semibold" style={{ color: !t.due_date ? 'var(--text-secondary)' : late ? 'var(--prio-alta-text)' : 'var(--ok-text)' }}>
+                          {t.priority && <span className="text-xs font-semibold px-2 py-0.5 rounded-[8px]" style={prioStyle(t.priority)}>{t.priority}</span>}
+                          <span className="text-xs font-semibold" style={{ color: !t.due_date ? 'var(--text-secondary)' : late ? 'var(--prio-alta-text)' : 'var(--ok-text)' }}>
                             {!t.due_date ? 'sin fecha límite' : late ? 'tarde' : 'a tiempo'}
                           </span>
                         </span>
@@ -504,7 +506,7 @@ export default function ReportesPage() {
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold text-[var(--text-primary)] truncate">{t.title}</span>
                       <span className="block text-xs text-[var(--text-secondary)]">
-                        venció el {dayFmt.format(new Date(t.due_date!))} · {t.project_id ? projects[t.project_id] ?? 'Proyecto' : 'Personal'}
+                        venció el {dayFmt.format(new Date(t.due_date!))} · {t.project_id ? projects[t.project_id] ?? 'Proyecto' : noProjectLabel(t.from_meeting)}
                       </span>
                     </span>
                     <span className="font-mono text-xs text-[var(--text-primary)]">{t.progress ?? 0}%</span>

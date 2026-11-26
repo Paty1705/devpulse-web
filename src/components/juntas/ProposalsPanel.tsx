@@ -233,13 +233,13 @@ export function ProposalsPanel({
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px] text-[var(--text-primary)]">
+              <div className="flex flex-wrap items-center gap-1.5 font-mono text-xs text-[var(--text-primary)]">
                 <span className="px-1.5 py-0.5 rounded-[6px]" style={prioStyle(p.priority)}>{p.priority}</span>
                 <span className="px-1.5 py-0.5 rounded-[6px] surface-card">{p.due_date ? `entrega ${formatDateOnly(p.due_date)}${p.due_time ? ` · ${p.due_time.slice(0, 5)}` : ''}` : 'sin fecha'}</span>
                 <span className="px-1.5 py-0.5 rounded-[6px] surface-card max-w-[11rem] truncate" title={names || undefined}>
                   {assigneeEmail ? `${shortName(assigneeEmail)}${people.length > 1 ? ` +${people.length - 1}` : ''}` : 'sin responsable'}
                 </span>
-                <span className="px-1.5 py-0.5 rounded-[6px] surface-card text-[var(--text-secondary)]">{p.source === 'ia' ? 'IA' : 'manual'}</span>
+                <span className="px-1.5 py-0.5 rounded-[6px] surface-card">{p.source === 'ia' ? 'IA' : 'manual'}</span>
               </div>
 
               {waiting && !open && <span className="text-xs text-[var(--text-secondary)]">Espera a que el jefe la acepte</span>}
@@ -259,7 +259,7 @@ export function ProposalsPanel({
                   {editable ? (
                     <>
                       <label className="flex flex-col gap-1">
-                        <span className="text-[11px] text-[var(--text-secondary)]">Qué hay que hacer</span>
+                        <span className="text-xs text-[var(--text-secondary)]">Qué hay que hacer</span>
                         <input name="titulo-propuesta"
                           autoFocus={p.id === newId}
                           key={`${p.id}-${p.title}`}
@@ -273,7 +273,7 @@ export function ProposalsPanel({
                         />
                       </label>
                       <label className="flex flex-col gap-1">
-                        <span className="text-[11px] text-[var(--text-secondary)]">Explicación (opcional)</span>
+                        <span className="text-xs text-[var(--text-secondary)]">Explicación (opcional)</span>
                         <textarea name="description"
                           key={`${p.id}-${p.description ?? ''}`}
                           defaultValue={p.description ?? ''}
@@ -289,7 +289,7 @@ export function ProposalsPanel({
                       </label>
                       <div className="grid grid-cols-2 gap-2">
                         <label className="col-span-2 flex flex-col gap-1">
-                          <span className="text-[11px] text-[var(--text-secondary)]">Proyecto</span>
+                          <span className="text-xs text-[var(--text-secondary)]">Proyecto</span>
                           <select name="project_id"
                             value={p.project_id ?? ''}
                             onChange={(e) => {
@@ -323,22 +323,22 @@ export function ProposalsPanel({
                           />
                         </div>
                         <label className="flex flex-col gap-1">
-                          <span className="text-[11px] text-[var(--text-secondary)]">Fecha de entrega</span>
+                          <span className="text-xs text-[var(--text-secondary)]">Fecha de entrega</span>
                           <input name="due_date" type="date" key={`${p.id}-due_date-${p.due_date ?? ''}`} defaultValue={p.due_date ?? ''} onBlur={(e) => { if (e.target.value !== (p.due_date ?? '')) patch(p.id, { due_date: e.target.value || null }); }} className={fieldClass} />
                         </label>
                         <label className="flex flex-col gap-1">
-                          <span className="text-[11px] text-[var(--text-secondary)]">Hora de entrega (opcional)</span>
+                          <span className="text-xs text-[var(--text-secondary)]">Hora de entrega (opcional)</span>
                           <input name="due_time" type="time" key={`${p.id}-due_time-${p.due_time ?? ''}`} defaultValue={p.due_time?.slice(0, 5) ?? ''} onBlur={(e) => { if (e.target.value !== (p.due_time?.slice(0, 5) ?? '')) patch(p.id, { due_time: e.target.value || null }); }} className={fieldClass} />
                         </label>
                         {p.due_time && !p.due_date && <span className="col-span-2 text-xs" style={{ color: 'var(--prio-media-text)' }}>Elige también la fecha para que cuente la hora.</span>}
                         <label className="flex flex-col gap-1">
-                          <span className="text-[11px] text-[var(--text-secondary)]">Prioridad</span>
+                          <span className="text-xs text-[var(--text-secondary)]">Prioridad</span>
                           <select name="priority" value={p.priority} onChange={(e) => patch(p.id, { priority: e.target.value as Proposal['priority'] })} className={fieldClass} style={prioStyle(p.priority)}>
                             {PRIORITIES.map((x) => <option key={x} value={x}>{x}</option>)}
                           </select>
                         </label>
                         <label className="flex flex-col gap-1">
-                          <span className="text-[11px] text-[var(--text-secondary)]">Fecha de prueba (opcional)</span>
+                          <span className="text-xs text-[var(--text-secondary)]">Fecha de prueba (opcional)</span>
                           <input name="test_date" type="date" key={`${p.id}-test_date-${p.test_date ?? ''}`} defaultValue={p.test_date ?? ''} onBlur={(e) => { if (e.target.value !== (p.test_date ?? '')) patch(p.id, { test_date: e.target.value || null }); }} className={fieldClass} />
                         </label>
                       </div>

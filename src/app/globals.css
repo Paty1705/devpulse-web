@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 @theme {
+  /* La letra chica nunca baja de 12px (en laptop la base es de 14px). */
+  --text-xs: max(0.75rem, 12px);
   --color-brand-neon: #11DBDC;
   --color-brand-magenta: #D15EEE;
   --color-brand-azul: #2983D0;
@@ -30,7 +32,7 @@
   --badge-bg: rgba(41, 131, 208, 0.12);
   --badge-text: #2983D0;
   --badge-sql-bg: rgba(105, 66, 215, 0.1);
-  --badge-sql-text: #6942D7;
+  --badge-sql-text: #5A30C4;
   --badge-locked-bg: rgba(239, 68, 68, 0.15);
   --badge-locked-text: #EF4444;
   --badge-urgent-bg: rgba(245, 158, 11, 0.15);
@@ -67,7 +69,7 @@
   --badge-bg: rgba(17, 219, 220, 0.15);
   --badge-text: #11DBDC;
   --badge-sql-bg: rgba(209, 94, 238, 0.18);
-  --badge-sql-text: #D15EEE;
+  --badge-sql-text: #F5C2FF;
   --badge-locked-bg: rgba(239, 68, 68, 0.2);
   --badge-locked-text: #F87171;
   --badge-urgent-bg: rgba(245, 158, 11, 0.2);
@@ -105,13 +107,41 @@
   --accent: #4F46E5;
   --accent-2: #06B6D4;
   --accent-contrast: #FFFFFF;
+  /* Acentos ajustados para llevar texto encima (ver readableFill). */
+  --accent-fill: #4F46E5;
+  --accent-2-fill: #047C90;
+  /* Acento usado como color de letra. */
+  --accent-text: color-mix(in srgb, var(--accent) 75%, #000);
   --glass-blur: 22px;
   --iridescence: 0.8;
   --page-base: var(--bg-page);
 }
 
+:root.dark {
+  --accent-text: color-mix(in srgb, var(--accent) 50%, #fff);
+}
+
+:root { --danger-text: #B91C1C; }
+:root.dark { --danger-text: #FECACA; }
+
+.accent-fill {
+  color: var(--accent-contrast);
+  background-image: linear-gradient(150deg, var(--accent-fill), var(--accent-2-fill));
+}
+.gray-fill {
+  color: #FFFFFF;
+  background-image: linear-gradient(150deg, #64748B, #334155);
+}
+
+/* Acciones que se esconden hasta pasar el mouse; sin mouse siempre se ven. */
+@media (hover: hover) {
+  .reveal-on-hover { opacity: 0; }
+  .group:hover .reveal-on-hover,
+  .reveal-on-hover:focus-visible { opacity: 1; }
+}
+
 :root[data-accent] {
-  --btn-primary-bg: var(--accent);
+  --btn-primary-bg: var(--accent-fill);
   --btn-primary-hover: var(--accent-2);
   --btn-primary-text: var(--accent-contrast);
   --border-card: color-mix(in srgb, var(--accent) 22%, transparent);
@@ -144,7 +174,7 @@
   --border-column: rgba(255, 255, 255, 0.6);
   --border-card: rgba(255, 255, 255, 0.75);
   --text-primary: #121933;
-  --text-secondary: #47506A;
+  --text-secondary: #3F4760;
   --glass-highlight: rgba(255, 255, 255, 0.9);
   --shadow-subtle: 0 10px 30px rgba(40, 50, 110, 0.12);
   --shadow-hover: 0 16px 36px rgba(40, 50, 110, 0.18);
@@ -163,7 +193,7 @@
   --border-column: rgba(255, 255, 255, 0.1);
   --border-card: rgba(255, 255, 255, 0.14);
   --text-primary: #EEF2FF;
-  --text-secondary: #A9B4CC;
+  --text-secondary: #C3CCE0;
   --glass-highlight: rgba(255, 255, 255, 0.18);
   --shadow-subtle: 0 12px 32px rgba(0, 0, 0, 0.45);
   --shadow-hover: 0 16px 36px rgba(0, 0, 0, 0.55);
@@ -232,7 +262,7 @@
 
 /* Botones principales: degradado entre los dos acentos. */
 :root[data-surface="vidrio"] [class~="bg-[var(--btn-primary-bg)]"] {
-  background-image: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background-image: linear-gradient(135deg, var(--accent-fill), var(--accent-2-fill));
   box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 30%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
@@ -343,6 +373,9 @@ h1, h2, h3 {
   }
 
   /* Junta: tres columnas del mismo alto, cada una con su propio scroll. */
+  .fit-page .agenda-grid { height: 100%; grid-template-rows: auto repeat(6, minmax(0, 1fr)); }
+  .fit-page .agenda-day { min-height: 0; overflow: hidden; }
+  .fit-page .agenda-day-list { position: relative; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
   .fit-page > .meeting-columns {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1.2fr);
@@ -399,7 +432,7 @@ h1, h2, h3 {
 /* Elemento activo de la navegación. */
 .nav-active {
   color: var(--accent-contrast);
-  background-image: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background-image: linear-gradient(135deg, var(--accent-fill), var(--accent-2-fill));
   box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 30%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
@@ -431,7 +464,7 @@ h1, h2, h3 {
 }
 :root.dark {
   --prio-alta-bg: rgba(251, 146, 60, 0.18); --prio-alta-text: #FDBA74;
-  --prio-media-bg: rgba(250, 204, 21, 0.16); --prio-media-text: #FDE047;
+  --prio-media-bg: rgba(250, 204, 21, 0.1); --prio-media-text: #FEF08A;
   --prio-baja-bg: rgba(74, 222, 128, 0.16); --prio-baja-text: #86EFAC;
   --ok-text: #4ADE80;
 }

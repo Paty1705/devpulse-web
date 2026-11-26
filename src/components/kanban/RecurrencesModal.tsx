@@ -113,7 +113,7 @@ export function RecurrencesModal({ isOpen, onClose, onChanged }: Props) {
                         {r.due_in_days > 0 && ` · ${r.due_in_days} ${r.due_in_days === 1 ? 'día' : 'días'} para terminarla`}
                       </p>
                     </div>
-                    <span className="shrink-0 text-[11px] font-semibold px-2 py-1 rounded-[8px]" style={r.active ? { background: 'var(--prio-baja-bg)', color: 'var(--prio-baja-text)' } : { background: 'var(--bg-page)', color: 'var(--text-secondary)' }}>
+                    <span className="shrink-0 text-xs font-semibold px-2 py-1 rounded-[8px]" style={r.active ? { background: 'var(--prio-baja-bg)', color: 'var(--prio-baja-text)' } : { background: 'var(--bg-page)', color: 'var(--text-secondary)' }}>
                       {r.active ? 'Activa' : r.end_date && r.next_run > r.end_date ? 'Terminó' : 'En pausa'}
                     </span>
                   </div>

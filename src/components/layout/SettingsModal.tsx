@@ -162,7 +162,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     onChange={(e) => updatePreferences({ glassBlur: Number(e.target.value) })}
                     className="w-full accent-[var(--btn-primary-bg)]"
                   />
-                  <span className="block text-[11px] text-[var(--text-secondary)] mt-1">Bájalo si la página se siente lenta en tu computadora.</span>
+                  <span className="block text-xs text-[var(--text-secondary)] mt-1">Bájalo si la página se siente lenta en tu computadora.</span>
                 </label>
                 <label className="block">
                   <span className="flex justify-between text-xs font-bold text-[var(--text-primary)] mb-2">

@@ -229,7 +229,7 @@ function RecursosBoard() {
                 className={`shrink-0 min-h-11 px-3.5 rounded-[14px] text-sm font-semibold inline-flex items-center gap-1.5 transition-colors ${kind === f.value ? 'nav-active' : 'chip-glass text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
               >
                 {f.label}
-                <span className="font-mono text-[11px] opacity-70">{kindCount[f.value]}</span>
+                <span className="font-mono text-xs">{kindCount[f.value]}</span>
               </button>
             ))}
             <button
@@ -238,7 +238,7 @@ function RecursosBoard() {
               className={`shrink-0 min-h-11 px-3.5 rounded-[14px] text-sm font-semibold inline-flex items-center gap-1.5 transition-colors ${forMe ? 'nav-active' : 'chip-glass text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
             >
               <UserRound size={15} /> Para mí
-              {forMeCount > 0 && <span className="font-mono text-[11px] opacity-70">{forMeCount}</span>}
+              {forMeCount > 0 && <span className="font-mono text-xs">{forMeCount}</span>}
             </button>
           </div>
         </div>
@@ -366,12 +366,12 @@ function ResourceCard({ resource: r, authorEmail, forEmail, projectName, current
           </span>
         )}
         <span className="absolute left-2 top-2 flex gap-1.5">
-          <span className="font-mono text-[11px] px-2 py-0.5 rounded-[8px] bg-black/55 text-white backdrop-blur-sm">
+          <span className="font-mono text-xs px-2 py-0.5 rounded-[8px] bg-black/55 text-white backdrop-blur-sm">
             {KIND_LABEL[r.kind]}{r.duration_minutes ? ` · ${r.duration_minutes} min` : ''}
           </span>
         </span>
         {forMe && (
-          <span className="absolute right-2 top-2 text-[11px] font-semibold px-2 py-0.5 rounded-[8px]" style={{ background: 'var(--prio-alta-bg)', color: 'var(--prio-alta-text)' }}>
+          <span className="absolute right-2 top-2 text-xs font-semibold px-2 py-0.5 rounded-[8px]" style={{ background: 'var(--prio-alta-bg)', color: 'var(--prio-alta-text)' }}>
             Para ti
           </span>
         )}
@@ -382,16 +382,16 @@ function ResourceCard({ resource: r, authorEmail, forEmail, projectName, current
           <button onClick={onOpen} className="text-left hover:underline underline-offset-2">{r.title}</button>
         </h3>
         {where && (
-          <span className="font-mono text-[11px] text-[var(--text-secondary)] truncate inline-flex items-center gap-1">
+          <span className="font-mono text-xs text-[var(--text-secondary)] truncate inline-flex items-center gap-1">
             <ExternalLink size={11} className="shrink-0" /> {where}
           </span>
         )}
         {r.description && <p className="text-[13px] text-[var(--text-secondary)] line-clamp-3">{r.description}</p>}
         {(r.tags.length > 0 || projectName) && (
           <div className="flex flex-wrap gap-1.5 pt-0.5">
-            {projectName && <span className="chip-glass text-[11px] font-semibold px-2 py-0.5 rounded-[8px] text-[var(--text-primary)]">{projectName}</span>}
+            {projectName && <span className="chip-glass text-xs font-semibold px-2 py-0.5 rounded-[8px] text-[var(--text-primary)]">{projectName}</span>}
             {r.tags.map((t) => (
-              <button key={t} onClick={() => onTag(t)} className="font-mono text-[11px] px-2 py-0.5 rounded-[8px] surface-card border border-[var(--border-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+              <button key={t} onClick={() => onTag(t)} className="font-mono text-xs px-2 py-0.5 rounded-[8px] surface-card border border-[var(--border-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                 #{t}
               </button>
             ))}

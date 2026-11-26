@@ -116,6 +116,11 @@ export const MINUTE_LABEL: Record<MinuteKind, string> = {
 
 export const PRIORITIES: Priority[] = ['Baja', 'Media', 'Alta', 'Crítica'];
 
+/** Sin proyecto: lo que asignó el jefe es trabajo, no algo personal. */
+export function noProjectLabel(fromMeeting?: boolean | null) {
+  return fromMeeting ? 'Sin proyecto' : 'Personal';
+}
+
 export function initials(email?: string | null) {
   if (!email) return '?';
   return (email.split('@')[0].replace(/[^a-zA-Z]/g, '').slice(0, 2) || '?').toUpperCase();

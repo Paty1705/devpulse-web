@@ -156,8 +156,7 @@ export default function JefaturaPage() {
                   <h3 className="font-bold text-xl text-[var(--text-primary)] min-w-0 break-words">{p.name}</h3>
                   <span
                     title={p.leader?.email ?? 'Sin responsable'}
-                    className="tile-3d shrink-0 w-9 h-9 rounded-[12px] flex items-center justify-center text-xs font-bold text-white"
-                    style={{ background: p.leader_id === user?.id ? 'linear-gradient(150deg, var(--accent), var(--accent-2))' : 'linear-gradient(150deg, #64748B, #334155)' }}
+                    className={`tile-3d shrink-0 w-9 h-9 rounded-[12px] flex items-center justify-center text-xs font-bold ${p.leader_id === user?.id ? 'accent-fill' : 'gray-fill'}`}
                   >
                     {p.leader?.email ? p.leader.email.split('@')[0].replace(/[^a-zA-Z]/g, '').slice(0, 2).toUpperCase() : '—'}
                   </span>
@@ -232,7 +231,7 @@ export default function JefaturaPage() {
                   />
                   <span>
                     También eliminar el repositorio vinculado en GitHub
-                    <span className="block text-[11px] text-[var(--text-secondary)] break-all">{deleteTarget.repo_url}</span>
+                    <span className="block text-xs text-[var(--text-secondary)] break-all">{deleteTarget.repo_url}</span>
                   </span>
                 </label>
               )}

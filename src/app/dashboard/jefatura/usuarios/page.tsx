@@ -177,7 +177,7 @@ export default function UsuariosPage() {
                           disabled={busyId === p.id}
                           onClick={() => setToDelete(p)}
                           aria-label={`Eliminar ${p.email}`}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[10px] text-xs font-bold text-[#EF4444] border border-[#EF4444]/30 hover:bg-[#EF4444] hover:text-white transition-colors disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[10px] text-xs font-bold text-[var(--danger-text)] border border-[#EF4444]/30 hover:bg-[#EF4444] hover:text-white transition-colors disabled:opacity-50"
                         >
                           <Trash2 size={13} /> Eliminar
                         </button>

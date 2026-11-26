@@ -665,7 +665,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
 
               {audits.length > 0 && (
                 <div className="pt-2 border-t border-[var(--border-column)] space-y-2">
-                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Historial</h5>
+                  <h5 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Historial</h5>
                   {audits.map(a => (
                     <div key={a.id} className="text-xs bg-[var(--bg-page)] border border-[var(--border-column)] rounded-[12px] p-2">
                       <div className="flex justify-between items-center mb-1">

@@ -60,7 +60,7 @@ export function QuickAddModal({ isOpen, date, isJefe, onClose, onAddPersonal, on
                 <Plus size={18} />
               </button>
             </div>
-            <p className="text-[10px] text-[var(--text-secondary)] mt-1">Solo tú la ves, no forma parte de ningún proyecto.</p>
+            <p className="text-[11px] text-[var(--text-secondary)] mt-1">Solo tú la ves, no forma parte de ningún proyecto.</p>
           </div>
 
           {isJefe && (
@@ -71,7 +71,7 @@ export function QuickAddModal({ isOpen, date, isJefe, onClose, onAddPersonal, on
               >
                 <Briefcase size={16} /> Crear tarea de trabajo
               </button>
-              <p className="text-[10px] text-[var(--text-secondary)] mt-1">Abre el formulario completo de Kanban con esta fecha precargada.</p>
+              <p className="text-[11px] text-[var(--text-secondary)] mt-1">Abre el formulario completo de Kanban con esta fecha precargada.</p>
             </div>
           )}
         </div>

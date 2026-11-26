@@ -102,7 +102,7 @@ export default function JuntasPage() {
       {past.length > 0 && (
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold text-[var(--text-primary)]">Anteriores</h2>
-          <div className="scroll-list grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 content-start gap-4 -mx-1 px-1 pb-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {past.map((m) => <MeetingCard key={m.id} meeting={m} currentEmail={user.email} />)}
           </div>
         </section>

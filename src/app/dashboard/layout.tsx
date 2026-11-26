@@ -34,7 +34,9 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen p-3 sm:p-4 flex gap-4 items-start">
-      <div className="hidden lg:block print:hidden"><Sidebar onOpenSettings={openSettings} /></div>
+      {/* self-stretch: la columna mide lo mismo que la página, para que el menú
+          pueda quedarse fijo al desplazarse y no deje un hueco debajo. */}
+      <div className="hidden lg:block self-stretch print:hidden"><Sidebar onOpenSettings={openSettings} /></div>
 
       {/* Menú del teléfono y tableta: panel que sale de la izquierda. */}
       {menuOpen && (

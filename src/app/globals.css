@@ -245,6 +245,11 @@
   backdrop-filter: blur(var(--glass-blur)) saturate(170%);
   box-shadow: var(--shadow-subtle), inset 0 1px 0 var(--glass-highlight, transparent);
 }
+/* Sin esto, el position: relative de arriba anula a "sticky" y el menú lateral
+   se va con la página. */
+.glass-panel.sticky {
+  position: sticky;
+}
 :root:not([data-surface="vidrio"]) .glass-iridescent::before {
   display: none;
 }
@@ -287,6 +292,9 @@ h1, h2, h3 {
 @media screen {
   .scroll-list,
   .scroll-list-sm {
+    /* relative: los textos ocultos para lectores de pantalla (absolutos) se
+       quedan dentro de la lista y no estiran el panel. */
+    position: relative;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--text-secondary) 45%, transparent) transparent;
@@ -299,18 +307,92 @@ h1, h2, h3 {
   }
 }
 
-/* Tablero: cada columna se desplaza por su cuenta, solo cuando las cinco caben
-   a lo ancho. La librería de arrastre admite un único contenedor con scroll,
-   y en pantallas angostas ese es el horizontal. */
-@media screen and (min-width: 1360px) {
-  .kanban-scroller {
-    overflow: visible;
+/* Escritorio: la pantalla mide lo mismo que la ventana. El menú y la barra de
+   arriba no se mueven; lo que crece se desplaza dentro de su sección. En
+   pantallas angostas o muy bajas la página se desplaza como siempre. */
+@media screen and (min-width: 1280px) and (min-height: 560px) {
+  .app-shell {
+    height: 100dvh;
   }
-  .kanban-list {
+  .app-column {
+    align-self: stretch;
+    min-height: 0;
+  }
+  /* El margen negativo deja sitio a las sombras para que no se recorten. */
+  .app-main {
+    min-height: 0;
     overflow-y: auto;
-    max-height: max(22rem, calc(100dvh - 19rem));
+    margin: -4px -8px -1rem;
+    padding: 4px 8px 1rem;
+  }
+  .app-main,
+  .meeting-columns *,
+  .kanban-list {
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--text-secondary) 45%, transparent) transparent;
+  }
+
+  /* Páginas que reparten el alto: .fit-body ocupa lo que sobra. */
+  .fit-page {
+    height: 100%;
+  }
+  .fit-page > .fit-body {
+    flex: 1 1 0;
+    min-height: 20rem;
+    max-height: none;
+  }
+
+  /* Junta: tres columnas del mismo alto, cada una con su propio scroll. */
+  .fit-page > .meeting-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1.2fr);
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch;
+  }
+  .meeting-columns > *,
+  .meeting-columns > * > section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .meeting-columns > * > section {
+    flex: 1 1 0;
+    /* Solo se usa si la ventana es tan baja que ni lo fijo cabe. */
+    overflow-y: auto;
+  }
+  .meeting-columns .panel-body {
+    position: relative;
+    flex: 1 1 0;
+    min-height: 7rem;
+    max-height: none;
+    overflow-y: auto;
+  }
+  .meeting-columns .scroll-list-sm {
+    max-height: none;
+    flex-shrink: 0;
+  }
+  .meeting-columns .panel-body > * {
+    flex-shrink: 0;
+  }
+
+  /* Tablero: las cinco columnas llenan el alto y cada una se desplaza. La
+     librería de arrastre admite un único contenedor con scroll, por eso los
+     de afuera dejan de serlo. */
+  .app-main:has(.kanban-page),
+  .kanban-page .kanban-scroller {
+    overflow: visible;
+  }
+  .kanban-page .kanban-grid {
+    height: 100%;
+    min-width: 0;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .kanban-page .kanban-column {
+    min-height: 0;
+  }
+  .kanban-page .kanban-list {
+    min-height: 0;
+    overflow-y: auto;
   }
 }
 

@@ -83,8 +83,8 @@ export default function VersionesPage() {
   }
 
   return (
-    <div className="max-w-[1400px] space-y-4 pb-8">
-      <header className="mb-2 flex justify-between items-end flex-wrap gap-3">
+    <div className="fit-page max-w-[1400px] flex flex-col gap-4">
+      <header className="flex justify-between items-end flex-wrap gap-3">
         <div className="flex flex-col gap-2">
           <div>
             <h1 className="text-2xl sm:text-[1.75rem] font-bold text-[var(--text-primary)]">Control de Versiones</h1>
@@ -108,7 +108,7 @@ export default function VersionesPage() {
         )}
       </header>
 
-      <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[20px] shadow-[var(--shadow-subtle)] overflow-x-auto scroll-list">
+      <div className="fit-body scroll-list bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[20px] shadow-[var(--shadow-subtle)] overflow-x-auto">
         {filteredLogs.length === 0 ? (
           <div className="text-center py-12 text-[var(--text-secondary)]">
             <GitBranch size={48} className="mx-auto mb-4 opacity-50" />

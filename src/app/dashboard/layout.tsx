@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
@@ -18,6 +18,12 @@ export default function DashboardLayout({
   const openSettings = () => setIsSettingsOpen(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const mainRef = useRef<HTMLElement>(null);
+
+  // En escritorio el que se desplaza es <main>: al cambiar de página vuelve arriba.
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0);
+  }, [pathname]);
 
   // Cierra el menú del teléfono al cambiar de página o con Escape.
   useEffect(() => {
@@ -33,7 +39,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen p-3 sm:p-4 flex gap-4 items-start">
+    <div className="app-shell min-h-screen p-3 sm:p-4 flex gap-4 items-start">
       {/* self-stretch: la columna mide lo mismo que la página, para que el menú
           pueda quedarse fijo al desplazarse y no deje un hueco debajo. */}
       <div className="hidden lg:block self-stretch print:hidden"><Sidebar onOpenSettings={openSettings} /></div>
@@ -51,9 +57,9 @@ export default function DashboardLayout({
         </div>
       )}
 
-      <div className="flex-1 min-w-0 w-full flex flex-col gap-4">
+      <div className="app-column flex-1 min-w-0 w-full flex flex-col gap-4">
       <div className="contents print:hidden"><Topbar onOpenSettings={openSettings} onOpenMenu={() => setMenuOpen(true)} /></div>
-      <main className="flex-1">
+      <main ref={mainRef} className="app-main flex-1">
         {!loading && profile?.status === 'pending' ? (
           <div className="max-w-lg mx-auto mt-16 text-center bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[8px] p-8 shadow-[var(--shadow-subtle)]">
             <Hourglass size={40} className="mx-auto mb-4 text-[var(--btn-primary-bg)]" />

@@ -93,7 +93,7 @@ export function ReviewPanel({ attendees, reviewFrom, currentUserId }: { attendee
       {!loaded ? (
         <p className="text-sm text-[var(--text-secondary)]">Cargando…</p>
       ) : (
-        <ul className="scroll-list flex flex-col gap-2.5 -mr-2 pr-2">
+        <ul className="panel-body scroll-list flex flex-col gap-2.5 -mr-2 pr-2">
           {rows.map((r) => (
             <li key={r.id} className="chip-glass shrink-0 rounded-[18px] p-3 flex flex-col gap-2">
               <span className="flex items-center gap-2.5">

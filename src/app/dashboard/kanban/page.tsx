@@ -5,7 +5,7 @@ import { KanbanBoard } from '@/components/kanban/KanbanBoard';
 export default function KanbanPage() {
   return (
     <div className="max-w-[1600px] mx-auto h-full flex flex-col">
-      <main className="flex-1">
+      <main className="flex-1 min-h-0">
         <KanbanBoard />
       </main>
     </div>

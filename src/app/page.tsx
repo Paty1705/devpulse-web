@@ -10,7 +10,7 @@ import { useEffect } from 'react';
 const TEST_USERS = [
   { email: 'erick@devpulse.com', label: 'Erick' },
   { email: 'alan@devpulse.com', label: 'Alan' },
-  { email: 'joana@devpulse.com', label: 'Joana' },
+  { email: 'yoana@devpulse.com', label: 'Yoana' },
   { email: 'paty@devpulse.com', label: 'Paty' },
   { email: 'pablo@devpulse.com', label: 'Pablo' },
   { email: 'adri@devpulse.com', label: 'Adri' },

@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI, type Part } from '@google/generative-ai';
 import { GoogleAIFileManager, FileState } from '@google/generative-ai/server';
 import { extractProposals, PRIORITIES, transcribeMeeting, type MeetingContext } from '@/lib/ai-junta';
+import { splitAssignees } from '@/lib/meetings';
 
 // Transcribir y analizar una junta larga puede tardar; Vercel lo respeta
 // (hasta 300 s en el plan Hobby con Fluid Compute).
@@ -12,6 +13,7 @@ export const maxDuration = 300;
 // primero a la Files API de Gemini (el límite de una petición es ~20 MB).
 const INLINE_LIMIT_BYTES = 15 * 1024 * 1024;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 function geminiMime(type: string, path: string) {
   const base = type.split(';')[0].trim();
@@ -117,30 +119,32 @@ export async function POST(req: Request) {
     // Paso 2: buscar las tareas en el texto.
     const proposals = await extractProposals(genAI, transcript, context);
 
-    // Normaliza: correos/proyectos deben existir; en proyectos individuales
-    // la tarea es del responsable del proyecto.
+    // Normaliza: correos y proyectos deben existir.
     const byEmail = new Map(attendees.map((a) => [a.profile!.email.toLowerCase(), a.user_id]));
     const byProject = new Map(projects.map((p) => [p.name.trim().toLowerCase(), p]));
     const rows = proposals
       .filter((p) => p && typeof p.title === 'string' && p.title.trim())
       .map((p) => {
         const project = p.project_name ? byProject.get(p.project_name.trim().toLowerCase()) : undefined;
-        let assignee = p.assignee_email ? byEmail.get(p.assignee_email.trim().toLowerCase()) ?? null : null;
+        const named = [...new Set((p.assignee_emails ?? []).map((e) => byEmail.get(String(e).trim().toLowerCase())).filter((x): x is string => !!x))];
+        // Si en un proyecto no se nombró a varias personas, es de quien lo lidera.
+        const people = named.length > 1 || !project?.leader_id ? named : [project.leader_id];
         let projectId = project?.id ?? null;
-        if (project?.leader_id) assignee = project.leader_id;
-        if (!projectId && assignee) {
-          const led = projects.filter((x) => x.leader_id === assignee);
+        if (!projectId && people.length === 1) {
+          const led = projects.filter((x) => x.leader_id === people[0]);
           if (led.length === 1) projectId = led[0].id;
         }
+        const dueDate = p.due_date && DATE_RE.test(p.due_date) ? p.due_date : null;
         const priority = PRIORITIES.includes(p.priority as (typeof PRIORITIES)[number]) ? p.priority : 'Media';
         return {
           meeting_id: meetingId,
           title: p.title.trim().slice(0, 140),
           description: p.description?.trim() || null,
           project_id: projectId,
-          assigned_to: assignee,
+          ...splitAssignees(people, [project?.leader_id]),
           priority,
-          due_date: p.due_date && DATE_RE.test(p.due_date) ? p.due_date : null,
+          due_date: dueDate,
+          due_time: dueDate && p.due_time && TIME_RE.test(p.due_time) ? p.due_time : null,
           test_date: p.test_date && DATE_RE.test(p.test_date) ? p.test_date : null,
           source_quote: p.quote?.trim().slice(0, 500) || null,
           source: 'ia' as const,

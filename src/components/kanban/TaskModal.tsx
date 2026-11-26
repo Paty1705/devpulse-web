@@ -9,6 +9,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { branchNameForTask } from '@/lib/github';
 import { TaskProgressSection } from '@/components/kanban/TaskProgressSection';
 import { describeRecurrence, formatShort, type Frequency } from '@/lib/recurrence';
+import { isPastDue } from '@/lib/due';
 
 type FullTask = {
   id: string;
@@ -426,7 +427,7 @@ export function TaskModal({ isOpen, onClose, task, onUpdated }: TaskModalProps) 
                 </span>
               </div>
             )}
-            {fullTask.status !== 'completed' && fullTask.due_date && new Date(fullTask.due_date) < new Date(new Date().toDateString()) && (
+            {fullTask.status !== 'completed' && fullTask.due_date && isPastDue(fullTask.due_date) && (
               <div className="bg-red-900/10 text-red-500 border border-red-500/30 rounded-[12px] px-4 py-3 text-sm font-bold flex items-center gap-2">
                 <AlertTriangle size={16} /> Tarea atrasada: venció el {new Date(fullTask.due_date).toLocaleDateString()}.
               </div>

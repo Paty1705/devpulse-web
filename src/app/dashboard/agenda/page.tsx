@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { TaskModal } from '@/components/kanban/TaskModal';
 import { NewTaskModal } from '@/components/kanban/NewTaskModal';
 import { QuickAddModal } from '@/components/agenda/QuickAddModal';
+import { dueTimeLabel, dueTimeSuffix, isPastDue } from '@/lib/due';
 
 type AgendaTask = {
   id: string;
@@ -189,8 +190,6 @@ export default function AgendaPage() {
 
   if (loading || !user) return <div className="p-8">Cargando agenda...</div>;
 
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
   const today = new Date();
 
   const monthLabel = viewDate.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
@@ -273,7 +272,7 @@ export default function AgendaPage() {
                 {totalCount > 0 && (
                   <span className="sm:hidden flex flex-wrap justify-center gap-0.5">
                     {dayTasks.slice(0, 3).map(t => (
-                      <span key={t.id} className="w-1.5 h-1.5 rounded-full" style={{ background: t.status !== 'completed' && new Date(t.due_date!) < startOfToday ? '#EF4444' : accentColorFor(t.item_type) }} />
+                      <span key={t.id} className="w-1.5 h-1.5 rounded-full" style={{ background: t.status !== 'completed' && isPastDue(t.due_date!) ? '#EF4444' : accentColorFor(t.item_type) }} />
                     ))}
                     {dayPersonal.slice(0, Math.max(0, 3 - dayTasks.length)).map(ev => (
                       <span key={ev.id} className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]" />
@@ -282,12 +281,12 @@ export default function AgendaPage() {
                 )}
                 <div className="hidden sm:block flex-1 overflow-y-auto space-y-1">
                   {dayTasks.slice(0, 3).map(t => {
-                    const isOverdue = t.status !== 'completed' && new Date(t.due_date!) < startOfToday;
+                    const isOverdue = t.status !== 'completed' && isPastDue(t.due_date!);
                     return (
                       <button
                         key={t.id}
                         onClick={(e) => { e.stopPropagation(); setSelectedTaskId(t.id); }}
-                        title={t.title}
+                        title={`${t.title}${dueTimeSuffix(t.due_date!)}`}
                         style={{ borderLeftColor: isOverdue ? '#EF4444' : accentColorFor(t.item_type) }}
                         className="w-full flex items-center gap-1 text-left text-[10px] leading-tight px-1.5 py-1 rounded-[8px] border-l-2 truncate chip-glass hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] transition-colors"
                       >
@@ -336,7 +335,7 @@ export default function AgendaPage() {
             ) : (
               <ul className="flex flex-col gap-1.5">
                 {dayTasks.map(t => {
-                  const isOverdue = t.status !== 'completed' && new Date(t.due_date!) < startOfToday;
+                  const isOverdue = t.status !== 'completed' && isPastDue(t.due_date!);
                   return (
                     <li key={t.id}>
                       <button
@@ -346,6 +345,7 @@ export default function AgendaPage() {
                       >
                         {isOverdue && <AlertTriangle size={13} className="text-red-500 shrink-0" />}
                         <span className="flex-1 min-w-0 truncate">{t.title}</span>
+                        {dueTimeLabel(t.due_date!) && <span className="shrink-0 font-mono text-[11px] text-[var(--text-secondary)]">{dueTimeLabel(t.due_date!)}</span>}
                       </button>
                     </li>
                   );

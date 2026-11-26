@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronDown, Loader2, Plus, RotateCcw, Sparkles, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { formatDateOnly, PRIORITIES, prioStyle, shortName, type AiStatus, type PersonRef, type Proposal } from '@/lib/meetings';
+import { assigneeIds, formatDateOnly, PRIORITIES, prioStyle, shortName, splitAssignees, type AiStatus, type PersonRef, type Proposal } from '@/lib/meetings';
 import { Avatar } from '@/components/juntas/Avatar';
 import { ProposalForm } from '@/components/juntas/ProposalForm';
+import { PeoplePicker } from '@/components/PeoplePicker';
 
 export type ProjectOption = { id: string; name: string; leader_id: string | null; leader: { email: string } | null };
 
@@ -24,7 +25,7 @@ type Props = {
   hasRecording: boolean;
   processing: boolean;
   onProcess: () => void;
-  onChanged: () => void;
+  onChanged: () => void | Promise<void>;
 };
 
 const fieldClass =
@@ -55,11 +56,12 @@ export function ProposalsPanel({
 
   const patch = async (id: string, values: Partial<Proposal>) => {
     setError(null);
-    const request = Promise.resolve(supabase.from('meeting_task_proposals').update(values).eq('id', id));
-    saving.current = Promise.all([saving.current, request]);
+    // Un guardado a la vez, en el orden en que se hicieron los cambios.
+    const request = saving.current.then(() => supabase.from('meeting_task_proposals').update(values).eq('id', id));
+    saving.current = request.catch(() => undefined);
     const { error: err } = await request;
     if (err) setError('No se pudo guardar el cambio.');
-    else onChanged();
+    else await onChanged();
   };
 
   const accept = async (id: string) => {
@@ -161,6 +163,7 @@ export function ProposalsPanel({
               meetingId={meetingId}
               currentUserId={currentUserId}
               projects={myProjects}
+              attendees={attendees}
               fieldClass={fieldClass}
               onSent={() => {
                 setProposing(false);
@@ -172,7 +175,17 @@ export function ProposalsPanel({
         )}
         {ordered.map((p) => {
           const isAuthor = !!currentUserId && p.created_by === currentUserId;
-          const editable = p.status === 'pendiente' && (isJefe || isAuthor);
+          // Si el jefe cambió a la persona principal, quien la propuso ya no puede editarla.
+          const editable = p.status === 'pendiente' && (isJefe || (isAuthor && p.assigned_to === currentUserId));
+          const people = assigneeIds(p);
+          const names = people.map((x) => shortName(emailById[x])).join(', ');
+          // Se puede elegir a quienes asisten, además de quien lidera el proyecto o ya estaba elegido.
+          const pickable = [
+            ...attendees,
+            ...[...new Set([...people, ...(projects.find((x) => x.id === p.project_id)?.leader_id ? [projects.find((x) => x.id === p.project_id)!.leader_id!] : [])])]
+              .filter((x) => !attendees.some((a) => a.id === x) && emailById[x])
+              .map((x) => ({ id: x, email: emailById[x] })),
+          ];
           const projectOptions = isJefe ? projects : myProjects;
           const proposer = p.source === 'manual' && p.created_by && p.created_by !== p.assigned_to ? emailById[p.created_by] : undefined;
           const ownProposal = p.source === 'manual' && p.created_by && p.created_by === p.assigned_to && !isAuthor;
@@ -197,7 +210,7 @@ export function ProposalsPanel({
                       onClick={() => accept(p.id)}
                       disabled={!p.assigned_to || busy !== null}
                       aria-label={`Aceptar: ${p.title}`}
-                      title={p.assigned_to ? 'Aceptar' : 'Elige proyecto o responsable para aceptar'}
+                      title={p.assigned_to ? 'Aceptar' : 'Elige quién la hará para aceptar'}
                       className="nav-active w-8 h-8 rounded-[10px] inline-flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {busy === p.id ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
@@ -222,15 +235,19 @@ export function ProposalsPanel({
 
               <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px] text-[var(--text-primary)]">
                 <span className="px-1.5 py-0.5 rounded-[6px]" style={prioStyle(p.priority)}>{p.priority}</span>
-                <span className="px-1.5 py-0.5 rounded-[6px] surface-card">{p.due_date ? `entrega ${formatDateOnly(p.due_date)}` : 'sin fecha'}</span>
-                <span className="px-1.5 py-0.5 rounded-[6px] surface-card max-w-[11rem] truncate">{assigneeEmail ? shortName(assigneeEmail) : 'sin responsable'}</span>
+                <span className="px-1.5 py-0.5 rounded-[6px] surface-card">{p.due_date ? `entrega ${formatDateOnly(p.due_date)}${p.due_time ? ` · ${p.due_time.slice(0, 5)}` : ''}` : 'sin fecha'}</span>
+                <span className="px-1.5 py-0.5 rounded-[6px] surface-card max-w-[11rem] truncate" title={names || undefined}>
+                  {assigneeEmail ? `${shortName(assigneeEmail)}${people.length > 1 ? ` +${people.length - 1}` : ''}` : 'sin responsable'}
+                </span>
                 <span className="px-1.5 py-0.5 rounded-[6px] surface-card text-[var(--text-secondary)]">{p.source === 'ia' ? 'IA' : 'manual'}</span>
               </div>
 
               {waiting && !open && <span className="text-xs text-[var(--text-secondary)]">Espera a que el jefe la acepte</span>}
               {p.status === 'aceptada' && (
                 <span className="flex items-center justify-between gap-2 text-[13px]">
-                  <span className="font-semibold" style={{ color: 'var(--ok-text)' }}>✓ Tarea creada y asignada</span>
+                  <span className="font-semibold" style={{ color: 'var(--ok-text)' }}>
+                    {people.length > 1 ? `✓ ${people.length} tareas creadas, una por persona` : '✓ Tarea creada y asignada'}
+                  </span>
                   <Link href="/dashboard/kanban" className="font-semibold text-[var(--text-primary)] underline underline-offset-2">Ver en tablero</Link>
                 </span>
               )}
@@ -272,16 +289,19 @@ export function ProposalsPanel({
                       </label>
                       <div className="grid grid-cols-2 gap-2">
                         <label className="col-span-2 flex flex-col gap-1">
-                          <span className="text-[11px] text-[var(--text-secondary)]">Proyecto · responsable</span>
+                          <span className="text-[11px] text-[var(--text-secondary)]">Proyecto</span>
                           <select name="project_id"
                             value={p.project_id ?? ''}
                             onChange={(e) => {
                               const proj = projects.find((x) => x.id === e.target.value);
-                              patch(p.id, { project_id: proj?.id ?? null, assigned_to: proj?.leader_id ?? (isJefe ? p.assigned_to : currentUserId ?? null) });
+                              const leader = proj?.leader_id;
+                              // Con una sola persona pasa a quien lidera; si ya eran varias, se le suma.
+                              const next = !isJefe || !leader ? people : people.length > 1 ? [...new Set([leader, ...people])] : [leader];
+                              patch(p.id, { project_id: proj?.id ?? null, ...splitAssignees(next, [isJefe ? leader : currentUserId, p.assigned_to]) });
                             }}
                             className={fieldClass}
                           >
-                            <option value="">Personal · sin proyecto</option>
+                            <option value="">Sin proyecto</option>
                             {isJefe && suggestedProjects.length > 0 && (
                               <optgroup label={`De ${shortName(assigneeEmail)}`}>
                                 {suggestedProjects.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
@@ -294,18 +314,23 @@ export function ProposalsPanel({
                             )}
                           </select>
                         </label>
-                        {isJefe && !p.project_id && (
-                          <label className="col-span-2 flex flex-col gap-1">
-                            <span className="text-[11px] text-[var(--text-secondary)]">Responsable (tarea personal)</span>
-                            <select name="assigned_to" value={p.assigned_to ?? ''} onChange={(e) => patch(p.id, { assigned_to: e.target.value || null })} className={fieldClass}>
-                              <option value="">Elegir responsable…</option>
-                              {attendees.map((a) => <option key={a.id} value={a.id}>{a.email}</option>)}
-                              {p.assigned_to && !attendees.some((a) => a.id === p.assigned_to) && (
-                                <option value={p.assigned_to}>{emailById[p.assigned_to] ?? 'Otra persona'}</option>
-                              )}
-                            </select>
-                          </label>
-                        )}
+                        <div className="col-span-2">
+                          <AssigneeField
+                            people={pickable}
+                            value={people}
+                            lockedId={isJefe ? undefined : currentUserId}
+                            onSave={(ids) => patch(p.id, splitAssignees(ids, [isJefe ? project?.leader_id : currentUserId, p.assigned_to]))}
+                          />
+                        </div>
+                        <label className="flex flex-col gap-1">
+                          <span className="text-[11px] text-[var(--text-secondary)]">Fecha de entrega</span>
+                          <input name="due_date" type="date" key={`${p.id}-due_date-${p.due_date ?? ''}`} defaultValue={p.due_date ?? ''} onBlur={(e) => { if (e.target.value !== (p.due_date ?? '')) patch(p.id, { due_date: e.target.value || null }); }} className={fieldClass} />
+                        </label>
+                        <label className="flex flex-col gap-1">
+                          <span className="text-[11px] text-[var(--text-secondary)]">Hora de entrega (opcional)</span>
+                          <input name="due_time" type="time" key={`${p.id}-due_time-${p.due_time ?? ''}`} defaultValue={p.due_time?.slice(0, 5) ?? ''} onBlur={(e) => { if (e.target.value !== (p.due_time?.slice(0, 5) ?? '')) patch(p.id, { due_time: e.target.value || null }); }} className={fieldClass} />
+                        </label>
+                        {p.due_time && !p.due_date && <span className="col-span-2 text-xs" style={{ color: 'var(--prio-media-text)' }}>Elige también la fecha para que cuente la hora.</span>}
                         <label className="flex flex-col gap-1">
                           <span className="text-[11px] text-[var(--text-secondary)]">Prioridad</span>
                           <select name="priority" value={p.priority} onChange={(e) => patch(p.id, { priority: e.target.value as Proposal['priority'] })} className={fieldClass} style={prioStyle(p.priority)}>
@@ -313,10 +338,6 @@ export function ProposalsPanel({
                           </select>
                         </label>
                         <label className="flex flex-col gap-1">
-                          <span className="text-[11px] text-[var(--text-secondary)]">Fecha de entrega</span>
-                          <input name="due_date" type="date" key={`${p.id}-due_date-${p.due_date ?? ''}`} defaultValue={p.due_date ?? ''} onBlur={(e) => { if (e.target.value !== (p.due_date ?? '')) patch(p.id, { due_date: e.target.value || null }); }} className={fieldClass} />
-                        </label>
-                        <label className="col-span-2 flex flex-col gap-1">
                           <span className="text-[11px] text-[var(--text-secondary)]">Fecha de prueba (opcional)</span>
                           <input name="test_date" type="date" key={`${p.id}-test_date-${p.test_date ?? ''}`} defaultValue={p.test_date ?? ''} onBlur={(e) => { if (e.target.value !== (p.test_date ?? '')) patch(p.id, { test_date: e.target.value || null }); }} className={fieldClass} />
                         </label>
@@ -332,11 +353,11 @@ export function ProposalsPanel({
                   <div className="flex items-center gap-2">
                     <Avatar email={assigneeEmail} highlight={p.assigned_to === currentUserId} size={26} />
                     <span className="flex-1 min-w-0 text-xs text-[var(--text-secondary)]">
-                      {assigneeEmail ? shortName(assigneeEmail) : 'Sin responsable'}
-                      {` · ${project?.name ?? 'personal'}`}
+                      {names || 'Sin responsable'}
+                      {` · ${project?.name ?? 'sin proyecto'}`}
                       {proposer && ` · propuesta por ${shortName(proposer)}`}
                       {ownProposal && ' · la propuso para sí'}
-                      {isJefe && p.status === 'pendiente' && !p.assigned_to && <span style={{ color: 'var(--prio-media-text)' }}> · elige proyecto o responsable para aceptar</span>}
+                      {isJefe && p.status === 'pendiente' && !p.assigned_to && <span style={{ color: 'var(--prio-media-text)' }}> · elige quién la hará para aceptar</span>}
                       {waiting && ' · espera a que el jefe la acepte'}
                     </span>
                   </div>
@@ -372,4 +393,17 @@ export function ProposalsPanel({
       {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
     </section>
   );
+}
+
+/** Mantiene lo marcado en pantalla mientras se guarda. */
+function AssigneeField({ people, value, lockedId, onSave }: { people: PersonRef[]; value: string[]; lockedId?: string; onSave: (ids: string[]) => Promise<void> }) {
+  const [draft, setDraft] = useState<string[] | null>(null);
+  const latest = useRef(0);
+  const change = async (ids: string[]) => {
+    const mine = ++latest.current;
+    setDraft(ids);
+    await onSave(ids);
+    if (mine === latest.current) setDraft(null);
+  };
+  return <PeoplePicker legend="Responsables" people={people} selected={draft ?? value} onChange={change} lockedId={lockedId} />;
 }

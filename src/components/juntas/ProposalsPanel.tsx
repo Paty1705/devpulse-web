@@ -145,7 +145,7 @@ export function ProposalsPanel({
         </p>
       )}
 
-      <ul className="flex flex-col gap-3">
+      <ul className="scroll-list flex flex-col gap-3 -mr-2 pr-2 empty:hidden">
         {ordered.map((p) => {
           const isAuthor = !!currentUserId && p.created_by === currentUserId;
           const editable = p.status === 'pendiente' && (isJefe || isAuthor);
@@ -158,7 +158,7 @@ export function ProposalsPanel({
           return (
             <li
               key={p.id}
-              className={`chip-glass rounded-[18px] p-3.5 flex flex-col gap-2.5 border ${p.status === 'aceptada' ? 'border-[var(--ok-text)]' : 'border-[var(--border-card)]'} ${p.status === 'descartada' ? 'opacity-55' : ''}`}
+              className={`chip-glass shrink-0 rounded-[18px] p-3.5 flex flex-col gap-2.5 border ${p.status === 'aceptada' ? 'border-[var(--ok-text)]' : 'border-[var(--border-card)]'} ${p.status === 'descartada' ? 'opacity-55' : ''}`}
             >
               <div className="flex items-start gap-2">
                 {editable ? (

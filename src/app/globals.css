@@ -281,6 +281,39 @@ h1, h2, h3 {
   display: none;
 }
 
+/* Listas que crecen (propuestas, minuta, reportes…): alto máximo con scroll
+   propio para no alargar la pantalla. Solo en pantalla: al imprimir o
+   guardar como PDF se muestran completas. */
+@media screen {
+  .scroll-list,
+  .scroll-list-sm {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--text-secondary) 45%, transparent) transparent;
+  }
+  .scroll-list {
+    max-height: clamp(20rem, 65dvh, 46rem);
+  }
+  .scroll-list-sm {
+    max-height: 14rem;
+  }
+}
+
+/* Tablero: cada columna se desplaza por su cuenta, solo cuando las cinco caben
+   a lo ancho. La librería de arrastre admite un único contenedor con scroll,
+   y en pantallas angostas ese es el horizontal. */
+@media screen and (min-width: 1360px) {
+  .kanban-scroller {
+    overflow: visible;
+  }
+  .kanban-list {
+    overflow-y: auto;
+    max-height: max(22rem, calc(100dvh - 19rem));
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--text-secondary) 45%, transparent) transparent;
+  }
+}
+
 /* Elemento activo de la navegación. */
 .nav-active {
   color: var(--accent-contrast);

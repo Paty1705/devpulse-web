@@ -93,9 +93,9 @@ export function ReviewPanel({ attendees, reviewFrom, currentUserId }: { attendee
       {!loaded ? (
         <p className="text-sm text-[var(--text-secondary)]">Cargando…</p>
       ) : (
-        <ul className="flex flex-col gap-2.5">
+        <ul className="scroll-list flex flex-col gap-2.5 -mr-2 pr-2">
           {rows.map((r) => (
-            <li key={r.id} className="chip-glass rounded-[18px] p-3 flex flex-col gap-2">
+            <li key={r.id} className="chip-glass shrink-0 rounded-[18px] p-3 flex flex-col gap-2">
               <span className="flex items-center gap-2.5">
                 <Avatar email={r.email} highlight={r.id === currentUserId} size={32} />
                 <span className="flex-1 min-w-0">

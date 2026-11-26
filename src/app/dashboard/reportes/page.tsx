@@ -439,11 +439,11 @@ export default function ReportesPage() {
               {selected.completed.length === 0 ? (
                 <p className="text-sm text-[var(--text-secondary)]">Ninguna en este periodo.</p>
               ) : (
-                <ul className="flex flex-col gap-2">
+                <ul className="scroll-list flex flex-col gap-2 -mr-2 pr-2">
                   {selected.completed.map((t) => {
                     const late = t.due_date && new Date(t.completed_at!) > new Date(t.due_date);
                     return (
-                      <li key={t.id} className="surface-card border border-[var(--border-card)] rounded-[14px] p-3 flex items-start justify-between gap-3">
+                      <li key={t.id} className="shrink-0 surface-card border border-[var(--border-card)] rounded-[14px] p-3 flex items-start justify-between gap-3">
                         <span className="min-w-0">
                           <span className="block text-sm font-semibold text-[var(--text-primary)]">{t.title}</span>
                           <span className="block text-xs text-[var(--text-secondary)]">
@@ -468,7 +468,7 @@ export default function ReportesPage() {
               {selected.progress.length === 0 ? (
                 <p className="text-sm text-[var(--text-secondary)]">No registró avances en este periodo.</p>
               ) : (
-                <ol className="flex flex-col">
+                <ol className="scroll-list">
                   {selected.progress.map((p) => {
                     const t = taskById.get(p.task_id);
                     return (
@@ -498,9 +498,9 @@ export default function ReportesPage() {
               <h2 className="text-lg font-semibold text-[var(--text-primary)] inline-flex items-center gap-2">
                 <AlertTriangle size={17} style={{ color: 'var(--prio-alta-text)' }} /> Atrasadas hoy
               </h2>
-              <ul className="flex flex-col gap-2">
+              <ul className="scroll-list flex flex-col gap-2 -mr-2 pr-2">
                 {selected.overdue.map((t) => (
-                  <li key={t.id} className="surface-card border border-[var(--border-card)] rounded-[14px] p-3 flex items-center justify-between gap-3">
+                  <li key={t.id} className="shrink-0 surface-card border border-[var(--border-card)] rounded-[14px] p-3 flex items-center justify-between gap-3">
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold text-[var(--text-primary)] truncate">{t.title}</span>
                       <span className="block text-xs text-[var(--text-secondary)]">

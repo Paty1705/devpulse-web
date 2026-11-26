@@ -108,7 +108,7 @@ export default function VersionesPage() {
         )}
       </header>
 
-      <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[20px] shadow-[var(--shadow-subtle)] overflow-x-auto">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[20px] shadow-[var(--shadow-subtle)] overflow-x-auto scroll-list">
         {filteredLogs.length === 0 ? (
           <div className="text-center py-12 text-[var(--text-secondary)]">
             <GitBranch size={48} className="mx-auto mb-4 opacity-50" />
@@ -117,7 +117,7 @@ export default function VersionesPage() {
           </div>
         ) : (
           <table className="w-full min-w-[40rem] text-sm">
-            <thead>
+            <thead className="sticky top-0 z-10 bg-[var(--bg-solid,var(--bg-card))]">
               <tr className="bg-[var(--bg-column)] border-b border-[var(--border-column)] text-left text-[var(--text-secondary)] uppercase text-xs tracking-wider">
                 <th className="px-4 py-3">Rama</th>
                 <th className="px-4 py-3">Proyecto</th>
